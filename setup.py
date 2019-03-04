@@ -91,6 +91,9 @@ data_files = [('', [
         'README.md',
         'LICENSE',
         'tudaesasII/version.py',
+        'tests',
+        'scripts_lectures',
+        'deriving_equations',
         ])]
 
 package_data = {
