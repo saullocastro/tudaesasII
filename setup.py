@@ -90,15 +90,7 @@ fullversion = write_version_py(version, is_released)
 data_files = [('', [
         'README.md',
         'LICENSE',
-        'tudaesasII/version.py',
-        'tests',
-        'scripts_lectures',
-        'deriving_equations',
         ])]
-
-package_data = {
-        '': ['tests/*.*'],
-        }
 
 s = setup(
     name = "tudaesasII",
@@ -110,10 +102,10 @@ s = setup(
     keywords = "structural analysis vibration dynamics finite elements",
     url = "https://github.com/saullocastro/tudaesasII",
     packages=find_packages(),
-    package_data=package_data,
     data_files=data_files,
     long_description=read('README.md'),
     classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
     install_requires=install_requires,
+    include_package_data=True,
 )
 

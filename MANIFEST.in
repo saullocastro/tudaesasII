@@ -1,0 +1,3 @@
+recursive-include tests *.py
+recursive-include scripts_lectures *.py
+recursive-include deriving_equations *.py
