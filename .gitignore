@@ -1,0 +1,20 @@
+version.py
+# Build related
+build
+dist
+.coverage
+.pytest_cache
+*.egg-info
+# Temp files
+.ipynb_checkpoints
+tmp*
+temp*
+tmp*.*
+temp*.*
+.cache
+
+# Python compiled files
+*.pyc
+*.pyo
+*.pyd
+
