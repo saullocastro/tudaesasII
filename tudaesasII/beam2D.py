@@ -2,7 +2,7 @@ import numpy as np
 
 class Beam2D(object):
     __slots__ = ['n1', 'n2', 'E', 'rho', 'Izz1', 'Izz2', 'A1', 'A2',
-            'interpolation', 'le']
+            'interpolation', 'le', 'thetarad']
     def __init__(self):
         self.n1 = None
         self.n2 = None
@@ -11,6 +11,7 @@ class Beam2D(object):
         self.rho = 7.83e3 # kg/m3
         self.interpolation = 'hermitian_cubic'
         self.le = None
+        self.thetarad = None
 
 def update_K_M(beam, nid_pos, ncoords, K, M):
     """Update K and M according to a beam element
@@ -40,9 +41,9 @@ def update_K_M(beam, nid_pos, ncoords, K, M):
     A2 = beam.A2
     le = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
     beam.le = le
-    r = np.arctan2(y2 - y1, x2 - x1)
-    cosr = np.cos(r)
-    sinr = np.sin(r)
+    beam.thetarad = np.arctan2(y2 - y1, x2 - x1)
+    cosr = np.cos(beam.thetarad)
+    sinr = np.sin(beam.thetarad)
 
     # positions c1, c2 in the stiffness and mass matrices
     c1 = 3*pos1
@@ -201,7 +202,26 @@ def update_K_M(beam, nid_pos, ncoords, K, M):
     else:
         raise NotImplementedError('beam interpolation "%s" not implemented' % beam.interpolation)
 
-def uv(le, u1, v1, beta1, u2, v2, beta2, n=100):
+def uv(beam, u1, v1, beta1, u2, v2, beta2, n=100):
+    """Calculate u and v for a Beam2D
+
+    Parameters
+    ----------
+    beam : Beam2D
+        The Beam2D finite element
+    u1, v1, beta1, u2, v2, beta2 : float or array-like
+        Nodal displacements and rotations
+    n : int
+        Number of points where the axial strain should be calculated within the
+        beam element
+
+    Returns
+    -------
+    uv : (2, :, n) array-like
+        Displacements `u` and `uv`  at all `n` points. The second array
+        dimension depends on the dimension of the nodal displacements and
+        rotations
+    """
     inputs = [u1, v1, beta1, u2, v2, beta2]
     inputs = list(map(np.atleast_1d, inputs))
     maxshape = max([np.shape(i)[0] for i in inputs])
@@ -211,13 +231,79 @@ def uv(le, u1, v1, beta1, u2, v2, beta2, n=100):
         else:
             assert inputs[i].shape[0] == maxshape
     u1, v1, beta1, u2, v2, beta2 = inputs
+    # transforming displacements to element's coordinates
+    cosr = np.cos(beam.thetarad)
+    sinr = np.sin(beam.thetarad)
+    u1e = cosr*u1 + sinr*v1
+    v1e = -sinr*u1 + cosr*v1
+    beta1e = beta1
+    u2e = cosr*u2 + sinr*v2
+    v2e = -sinr*u2 + cosr*v2
+    beta2e = beta2
+    # calculating u, v
+    le = beam.le
     xi = np.linspace(-1, +1, n)
-    Nu1 = u1[:, None]*(1-xi)/2
-    Nu2 = u2[:, None]*(1+xi)/2
-    Nv1 = v1[:, None]*(1/2 - 3*xi/4 + 1*xi**3/4)
-    Nv2 = beta1[:, None]*(le*(1/8 - 1*xi/8 - 1*xi**2/8 + 1*xi**3/8))
-    Nv3 = v2[:, None]*(1/2 + 3*xi/4 - 1*xi**3/4)
-    Nv4 = beta2[:, None]*(le*(-1/8 - 1*xi/8 + 1*xi**2/8 + 1*xi**3/8))
+    Nu1 = u1e[:, None]*(1-xi)/2
+    Nu2 = u2e[:, None]*(1+xi)/2
+    Nv1 = v1e[:, None]*(1/2 - 3*xi/4 + 1*xi**3/4)
+    Nv2 = beta1e[:, None]*(le*(1/8 - 1*xi/8 - 1*xi**2/8 + 1*xi**3/8))
+    Nv3 = v2e[:, None]*(1/2 + 3*xi/4 - 1*xi**3/4)
+    Nv4 = beta2e[:, None]*(le*(-1/8 - 1*xi/8 + 1*xi**2/8 + 1*xi**3/8))
+    ue = Nu1+Nu2
+    ve = Nv1+Nv2+Nv3+Nv4
+    # transforming displacements to global coordinates
+    u = cosr*ue - sinr*ve
+    v = sinr*ue + cosr*ve
     # final shape will be (uv, n, maxshape)
-    return np.array([Nu1+Nu2, Nv1+Nv2+Nv3+Nv4])
+    return np.array([u, v])
+
+def exx(y, beam, u1, v1, beta1, u2, v2, beta2, n=3):
+    """Calculate axial stresses for a Beam2D
+
+    Parameters
+    ----------
+    y : float
+        Distance from the neutral axis
+    beam : Beam2D
+        The Beam2D finite element
+    u1, v1, beta1, u2, v2, beta2 : float or array-like
+        Nodal displacements and rotations
+    n : int
+        Number of points where the axial strain should be calculated within the
+        beam element
+
+    Returns
+    -------
+    exx : (:, n) array-like
+        The strains at all `n` points. The first array dimension depends on the
+        dimension of the nodal displacements and rotations
+    """
+    inputs = [u1, v1, beta1, u2, v2, beta2]
+    inputs = list(map(np.atleast_1d, inputs))
+    maxshape = max([np.shape(i)[0] for i in inputs])
+    for i in range(len(inputs)):
+        if inputs[i].shape[0] == 1:
+            inputs[i] = np.ones(maxshape)*inputs[i][0]
+        else:
+            assert inputs[i].shape[0] == maxshape
+    u1, v1, beta1, u2, v2, beta2 = inputs
+    # transforming displacements to element's coordinates
+    cosr = np.cos(beam.thetarad)
+    sinr = np.sin(beam.thetarad)
+    u1e = cosr*u1 + sinr*v1
+    v1e = -sinr*u1 + cosr*v1
+    beta1e = beta1
+    u2e = cosr*u2 + sinr*v2
+    v2e = -sinr*u2 + cosr*v2
+    beta2e = beta2
+    # calculating at n positions along the beam element
+    le = beam.le
+    xi = np.linspace(-1, +1, n)
+    Nu1x = u1e[:, None]*(-1)/2
+    Nu2x = u2e[:, None]*(+1)/2
+    Nv1xx = v1e[:, None]*(6*xi/4)
+    Nv2xx = beta1e[:, None]*(le*(-2/8 + 6*xi/8))
+    Nv3xx = v2e[:, None]*(-6*xi/4)
+    Nv4xx = beta2e[:, None]*(le*(+2/8 + 6*xi/8))
+    return (2/le)*(Nu1x + Nu2x) - y*(2/le)**2*(Nv1xx + Nv2xx + Nv3xx + Nv4xx)
 
