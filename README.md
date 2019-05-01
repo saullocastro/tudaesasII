@@ -8,6 +8,7 @@ This Python module can be used by the students to assist them in the
 assignments 
 
 
+
 License
 -------
 Distrubuted in the 2-Clause BSD license (https://raw.github.com/saullocastro/tudaesasII/master/LICENSE).
