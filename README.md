@@ -1,3 +1,13 @@
+Travis-CI status:
+
+[![Build Status](https://travis-ci.org/saullocastro/tudaesasII.svg?branch=master)](https://travis-ci.org/saullocastro/tudaesasII)
+
+
+Coverage status:
+
+[![Coverage Status](https://coveralls.io/repos/github/saullocastro/tudaesasII/badge.svg?branch=master)](https://coveralls.io/github/saullocastro/tudaesasII?branch=master)
+
+
 TU Delft
 Aerospace Engineering
 Aerospace Structures and Computational Mechanics
