@@ -1,7 +1,7 @@
 import numpy as np
 
-from tudaesasII.beam2D import Beam2D, update_K_M
 from structsolve import solve
+from tudaesasII.beam2D import Beam2D, update_K_M
 
 def test_static_curved_beam(plot=False):
     # number of nodes
