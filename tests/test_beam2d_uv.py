@@ -1,7 +1,9 @@
 import numpy as np
+from scipy.linalg import solve
 
-from structsolve import solve
 from tudaesasII.beam2D import Beam2D, update_K_M, uv
+
+DOF = 3
 
 def test_beam2d_displ(plot=False):
     # number of nodes
@@ -56,18 +58,28 @@ def test_beam2d_displ(plot=False):
         beams.append(beam)
 
     # applying boundary conditions
+    bk = np.zeros(K.shape[0], dtype=bool) #array to store known DOFs
+    check = np.isclose(x, 0.) # locating node at root
     # clamping at root
-    K[0:3, :] = 0
-    K[:, 0:3] = 0
-    M[0:3, :] = 0
-    M[:, 0:3] = 0
+    for i in range(DOF):
+        bk[i::DOF] = check
+    bu = ~bk # same as np.logical_not, defining unknown DOFs
+
+    # sub-matrices corresponding to unknown DOFs
+    Kuu = K[bu, :][:, bu]
+    Muu = M[bu, :][:, bu]
 
     # test
     f = np.zeros(K.shape[0])
     f[-2] = F
+    fu = f[bu]
 
     # solving
-    u = solve(K, f)
+    uu = solve(Kuu, fu)
+
+    # vector u containing displacements for all DOFs
+    u = np.zeros(K.shape[0], dtype=float)
+    u[bu] = uu
 
     beam = beams[0]
     nplot = 100
