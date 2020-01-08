@@ -1,7 +1,9 @@
 import numpy as np
-from structsolve import freq
+from scipy.linalg import eigh
 
 from tudaesasII.beam2D import Beam2D, update_K_M
+
+DOF = 3
 
 def test_nat_freq_curved_beam():
     n = 100
@@ -20,7 +22,7 @@ def test_nat_freq_curved_beam():
     y = r*np.sin(thetas)
 
     # getting nodes
-    ncoords = np.vstack((x ,y)).T
+    ncoords = np.vstack((x, y)).T
     nids = 1 + np.arange(ncoords.shape[0])
     nid_pos = dict(zip(nids, np.arange(len(nids))))
 
@@ -48,19 +50,19 @@ def test_nat_freq_curved_beam():
         beams.append(beam)
 
     # applying boundary conditions
-    # simply supported at both ends
-    K[0:2, :] = 0
-    K[:, 0:2] = 0
-    M[0:2, :] = 0
-    M[:, 0:2] = 0
+    bk = np.zeros(K.shape[0], dtype=bool) #array to store known DOFs
+    check = np.isclose(x, x.min()) | np.isclose(x, x.max()) # locating nodes at both ends
+    # simply supporting at both ends
+    bk[0::DOF] = check # u
+    bk[1::DOF] = check # v
+    bu = ~bk # same as np.logical_not, defining unknown DOFs
 
-    K[-3:-1, :] = 0
-    K[:, -3:-1] = 0
-    M[-3:-1, :] = 0
-    M[:, -3:-1] = 0
+    # sub-matrices corresponding to unknown DOFs
+    Kuu = K[bu, :][:, bu]
+    Muu = M[bu, :][:, bu]
 
-    eigvals, eigmodes = freq(K, M, sparse_solver=True, silent=True)
-    omegan = ((-eigvals)**0.5).real
+    eigvals, U = eigh(a=Kuu, b=Muu)
+    omegan = eigvals**0.5
     omega123 = [396.98, 931.22, 1797.31]
     print('Reference omega123', omega123)
     print('Numerical omega123', omegan[0:3])

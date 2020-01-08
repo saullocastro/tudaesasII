@@ -1,7 +1,9 @@
 import numpy as np
+from scipy.linalg import solve
 
-from structsolve import solve
 from tudaesasII.beam2D import Beam2D, update_K_M
+
+DOF = 3
 
 def test_static_curved_beam(plot=False):
     # number of nodes
@@ -59,18 +61,29 @@ def test_static_curved_beam(plot=False):
         beams.append(beam)
 
     # applying boundary conditions
-    # clamping at root
-    K[0:3, :] = 0
-    K[:, 0:3] = 0
-    M[0:3, :] = 0
-    M[:, 0:3] = 0
+    bk = np.zeros(K.shape[0], dtype=bool) #array to store known DOFs
+    check = np.isclose(x, x.min())
+    # clamping curved beam at the left extremity
+    for i in range(DOF):
+        bk[i::DOF] = check
+    bu = ~bk # same as np.logical_not, defining unknown DOFs
+
+    # sub-matrices corresponding to unknown DOFs
+    Kuu = K[bu, :][:, bu]
+    Muu = M[bu, :][:, bu]
 
     # test
     f = np.zeros(K.shape[0])
     f[-2] = F
+    fu = f[bu]
 
     # solving
-    u = solve(K, f)
+    uu = solve(Kuu, fu)
+
+    # vector u containing displacements for all DOFs
+    u = np.zeros(K.shape[0], dtype=float)
+    u[bu] = uu
+
     u = u.reshape(n, -1)
 
     print('u_tip', u[-1])
