@@ -6,8 +6,8 @@ import subprocess
 from setuptools import setup, find_packages
 
 
-is_released = True
-version = '2019.2'
+is_released = False
+version = '2020.0'
 
 
 def git_version():
