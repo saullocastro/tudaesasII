@@ -1,6 +1,14 @@
 import numpy as np
 
 class Beam2D(object):
+    """Euler-Bernoulli beam element
+
+    Formulated using Euler-Bernoulli beam element with two interpolation
+    polynomials available:
+        - Hermitian cubic
+        - Legendre
+
+    """
     __slots__ = ['n1', 'n2', 'E', 'rho', 'Izz1', 'Izz2', 'A1', 'A2',
             'interpolation', 'le', 'thetarad']
     def __init__(self):
