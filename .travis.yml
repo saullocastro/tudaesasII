@@ -4,6 +4,7 @@ python:
   # We don't actually use the Travis Python, but this keeps it organized.
   - "3.5"
   - "3.6"
+  - "3.7"
 
 env:
   - CONDA_DEPS="pytest coverage coveralls pytest-cov numpy"
@@ -14,11 +15,7 @@ before_install:
   - export MINICONDA=$HOME/miniconda
   - export PATH="$MINICONDA/bin:$PATH"
   - hash -r
-  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
-      wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
-    else
-      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-    fi
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
   - bash miniconda.sh -b -f -p $MINICONDA
   - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r

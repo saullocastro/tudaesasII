@@ -1,9 +1,6 @@
 import sys
 sys.path.append('..')
 
-import matplotlib
-matplotlib.use('TkAgg')
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy.linalg import solve
 from composites.laminate import read_isotropic
@@ -109,6 +106,9 @@ def test_static_plate_quad_point_load(plot=False):
     wmax_ref = 6.594931610258557e-05
     assert np.isclose(wmax_ref, w.max(), rtol=0.02)
     if plot:
+        import matplotlib
+        matplotlib.use('TkAgg')
+        import matplotlib.pyplot as plt
         import matplotlib
         matplotlib.use('TkAgg')
         import matplotlib.pyplot as plt

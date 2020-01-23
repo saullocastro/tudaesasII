@@ -1,9 +1,6 @@
 import sys
 sys.path.append('..')
 
-import matplotlib
-matplotlib.use('TkAgg')
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy.linalg import eigh
 from composites.laminate import read_isotropic
@@ -108,6 +105,9 @@ if True:
     print('Numerical omega123', omegan[0:10])
 
     if True:
+        import matplotlib
+        matplotlib.use('TkAgg')
+        import matplotlib.pyplot as plt
         plt.clf()
         plt.contourf(xmesh, ymesh, u[2::DOF].reshape(xmesh.shape))
         plt.show()
