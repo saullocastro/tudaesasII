@@ -8,9 +8,7 @@ from composites.laminate import read_isotropic
 from tudaesasII.quad4r import Quad4R, update_K, update_M, DOF
 
 
-#def test_nat_freq_plate(plot=False, mode=0):
-plot = False
-if True:
+def test_nat_freq_plate(plot=False, mode=0):
     nx = 19
     ny = 19
 
@@ -104,7 +102,7 @@ if True:
     print('Theoretical omega123', wmn)
     print('Numerical omega123', omegan[0:10])
 
-    if True:
+    if plot:
         import matplotlib
         matplotlib.use('TkAgg')
         import matplotlib.pyplot as plt
@@ -113,5 +111,5 @@ if True:
         plt.show()
 
 
-#if __name__ == '__main__':
-    #test_nat_freq_plate(plot=True, mode=0)
+if __name__ == '__main__':
+    test_nat_freq_plate(plot=True, mode=0)
