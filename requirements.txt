@@ -1,5 +1,7 @@
 numpy
 scipy
+composites
+structsolve
 pytest
 pytest-cov
 coverage

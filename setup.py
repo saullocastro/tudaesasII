@@ -64,6 +64,7 @@ install_requires = [
         "numpy",
         "scipy",
         "structsolve",
+        "composites",
         ]
 
 #Trove classifiers
