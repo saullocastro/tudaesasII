@@ -2,6 +2,9 @@ Travis-CI status:
 
 [![Build Status](https://travis-ci.org/saullocastro/tudaesasII.svg?branch=master)](https://travis-ci.org/saullocastro/tudaesasII)
 
+Github Actions status:
+
+[![Actions Status](https://github.com/saullocastro/tudaesasII/workflows/pytest/badge.svg)](https://github.com/saullocastro/tudaesasII/actions)
 
 Coverage status:
 
