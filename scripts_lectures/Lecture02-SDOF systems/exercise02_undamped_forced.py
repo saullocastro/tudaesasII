@@ -7,13 +7,13 @@ t = Symbol('t', positive=True)
 m = Symbol('m', positive=True)
 k = Symbol('k', positive=True)
 F0 = Symbol('F0', positive=True)
-wf = Symbol('\omega_f', positive=True)
+omegaf = Symbol('\omega_f', positive=True)
 
 # unknown function
 u = Function('u')(t)
 
 # solving ODE
-F = F0*sympy.sin(wf*t)
+F = F0*sympy.sin(omegaf*t)
 sol = dsolve(m*u.diff(t, t) + k*u - F)
 
 # sol.lhs ==> u(t)
