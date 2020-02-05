@@ -19,16 +19,16 @@ ONE = sympy.Integer(1)
 for leg_poly in [True]:
     if leg_poly:
         Nv1 = ONE/2 - 3*xi/4 + 1*xi**3/4
-        Nv2 = le*(ONE/8 - 1*xi/8 - 1*xi**2/8 + 1*xi**3/8)
-        Nv3 = ONE/2 + 3*xi/4 - 1*xi**3/4
-        Nv4 = le*(-ONE/8 - 1*xi/8 + 1*xi**2/8 + 1*xi**3/8)
+        Nb1 = le*(ONE/8 - 1*xi/8 - 1*xi**2/8 + 1*xi**3/8)
+        Nv2 = ONE/2 + 3*xi/4 - 1*xi**3/4
+        Nb2 = le*(-ONE/8 - 1*xi/8 + 1*xi**2/8 + 1*xi**3/8)
     else: # Hermitian cubic functions
         Nv1 = ONE/4*(1-xi)**2*(2+xi)
-        Nv2 = le*1/8*(1-xi)**2*(1+xi)
-        Nv3 = ONE/4*(1+xi)**2*(2-xi)
-        Nv4 = le*1/8*(1+xi)**2*(xi-1)
+        Nb1 = le*1/8*(1-xi)**2*(1+xi)
+        Nv2 = ONE/4*(1+xi)**2*(2-xi)
+        Nb2 = le*1/8*(1+xi)**2*(xi-1)
     Nu = Matrix([[Nu1, 0,  0, Nu2,  0,  0]])
-    Nv = Matrix([[0, Nv1, Nv2,  0, Nv3, Nv4]])
+    Nv = Matrix([[0, Nv1, Nb1,  0, Nv2, Nb2]])
     Nbeta = -(2/le)*sympy.diff(Nv, xi)
 
     Nuxi = sympy.diff(Nu, xi)

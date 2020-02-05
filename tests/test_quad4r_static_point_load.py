@@ -17,7 +17,7 @@ def test_static_plate_quad_point_load(plot=False):
     b = 7
     h = 0.005 # m
 
-    # Material Lastrobe Lescalloy
+    # material
     E = 200e9
     nu = 0.3
 
@@ -58,8 +58,8 @@ def test_static_plate_quad_point_load(plot=False):
         quad.n2 = n2
         quad.n3 = n3
         quad.n4 = n4
-        ##quad.scf13 = plate.scf_k13
-        #quad.scf23 = plate.scf_k23
+        quad.scf13 = plate.scf_k13
+        quad.scf23 = plate.scf_k23
         quad.h = h
         quad.ABDE = plate.ABDE
         update_K(quad, nid_pos, ncoords, K)
@@ -83,7 +83,6 @@ def test_static_plate_quad_point_load(plot=False):
     # external force vector for point load at center
     f = np.zeros(K.shape[0])
     fmid = 1.
-
     # force at center node
     check = np.isclose(x, a/2) & np.isclose(y, b/2)
     f[2::DOF][check] = fmid
@@ -106,9 +105,6 @@ def test_static_plate_quad_point_load(plot=False):
     wmax_ref = 6.594931610258557e-05
     assert np.isclose(wmax_ref, w.max(), rtol=0.02)
     if plot:
-        import matplotlib
-        matplotlib.use('TkAgg')
-        import matplotlib.pyplot as plt
         import matplotlib
         matplotlib.use('TkAgg')
         import matplotlib.pyplot as plt
