@@ -77,10 +77,10 @@ Intended Audience :: Developers
 Topic :: Scientific/Engineering :: Mathematics
 Topic :: Education
 License :: OSI Approved :: BSD License
-Operating System :: Microsoft :: Windows
-Programming Language :: Python :: 2.7
 Programming Language :: Python :: 3.5
 Programming Language :: Python :: 3.6
+Programming Language :: Python :: 3.7
+Operating System :: Microsoft :: Windows
 Operating System :: Unix
 
 """
