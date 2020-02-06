@@ -6,7 +6,7 @@ import numpy as np
 DOF = 2
 
 class Truss2D(object):
-    __slots__ = ['n1', 'n2', 'E', 'A', 'le', 'rho']
+    __slots__ = ['n1', 'n2', 'E', 'A', 'le', 'rho', 'thetarad']
     def __init__(self):
         self.n1 = None
         self.n2 = None
