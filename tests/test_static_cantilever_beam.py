@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.linalg import solve
 
-from tudaesasII.beam2D import Beam2D, update_K_M
+from tudaesasII.beam2d import Beam2D, update_K, update_M
 
 DOF = 3
 
@@ -54,7 +54,8 @@ def test_cantilever_beam(plot=False):
         beam.rho = rho
         beam.A1, beam.A2 = A1, A2
         beam.Izz1, beam.Izz2 = Izz1, Izz2
-        update_K_M(beam, nid_pos, ncoords, K, M)
+        update_K(beam, nid_pos, ncoords, K)
+        update_M(beam, nid_pos, M)
         beams.append(beam)
 
     # applying boundary conditions
