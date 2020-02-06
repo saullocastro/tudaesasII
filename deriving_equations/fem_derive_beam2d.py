@@ -16,7 +16,7 @@ R = Matrix([[  cosr,  sinr , 0, 0, 0, 0],
             [ 0, 0, 0, 0,  0 , 1]])
 
 ONE = sympy.Integer(1)
-for leg_poly in [True]:
+for leg_poly in [True, False]:
     if leg_poly:
         Nv1 = ONE/2 - 3*xi/4 + 1*xi**3/4
         Nb1 = le*(ONE/8 - 1*xi/8 - 1*xi**2/8 + 1*xi**3/8)
