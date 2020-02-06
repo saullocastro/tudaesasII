@@ -78,7 +78,7 @@ eigvals, V = eigh(Kuutilde)
 wn = eigvals**0.5
 
 p = 4
-print(wn[:p])
+print('omegan**2', wn[:p]**2)
 
 P = V[:, :p]
 
@@ -87,6 +87,3 @@ print(np.round(P.T @ Kuutilde @ P, 2))
 print()
 print('P.T @ P')
 print(np.round(P.T @ P, 2))
-
-
-
