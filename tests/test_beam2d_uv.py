@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.linalg import solve
 
-from tudaesasII.beam2D import Beam2D, update_K_M, uv
+from tudaesasII.beam2d import Beam2D, update_K_M, uv
 
 DOF = 3
 
