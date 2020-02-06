@@ -2,12 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def u_t(fn, zeta, m, k, t1, t2, t):
-    H1 = np.heaviside(t1 - tn, 1.)
-    H2 = np.heaviside(t2 - tn, 1.)
+    tn = (t1 + t2)/2
+    dt = t2 - t1
+    H = np.heaviside(t - tn, 1.)
     omegan = np.sqrt(k/m)
     omegad = omegan*np.sqrt(1 - zeta**2)
-    h = 1/(m*omegad)*np.sin(omegad*(t-tn))*np.exp(-zeta*omegan*(t-tn))*(H1 - H2)
-    return fn*(t2 - t1)*h
+    h = 1/(m*omegad)*np.sin(omegad*(t-tn))*np.exp(-zeta*omegan*(t-tn))*H
+    return fn*dt*h
 
 def forcefunc(t):
     t = np.atleast_1d(t)
@@ -15,19 +16,21 @@ def forcefunc(t):
     check = t<1
     f[check] = 30*t[check]**2
     f[~check] = -30*(2-t[~check])**2
+    f[t>2] = 0
     return f
 
-t = np.linspace(0, 2., 10000)
+tload = np.linspace(0, 2., 1000)
+t = np.linspace(0, 10., 10000)
 
-plt.plot(t, forcefunc(t), 'c')
+plt.plot(tload, forcefunc(tload), 'c')
 plt.xlabel('$t$')
 plt.ylabel('$f(t)$')
-plt.xlim(0, t.max())
-plt.ylim(forcefunc(t).min()*1.1, forcefunc(t).max()*1.1)
+plt.xlim(0, tload.max())
+plt.ylim(forcefunc(tload).min()*1.1, forcefunc(tload).max()*1.1)
 if True:
     intervals = 20
-    tapprox = np.linspace(t.min(), t.max(), intervals+1)
-    plt.hlines(0, xmin=t.min(), xmax=t.max(), colors='k', linestyles='--')
+    tapprox = np.linspace(tload.min(), tload.max(), intervals+1)
+    plt.hlines(0, xmin=tload.min(), xmax=tload.max(), colors='k', linestyles='--')
     for t1, t2 in zip(tapprox[:-1], tapprox[1:]):
         tn = (t1 + t2)/2
         fn = forcefunc(tn)
@@ -40,20 +43,20 @@ plt.clf()
 ax = plt.gca()
 
 plt.figure()
-for intervals in [4, 6, 8, 10, 50]:
-    tapprox = np.linspace(t.min(), t.max(), intervals+1)
+for intervals in [2, 6, 10, 14]:
+    tapprox = np.linspace(tload.min(), tload.max(), intervals+1)
     for t1, t2 in zip(tapprox[:-1], tapprox[1:]):
         tn = (t1 + t2)/2
         fn = forcefunc(tn)
         plt.plot((t1, t1), (0, fn), 'k--')
         plt.plot((t1, t2), (fn, fn), 'k--')
         plt.plot((t2, t2), (0, fn), 'k--')
-        plt.plot(t, forcefunc(t), 'c', zorder=0)
+        plt.plot(tload, forcefunc(tload), 'c', zorder=0)
         plt.xlabel('$t$')
         plt.ylabel('$f(t)$')
-        plt.xlim(0, t.max())
-        plt.ylim(forcefunc(t).min()*1.1, forcefunc(t).max()*1.1)
-    plt.hlines(0, xmin=t.min(), xmax=t.max(), colors='k', linestyles='--')
+        plt.xlim(0, tload.max())
+        plt.ylim(forcefunc(tload).min()*1.1, forcefunc(tload).max()*1.1)
+    plt.hlines(0, xmin=tload.min(), xmax=tload.max(), colors='k', linestyles='--')
     plt.show()
 
     k = 30
@@ -69,5 +72,5 @@ for intervals in [4, 6, 8, 10, 50]:
 
 ax.set_xlabel('$t$')
 ax.set_ylabel('$u(t)$')
-ax.legend()
+ax.legend(loc='upper center')
 ax.get_figure()
