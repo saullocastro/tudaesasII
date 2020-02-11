@@ -1,5 +1,6 @@
-# cover forced vibrations (slide 206)
-# study ressonance
+import sys
+sys.path.append('../..')
+
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -7,13 +8,11 @@ import numpy as np
 from numpy import dot, pi
 from scipy.linalg import cholesky
 from numpy.linalg import eigh
-from numba import njit
 
-from beam2D import Beam2D, update_K_M
+from tudaesasII.beam2d import Beam2D, update_K, update_M, DOF
 
 
-DOF = 3
-
+m2mm = 1000
 # number of nodes
 n = 300
 
@@ -64,7 +63,8 @@ for n1, n2 in zip(n1s, n2s):
     beam.rho = rho
     beam.A1, beam.A2 = A1, A2
     beam.Izz1, beam.Izz2 = Izz1, Izz2
-    update_K_M(beam, nid_pos, ncoords, K, M, lumped=True)
+    update_K(beam, nid_pos, ncoords, K)
+    update_M(beam, nid_pos, M, lumped=True)
     elements.append(beam)
 
 I = np.ones_like(M)
@@ -108,17 +108,17 @@ for i in range(5):
     plt.clf()
     plt.title(r'$\omega_n = %1.2f\ Hz$' % omegan[i])
     plt.plot(x+modes[0::DOF, i], y+modes[1::DOF, i])
-    plt.savefig('exercise13_plot_eigenmode_%02d.png' % i, bbox_inches='tight')
+    plt.savefig('modf07_plot_eigenmode_%02d.png' % i, bbox_inches='tight')
 
 # performing dynamic analysis in time domain
 nmodes = 20
 tmax = 10
-time_steps = 10000
-plot_freq = 10
+time_steps = 2000
+plot_freq = 2
 
 P = V[:, :nmodes]
 
-times = np.linspace(0, tmax, time_steps)
+t = np.linspace(0, tmax, time_steps)
 
 # gravity acceleration
 g = -9.81 #m/s^2
@@ -164,69 +164,85 @@ plt.show()
 
 # - oscillatory wind
 wind_area = y*side
-wind_freq = 2*pi/5 # rad/s
-
-deltat = times[1] - times[0]
+wind_freq = 2*pi/3 # rad/s
 
 # modal damping, using 2% for all modes
 zeta = np.array([0.02]*nmodes)
 
 on = omegan[:nmodes]
-od = omegan[:nmodes]*np.sqrt(1 - zeta**2)
+od = on*np.sqrt(1 - zeta**2)
 
 # homogeneous solution for free damped 1DOF system using initial conditions
 u0 = np.zeros(DOF*n)
 v0 = np.zeros(DOF*n)
 r0 = P.T @ L.T @ u0[bu]
 rdot0 = P.T @ L.T @ v0[bu]
-if np.any(r0 != 0):
-    phi = np.arctan(od*r0/(zeta*on*r0 + rdot0))
-else:
-    phi = 0
+phi = np.zeros_like(od)
+check = r0 != 0
+phi[check] = np.arctan(od[check]*r0[check]/(zeta[check]*on[check]*r0[check] + rdot0[check]))
 A0 = np.sqrt(r0**2 + (zeta*on/od*r0 + rdot0/od)**2)
 
-# dynamic analysis for each time tc
+# dynamic analysis
 # NOTE this can be further vectorized using NumPy bradcasting, but I kept this
 # loop in order to make the code more understandable
 f = np.zeros_like(fg)
-u = np.zeros(DOF*n)
-rpc = np.zeros(nmodes)
+u = np.zeros((DOF*n, len(t)))
+rpc = np.zeros((nmodes, len(t)))
+
+on = on[:, None]
+od = od[:, None]
+zeta = zeta[:, None]
 
 # convolution integral: general load as a sequence of impulse loads
-# NOTE using NumBa's njit to accelerate here
-@njit(nogil=True)
-def calc_rp(c, deltat, tc, on, fmodal, times, rpc):
-    rpc *= 0
-    for i, tn in enumerate(times[:c]):
-        # undamped heaviside function
-        h = 1/od*np.exp(-zeta*on*(tc - tn))*np.sin(od*(tc - tn))
-        rpc += fmodal[i]*h*deltat
 
-fmodal = np.zeros((len(times), nmodes))
-for c, tc in enumerate(times):
-    f[:] = fg
-    wind_speed_total = wind_speed + wind_speed/10*np.sin(wind_freq*tc)
+def r_t(t, t1, t2, on, zeta, od, fmodaln):
+    tn = (t1 + t2)/2
+    dt = t2 - t1
+    # damped function
+    H = np.heaviside(t - tn, 1.)
+    h = np.zeros((fmodaln.shape[0], t.shape[0]))
+    check = t >= tn
+    h[:, check] = 1/od*np.exp(-zeta*on*(t[check] - tn))*np.sin(od*(t[check] - tn))*H[check]
+    return fmodaln*dt*h
+
+for t1, t2 in zip(t[:-1], t[1:]):
+    tn = (t1 + t2)/2
+    f[:] = fg #gravitational forces
+    wind_speed_total = wind_speed + wind_speed/10*np.sin(wind_freq*tn)
     f_wind = wind_area*rhoair*wind_speed_total**2/2
     f[0::DOF] = f_wind
 
     # calculating modal forces
-    fmodal[c] = dot(P.T, dot(Linv, f[bu]))
+    fmodaln = dot(P.T, dot(Linv, f[bu]))[:, None]
+    # convolution
+    rpc += r_t(t, t1, t2, on, zeta, od, fmodaln)
 
-    calc_rp(c, deltat, tc, on, fmodal, times, rpc)
+# superposition between homogeneous solution and forced solution
+rh = A0[:, None]*np.exp(-zeta*on*t)*np.sin(od*t + phi[:, None])
+r = rh + rpc
 
-    # superposition between homogeneous solution and forced solution
-    rh = A0*np.exp(-zeta*on*tc)*np.sin(od*tc + phi)
-    r = rh + rpc
-    # transforming from r-space to displacement
-    u[bu] = Linv.T @ P @ r
+# transforming from r-space to displacement
+u[bu] = Linv.T @ P @ r
 
-    if c % plot_freq == 0:
-        plt.clf()
-        plt.title('Oscillating building, t=%1.3f s' % tc)
-        plt.xlim(-0.1, 0.1)
-        plt.plot(u[0::DOF], y)
-        plt.xlabel('Lateral displacement, $m$')
+plt.clf()
+fig = plt.gcf()
+for i in range(len(t)):
+    if i % plot_freq == 0:
+        plt.cla()
+        plt.title('Oscillating building, t=%1.3f s' % t[i])
+        plt.xlim(-60, 60)
+        plt.ylim(0, y.max()*1.1)
+        plt.plot(u[0::DOF, i]*m2mm, y)
+        plt.xlabel('Lateral displacement, $mm$')
         plt.ylabel('Height, $m$')
-        utip = u[0::DOF][-1]
-        plt.text(0, y.max(), '%1.2f mm' % (utip*1000))
+        utip = u[0::DOF, i][-1]
+        plt.text(0, y.max()*1.05, '%1.2f mm' % (utip*m2mm))
         plt.pause(1e-9)
+        if not plt.fignum_exists(fig.number):
+            break
+
+plt.clf()
+plt.plot(t, u[0::DOF, :][-1]*m2mm)
+plt.ylabel('Lateral displacement, $mm$')
+plt.xlabel('Time, $s$')
+plt.show()

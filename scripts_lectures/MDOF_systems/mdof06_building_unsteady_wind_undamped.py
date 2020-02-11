@@ -1,5 +1,3 @@
-# cover forced vibrations
-# study ressonance
 import sys
 sys.path.append('../..')
 
@@ -14,6 +12,7 @@ from numpy.linalg import eigh
 from tudaesasII.beam2d import Beam2D, update_K, update_M, DOF
 
 
+m2mm = 1000
 # number of nodes
 n = 300
 
@@ -113,9 +112,9 @@ for i in range(5):
 
 # performing dynamic analysis in time domain
 nmodes = 20
-tmax = 1
-time_steps = 1000
-plot_freq = 10
+tmax = 10
+time_steps = 2000
+plot_freq = 2
 
 P = V[:, :nmodes]
 
@@ -165,7 +164,7 @@ plt.show()
 
 # - oscillatory wind
 wind_area = y*side
-wind_freq = 2*pi/5 # rad/s
+wind_freq = 2*pi/3 # rad/s
 
 # homogeneous solution using initial conditions
 u0 = np.zeros(DOF*n)
@@ -175,25 +174,24 @@ rdot0 = P.T @ L.T @ v0[bu]
 c1 = r0
 c2 = rdot0/omegan[:nmodes]
 
-# dynamic analysis for each time tc
+# dynamic analysis
 # NOTE this can be further vectorized using NumPy bradcasting, but I kept this
 # loop in order to make the code more understandable
 f = np.zeros_like(fg)
 u = np.zeros((DOF*n, len(t)))
 rpc = np.zeros((nmodes, len(t)))
-r = np.zeros((nmodes, len(t)))
 
 on = omegan[:nmodes][:, None]
 
 # convolution integral: general load as a sequence of impulse loads
-def calc_rp(t, t1, t2, on, fmodaln):
+
+def r_t(t, t1, t2, on, fmodaln):
+    tn = (t1 + t2)/2
     dt = t2 - t1
-    H1 = np.heaviside(t - t1, 1.)
-    H2 = np.heaviside(t - t2, 1.)
     # undamped function
-    h1 = 1/on*np.sin(on*(t - t1))*H1
-    h2 = 1/on*np.sin(on*(t - t2))*H2
-    return fmodaln*dt*(h1 - h2)
+    H = np.heaviside(t - tn, 1.)
+    h = 1/on*np.sin(on*(t - tn))*H
+    return fmodaln*dt*h
 
 for t1, t2 in zip(t[:-1], t[1:]):
     tn = (t1 + t2)/2
@@ -201,10 +199,11 @@ for t1, t2 in zip(t[:-1], t[1:]):
     wind_speed_total = wind_speed + wind_speed/10*np.sin(wind_freq*tn)
     f_wind = wind_area*rhoair*wind_speed_total**2/2
     f[0::DOF] = f_wind
+
     # calculating modal forces
     fmodaln = dot(P.T, dot(Linv, f[bu]))[:, None]
     # convolution
-    rpc += calc_rp(t, t1, t2, on, fmodaln)
+    rpc += r_t(t, t1, t2, on, fmodaln)
 
 # superposition with homogeneous solution (using initial conditions)
 rh = c1[:, None]*np.sin(on*t) + c2[:, None]*np.cos(on*t)
@@ -213,14 +212,25 @@ r = rh + rpc
 # transforming from r-space to displacement
 u[bu] = Linv.T @ P @ r
 
+plt.clf()
+fig = plt.gcf()
 for i in range(len(t)):
     if i % plot_freq == 0:
-        plt.clf()
+        plt.cla()
         plt.title('Oscillating building, t=%1.3f s' % t[i])
-        plt.xlim(-0.015, 0.015)
-        plt.plot(u[0::DOF, i], y)
-        plt.xlabel('Lateral displacement, $m$')
+        plt.xlim(-60, 60)
+        plt.ylim(0, y.max()*1.1)
+        plt.plot(u[0::DOF, i]*m2mm, y)
+        plt.xlabel('Lateral displacement, $mm$')
         plt.ylabel('Height, $m$')
         utip = u[0::DOF, i][-1]
-        plt.text(0.0075, y.max(), '%1.2f mm' % (utip*1000))
+        plt.text(0.0075, 1.05*y.max(), '%1.2f mm' % (utip*m2mm))
         plt.pause(1e-9)
+        if not plt.fignum_exists(fig.number):
+            break
+
+plt.clf()
+plt.plot(t, u[0::DOF, :][-1]*m2mm)
+plt.ylabel('Lateral displacement, $mm$')
+plt.xlabel('Time, $s$')
+plt.show()
