@@ -9,8 +9,8 @@ from tudaesasII.quad4r import Quad4R, update_K, update_M, DOF
 
 
 def test_nat_freq_plate(plot=False, mode=0):
-    nx = 19
-    ny = 19
+    nx = 9
+    ny = 9
 
     a = 0.3
     b = 0.5
@@ -90,7 +90,6 @@ def test_nat_freq_plate(plot=False, mode=0):
 
     # vector u containing displacements for all DOFs
     u = np.zeros(K.shape[0], dtype=float)
-    mode = 3
     u[bu] = U[:, mode]
 
     # theoretical reference
@@ -101,6 +100,8 @@ def test_nat_freq_plate(plot=False, mode=0):
 
     print('Theoretical omega123', wmn)
     print('Numerical omega123', omegan[0:10])
+
+    assert np.isclose(wmn, omegan[0], rtol=0.01)
 
     if plot:
         import matplotlib
