@@ -41,20 +41,27 @@ xfunc = r.components[R.i]
 yfunc = r.components[R.j]
 
 # Jacobian
+# http://kis.tu.kielce.pl/mo/COLORADO_FEM/colorado/IFEM.Ch17.pdf
 #NOTE for linear element these derivatives are constant
 # xi = xi(x, y)
 # eta = eta(x, y)
-# dx   = [dx/dxi  dx/deta ] dxi
-# dy     [dy/dxi  dy/deta ] deta
+#J = [dx/dxi  dy/dxi ]
+#    [dx/deta dy/deta]
+# dx   = J.T dxi
+# dy         deta
 #
-J = Matrix([[xfunc.diff(xi), xfunc.diff(eta)],
-            [yfunc.diff(xi), yfunc.diff(eta)]])
+# dxi   = Jinv.T dx
+# deta           dy
+#
+# Jinv:
+# d/dx = d/dxi*dxi/dx + d/deta*deta/dx = [dxi/dx   deta/dx] d/dxi  =  [j11  j12] d/dxi
+# d/dy   d/dxi*dxi/dy + d/deta*deta/dy   [dxi/dy   deta/dy] d/deta =  [j21  j22] d/deta
+#
+J = Matrix([[xfunc.diff(xi),  yfunc.diff(xi)],
+            [xfunc.diff(eta), yfunc.diff(eta)]])
 detJ = J.det().simplify()
 print('detJ =', detJ)
 
-# Jinv:
-# d/dx = d/dxi*dxi/dx + d/deta*deta/dx = [dxi/dx   deta/dx] d/dxi
-# d/dy   d/dxi*dxi/dy + d/deta*deta/dy   [dxi/dy   deta/dy] d/deta
 j = J.inv()
 j11 = j[0, 0].simplify()
 j12 = j[0, 1].simplify()
