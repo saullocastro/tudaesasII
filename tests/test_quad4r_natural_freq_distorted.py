@@ -36,10 +36,12 @@ def test_nat_freq_plate(plot=False, mode=0):
     y = ncoords[:, 1]
 
     inner = np.logical_not(isclose(x, 0) | isclose(x, a) | isclose(y, 0) | isclose(y, b))
+    np.random.seed(20)
     rdm = (-1 + 2*np.random.rand(x[inner].shape[0]))
+    np.random.seed(20)
     rdm = (-1 + 2*np.random.rand(y[inner].shape[0]))
-    x[inner] += dx*rdm*0.4
-    y[inner] += dy*rdm*0.4
+    x[inner] += dx*rdm*0.45
+    y[inner] += dy*rdm*0.45
 
 
     nids = 1 + np.arange(ncoords.shape[0])
@@ -66,10 +68,6 @@ def test_nat_freq_plate(plot=False, mode=0):
         r3 = ncoords[pos3]
         r4 = ncoords[pos4]
         normal = np.cross(r2 - r1, r3 - r2)
-        #plt.plot([r1[0], r2[0]], [r1[1], r2[1]], 'k-')
-        #plt.plot([r2[0], r3[0]], [r2[1], r3[1]], 'k-')
-        #plt.plot([r3[0], r4[0]], [r3[1], r4[1]], 'k-')
-        #plt.plot([r4[0], r1[0]], [r4[1], r1[1]], 'k-')
         assert normal > 0 # guaranteeing that all elements have CCW positive normal
         quad = Quad4R()
         quad.rho = rho
@@ -123,7 +121,21 @@ def test_nat_freq_plate(plot=False, mode=0):
         import matplotlib
         matplotlib.use('TkAgg')
         import matplotlib.pyplot as plt
+
         plt.clf()
+        for n1, n2, n3, n4 in zip(n1s, n2s, n3s, n4s):
+            pos1 = nid_pos[n1]
+            pos2 = nid_pos[n2]
+            pos3 = nid_pos[n3]
+            pos4 = nid_pos[n4]
+            r1 = ncoords[pos1]
+            r2 = ncoords[pos2]
+            r3 = ncoords[pos3]
+            r4 = ncoords[pos4]
+            plt.plot([r1[0], r2[0]], [r1[1], r2[1]], 'k-')
+            plt.plot([r2[0], r3[0]], [r2[1], r3[1]], 'k-')
+            plt.plot([r3[0], r4[0]], [r3[1], r4[1]], 'k-')
+            plt.plot([r4[0], r1[0]], [r4[1], r1[1]], 'k-')
         plt.contourf(xmesh, ymesh, u[2::DOF].reshape(xmesh.shape))
         plt.show()
 
