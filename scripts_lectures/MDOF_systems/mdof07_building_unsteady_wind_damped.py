@@ -112,7 +112,7 @@ for i in range(5):
 
 # performing dynamic analysis in time domain
 nmodes = 20
-tmax = 10
+tmax = 8
 time_steps = 2000
 plot_freq = 2
 
@@ -164,7 +164,7 @@ plt.show()
 
 # - oscillatory wind
 wind_area = y*side
-wind_freq = 2*pi/3 # rad/s
+wind_freq = pi # rad/s
 
 # modal damping, using 2% for all modes
 zeta = np.array([0.02]*nmodes)
