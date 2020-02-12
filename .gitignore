@@ -12,6 +12,8 @@ temp*
 tmp*.*
 temp*.*
 .cache
+# Output files
+*.png
 
 # Python compiled files
 *.pyc
