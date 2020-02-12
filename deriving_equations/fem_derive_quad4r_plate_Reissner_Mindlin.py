@@ -88,10 +88,38 @@ N2x = j11*N2xi + j12*N2eta
 N3x = j11*N3xi + j12*N3eta
 N4x = j11*N4xi + j12*N4eta
 
+N1xxi = N1x.diff(xi)
+N1xeta = N1x.diff(eta)
+N2xxi = N2x.diff(xi)
+N2xeta = N2x.diff(eta)
+N3xxi = N3x.diff(xi)
+N3xeta = N3x.diff(eta)
+N4xxi = N4x.diff(xi)
+N4xeta = N4x.diff(eta)
+
+N1xy = j21*N1xxi + j22*N1xeta
+N2xy = j21*N2xxi + j22*N2xeta
+N3xy = j21*N3xxi + j22*N3xeta
+N4xy = j21*N4xxi + j22*N4xeta
+
 N1y = j21*N1xi + j22*N1eta
 N2y = j21*N2xi + j22*N2eta
 N3y = j21*N3xi + j22*N3eta
 N4y = j21*N4xi + j22*N4eta
+
+N1yxi = N1y.diff(xi)
+N1yeta = N1y.diff(eta)
+N2yxi = N2y.diff(xi)
+N2yeta = N2y.diff(eta)
+N3yxi = N3y.diff(xi)
+N3yeta = N3y.diff(eta)
+N4yxi = N4y.diff(xi)
+N4yeta = N4y.diff(eta)
+
+N1yx = j11*N1yxi + j12*N1yeta
+N2yx = j11*N2yxi + j12*N2yeta
+N3yx = j11*N3yxi + j12*N3yeta
+N4yx = j11*N4yxi + j12*N4yeta
 
 print('N1 =', N1)
 print('N2 =', N2)
@@ -107,6 +135,19 @@ print('N1y =', N1y.simplify())
 print('N2y =', N2y.simplify())
 print('N3y =', N3y.simplify())
 print('N4y =', N4y.simplify())
+print('')
+print('N1xy =', N1xy.simplify())
+print('N2xy =', N2xy.simplify())
+print('N3xy =', N3xy.simplify())
+print('N4xy =', N4xy.simplify())
+print('')
+print('Niyx only for checking purposes')
+print('')
+print('N1yx =', N1yx.simplify())
+print('N2yx =', N2yx.simplify())
+print('N3yx =', N3yx.simplify())
+print('N4yx =', N4yx.simplify())
+print('')
 
 detJ = sympy.var('detJ')
 N1, N2, N3, N4 = sympy.var('N1, N2, N3, N4')
@@ -160,41 +201,49 @@ BLgxz = Matrix([[0, 0, N1x, N1, 0,
 
 BL = Matrix([BLexx, BLeyy, BLgxy, BLkxx, BLkyy, BLkxy, BLgyz, BLgxz])
 
-#TODO hourglass control
-# From: https://abaqus-docs.mit.edu/2017/English/SIMACAEELMRefMap/simaelm-c-sectioncontrol.htm#simaelm-c-esection-hourglass
-sympy.var('hhg')
-G = 1/3*(A12 + E44 + E55)/h
-rFG = 0.005 * integrate(G/h, (h, -hhg/2, +hhg/2))
-rthetaG = 0.00375 * 12 * integrate(G*h**2/h**3, (h, -hhg/2, +hhg/2))
-
-hhg = (12*(E44 + E55 + A66)/(A11 + A22 + 0))**0.5
-rthetaG = -0.18*(0.333333333333333*A12 + 0.333333333333333*E44 + 0.333333333333333*E55)/hhg
-rFG = -0.02*(0.333333333333333*A12 + 0.333333333333333*E44 + 0.333333333333333*E55)/hhg
-
-B1P = Matrix([[N1x, 0, 0, 0, 0,
-               N2x, 0, 0, 0, 0,
-               N3x, 0, 0, 0, 0,
-               N4x, 0, 0, 0, 0]])
-B2P = Matrix([[0, N1y, 0, 0, 0,
-               0, N2y, 0, 0, 0,
-               0, N3y, 0, 0, 0,
-               0, N4y, 0, 0, 0]])
-B1Pr = Matrix([[0, 0, 0, N1x, 0,
-                0, 0, 0, N2x, 0,
-                0, 0, 0, N3x, 0,
-                0, 0, 0, N4x, 0]])
-B2Pr = Matrix([[0, 0, 0, 0, N1y,
-                0, 0, 0, 0, N2y,
-                0, 0, 0, 0, N3y,
-                0, 0, 0, 0, N4y]])
-
-
-BalphaP = Matrix([B1P, B2P, B1Pr, B2Pr])
-Khse = sympy.zeros(num_nodes*DOF, num_nodes*DOF)
-ss = 1
-sr = 1
-Khse[:, :] = ss*rFG*(BalphaP.T*BalphaP)*h*A + sr*rthetaG*(BalphaP.T*BalphaP)*h**3*A
-
+# hourglass control as per Brockman 1987
+# https://onlinelibrary.wiley.com/doi/pdf/10.1002/nme.1620241208
+print('gamma1 = N1xy')
+print('gamma2 = N2xy')
+print('gamma3 = N3xy')
+print('gamma4 = N4xy')
+Eu = Ev = 0.10*A11/(1 + 1/A)
+Ephix = 0.10*D11/(1 + 1/A)
+Ephiy = 0.10*D22/(1 + 1/A)
+Ew = (Ephix + Ephiy)/2
+print('Eu =', Eu)
+print('Ev =', Ev)
+print('Ew =', Ew)
+print('Ephix =', Ephix)
+print('Ephiy =', Ephiy)
+gamma1, gamma2, gamma3, gamma4 = sympy.var('gamma1, gamma2, gamma3, gamma4')
+Eu, Ev, Ew, Ephix, Ephiy = sympy.var('Eu, Ev, Ew, Ephix, Ephiy')
+Bgamma = Matrix([[gamma1, 0, 0, 0, 0,
+                  gamma2, 0, 0, 0, 0,
+                  gamma3, 0, 0, 0, 0,
+                  gamma4, 0, 0, 0, 0],
+                 [0, gamma1, 0, 0, 0,
+                  0, gamma2, 0, 0, 0,
+                  0, gamma3, 0, 0, 0,
+                  0, gamma4, 0, 0, 0],
+                 [0, 0, gamma1, 0, 0,
+                  0, 0, gamma2, 0, 0,
+                  0, 0, gamma3, 0, 0,
+                  0, 0, gamma4, 0, 0],
+                 [0, 0, 0, gamma1, 0,
+                  0, 0, 0, gamma2, 0,
+                  0, 0, 0, gamma3, 0,
+                  0, 0, 0, gamma4, 0],
+                 [0, 0, 0, 0, gamma1,
+                  0, 0, 0, 0, gamma2,
+                  0, 0, 0, 0, gamma3,
+                  0, 0, 0, 0, gamma4],
+                 ])
+Egamma = Matrix([[Eu, 0, 0, 0, 0],
+                 [0, Ev, 0, 0, 0],
+                 [0, 0, Ew, 0, 0],
+                 [0, 0, 0, Ephix, 0],
+                 [0, 0, 0, 0, Ephiy]])
 
 # Constitutive linear stiffness matrix
 Ke = sympy.zeros(num_nodes*DOF, num_nodes*DOF)
@@ -213,7 +262,7 @@ ABDE = Matrix(
 
 sympy.var('wij')
 
-Ke[:, :] = wij*detJ*BL.T*ABDE*BL
+Ke[:, :] = wij*detJ*(BL.T*ABDE*BL + Bgamma.T*Egamma*Bgamma)
 
 # Mass matrix adapted from (#TODO offset yet to be checked):
 d = 0
@@ -237,7 +286,6 @@ Me[:, :] = wij*detJ*rho*(h*Nu.T*Nu + h*Nv.T*Nv + h*Nw.T*Nw +
 # K represents the global stiffness matrix
 # in case we want to apply coordinate transformations
 K = Ke
-#Khs = Khse
 M = Me
 Mlumped = Melumped
 
@@ -262,14 +310,6 @@ for ind, val in np.ndenumerate(K):
     sj = name_ind(j)
     print('    K[%d+%s, %d+%s]' % (i%DOF, si, j%DOF, sj), '+=', K[ind])
 
-#print()
-#for ind, val in np.ndenumerate(Khs):
-    #if val == 0:
-        #continue
-    #i, j = ind
-    #si = name_ind(i)
-    #sj = name_ind(j)
-    #print('    K[%d+%s, %d+%s]' % (i%DOF, si, j%DOF, sj), '+=', Khs[ind])
 
 print()
 for ind, val in np.ndenumerate(M):
