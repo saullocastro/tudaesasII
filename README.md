@@ -22,7 +22,7 @@ assignments.
 
 If you use any content of this repository, please cite it as:
 
-Castro, S.G.P. Supporting code for Computational Mechanics Stability and Analysis of Structures II, Department of Aerospace Structures and Materials, Delft University of Technology, 2019. [![DOI](https://zenodo.org/badge/173753498.svg)](https://zenodo.org/badge/latestdoi/173753498)
+Castro, S.G.P. Supporting code for Computational Mechanics Stability and Analysis of Structures II, Department of Aerospace Structures and Materials, Delft University of Technology, 2020. [![DOI](https://zenodo.org/badge/173753498.svg)](https://zenodo.org/badge/latestdoi/173753498)
 
 License
 -------
