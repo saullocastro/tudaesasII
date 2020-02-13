@@ -5,7 +5,6 @@ import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import numpy as np
-from numpy import dot, pi
 from scipy.linalg import cholesky
 from numpy.linalg import eigh
 
@@ -93,7 +92,7 @@ Kkk = K[bk, :][:, bk]
 # finding natural frequencies and orthonormal base
 L = cholesky(Muu, lower=True)
 Linv = np.linalg.inv(L)
-Ktilde = dot(dot(Linv, Kuu), Linv.T)
+Ktilde = Linv @ Kuu @ Linv.T
 gamma, V = eigh(Ktilde) # already gives V[:, i] normalized to 1
 omegan = gamma**0.5
 print('First 5 natural frequencies', omegan[:5])
@@ -101,7 +100,7 @@ print('First 5 natural frequencies', omegan[:5])
 # calculating vibration modes from orthonormal base (remember U = L^(-T) V)
 modes = np.zeros((DOF*n, len(gamma)))
 for i in range(modes.shape[1]):
-    modes[bu, i] = dot(Linv.T, V[:, i])
+    modes[bu, i] = Linv.T @ V[:, i]
 
 # ploting vibration modes
 for i in range(5):
@@ -132,7 +131,7 @@ d2uugdt2 = d2udt2[bu]
 
 # force due to gravity (explained Assignment documents)
 fg = np.zeros(DOF*n)
-fg[bu] = dot(Muu, d2uugdt2) + dot(Muk, d2ukgdt2)
+fg[bu] = Muu @ d2uugdt2 + Muk @ d2ukgdt2
 
 # force due to wind
 # - using dynamic pressure q = rhoair*wind_speed**2/2
@@ -164,7 +163,7 @@ plt.show()
 
 # - oscillatory wind
 wind_area = y*side
-wind_freq = pi # rad/s
+wind_freq = np.pi # rad/s
 
 # homogeneous solution using initial conditions
 u0 = np.zeros(DOF*n)
@@ -201,7 +200,7 @@ for t1, t2 in zip(t[:-1], t[1:]):
     f[0::DOF] = f_wind
 
     # calculating modal forces
-    fmodaln = dot(P.T, dot(Linv, f[bu]))[:, None]
+    fmodaln = (P.T @ Linv @ f[bu])[:, None]
     # convolution
     rpc += r_t(t, t1, t2, on, fmodaln)
 

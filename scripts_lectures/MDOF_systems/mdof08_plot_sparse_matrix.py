@@ -5,7 +5,6 @@ import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import numpy as np
-from numpy import dot, pi
 from scipy.linalg import cholesky
 
 from tudaesasII.beam2d import Beam2D, update_K, update_M, DOF
@@ -92,7 +91,7 @@ Kkk = K[bk, :][:, bk]
 # finding natural frequencies and orthonormal base
 L = cholesky(Muu, lower=True)
 Linv = np.linalg.inv(L)
-Ktilde = dot(dot(Linv, Kuu), Linv.T)
+Ktilde = Linv @ Kuu @ Linv.T
 
 from tudaesasII.utils import plot_sparse_matrix
 
