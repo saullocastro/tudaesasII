@@ -37,6 +37,10 @@ for leg_poly in [True, False]:
     Ke = sympy.zeros(6, 6)
     Me = sympy.zeros(6, 6)
 
+    BL = sympy.Matrix([(2/le)*Nuxi,
+                       (2/le)*Nbetaxi])
+    print('BL (nodal displacements in global coordinates) =', BL*R)
+
     Ke[:, :] = (2/le)*E*Izz*Nbetaxi.T*Nbetaxi + (2/le)*E*A*Nuxi.T*Nuxi
     Me[:, :] = (le/2)*rho*(A*Nu.T*Nu + A*Nv.T*Nv + Izz*Nbeta.T*Nbeta)
 

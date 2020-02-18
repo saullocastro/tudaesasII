@@ -8,7 +8,7 @@ from tudaesasII.beam2d import Beam2D, update_K, update_M, exx
 
 DOF = 3
 
-def test_beam2d_displ(plot=False):
+def test_beam2d_displ():
     # number of nodes
     n = 2
     # Material Lastrobe Lescalloy
@@ -86,26 +86,11 @@ def test_beam2d_displ(plot=False):
     u[bu] = uu
 
     beam = beams[0]
-    nplot = 10
-    xplot = np.linspace(0, L, nplot)
-    yplot = np.zeros_like(xplot)
-    h = np.linspace(h_root, h_tip, nplot)
-    exxbot = exx(-h/2, beam, *u[:6], n=nplot)
-    exxtop = exx(+h/2, beam, *u[:6], n=nplot)
-    ref = np.array([-0.00496552, -0.00441379, -0.00386207, -0.00331034, -0.00275862, -0.0022069,
-  -0.00165517, -0.00110345, -0.00055172, 0.])
-    assert np.allclose(exxbot[0], ref)
-    assert np.allclose(exxtop[0], -ref)
-
-    if plot:
-        # plotting
-        import matplotlib
-        matplotlib.use('TkAgg')
-        import matplotlib.pyplot as plt
-
-        plt.plot(xplot, exxbot[0])
-        plt.plot(xplot, exxtop[0])
-        plt.show()
+    exxbot = exx(beam, -h_root/2, -1, *u[:6])
+    exxtop = exx(beam, +h_root/2, -1, *u[:6])
+    ref = -0.00496552
+    assert np.allclose(exxbot, ref)
+    assert np.allclose(exxtop, -ref)
 
 if __name__ == '__main__':
-    test_beam2d_displ(plot=True)
+    test_beam2d_displ()

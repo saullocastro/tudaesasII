@@ -311,53 +311,36 @@ def uv(beam, u1, v1, beta1, u2, v2, beta2, n=100):
     # final shape will be (uv, n, maxshape)
     return np.array([u, v])
 
-def exx(y, beam, u1, v1, beta1, u2, v2, beta2, n=3):
-    """Calculate axial stresses for a Beam2D
+def exx(beam, y, xi, u1, v1, beta1, u2, v2, beta2):
+    """Calculate the axial strain exx for a Beam2D element
+
+    Strains are calculated assuming constant rot
+    exx = exx0 + y*kxx
+
+    |exx0| = |BL||u1, v1, beta1, u2, v2, beta2|^T
+    |kxx |
 
     Parameters
     ----------
-    y : float
-        Distance from the neutral axis
     beam : Beam2D
         The Beam2D finite element
+    y : float
+        Distance from the neutral axis
+    xi : float
+        Natural coordinate along beam axis
     u1, v1, beta1, u2, v2, beta2 : float or array-like
-        Nodal displacements and rotations
-    n : int
-        Number of points where the axial strain should be calculated within the
-        beam element
+        Nodal displacements and rotations in global coordinates
 
     Returns
     -------
-    exx : (:, n) array-like
-        The strains at all `n` points. The first array dimension depends on the
-        dimension of the nodal displacements and rotations
+    exx : float
+        The calculated axial strain
+
     """
-    inputs = [u1, v1, beta1, u2, v2, beta2]
-    inputs = list(map(np.atleast_1d, inputs))
-    maxshape = max([np.shape(i)[0] for i in inputs])
-    for i in range(len(inputs)):
-        if inputs[i].shape[0] == 1:
-            inputs[i] = np.ones(maxshape)*inputs[i][0]
-        else:
-            assert inputs[i].shape[0] == maxshape
-    u1, v1, beta1, u2, v2, beta2 = inputs
-    # transforming displacements to element's coordinates
     cosr = np.cos(beam.thetarad)
     sinr = np.sin(beam.thetarad)
-    u1e = cosr*u1 + sinr*v1
-    v1e = -sinr*u1 + cosr*v1
-    beta1e = beta1
-    u2e = cosr*u2 + sinr*v2
-    v2e = -sinr*u2 + cosr*v2
-    beta2e = beta2
-    # calculating at n positions along the beam element
     le = beam.le
-    xi = np.linspace(-1, +1, n)
-    Nu1x = u1e[:, None]*(-1)/2
-    Nu2x = u2e[:, None]*(+1)/2
-    Nv1xx = v1e[:, None]*(6*xi/4)
-    Nv2xx = beta1e[:, None]*(le*(-2/8 + 6*xi/8))
-    Nv3xx = v2e[:, None]*(-6*xi/4)
-    Nv4xx = beta2e[:, None]*(le*(+2/8 + 6*xi/8))
-    return (2/le)*(Nu1x + Nu2x) - y*(2/le)**2*(Nv1xx + Nv2xx + Nv3xx + Nv4xx)
-
+    BL = np.array([[-cosr/le, -sinr/le, 0, cosr/le, sinr/le, 0],
+                   [6*sinr*xi/le**2, -6*cosr*xi/le**2, 2*(1/2 - 3*xi/2)/le, -6*sinr*xi/le**2, 6*cosr*xi/le**2, 2*(-3*xi/2 - 1/2)/le]])
+    exx0, kxx = BL @ np.array([u1, v1, beta1, u2, v2, beta2])
+    return exx0 + y*kxx
