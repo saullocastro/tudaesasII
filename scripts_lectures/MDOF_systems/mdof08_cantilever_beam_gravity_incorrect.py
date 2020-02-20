@@ -16,8 +16,8 @@ from tudaesasII.beam2d import Beam2D, update_K, update_M, DOF
 nx = 100
 
 # geometry
-L = 10
-h = 0.5
+L = 1
+h = 0.05
 w = h
 Izz = h**3*w/12
 A = w*h
@@ -96,7 +96,6 @@ fgu = fg[bu]
 uu0 = solve(Kuu, fgu)
 u0 = np.zeros(K.shape[0])
 u0[bu] = uu0
-print(u0.sum())
 
 # finding natural frequencies and orthonormal base
 L = cholesky(Muu, lower=True)
@@ -166,8 +165,8 @@ for t1, t2 in zip(t[:-1], t[1:]):
     tn = (t1 + t2)/2
     fu[:] = fgu #NOTE keeping gravitational forces
 
-    if tn >= 0.3 and tn <= 0.4:
-        fu[DOF*(nx//2)+1] += 1000
+    if tn >= 0.3 and tn <= 0.305:
+        fu[DOF*(nx//2)+1] += -1000
 
     # calculating modal forces
     fmodaln = (P.T @ Linv @ fu)[:, None]
