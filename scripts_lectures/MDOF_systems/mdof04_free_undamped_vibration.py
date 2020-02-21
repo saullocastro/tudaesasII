@@ -86,7 +86,7 @@ plt.title('perturbation')
 plt.plot(ncoords[:, 0], u0[1::DOF])
 plt.show()
 
-nmodes = 2
+nmodes = 10
 print('wn', wn[:nmodes])
 
 c1 = []
@@ -176,6 +176,6 @@ yf = 2/num*np.abs(uf[0:num//2])
 
 plt.xlabel('$rad/s$')
 plt.plot(xf, yf)
-plt.xlim(0, wn[3]+50)
+plt.xlim(0, wn[nmodes-1]+50)
 plt.show()
 
