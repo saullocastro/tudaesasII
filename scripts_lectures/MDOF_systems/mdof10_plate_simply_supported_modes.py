@@ -1,8 +1,6 @@
 import sys
 sys.path.append('../..')
 
-import matplotlib
-matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import numpy as np
@@ -91,11 +89,13 @@ bu = ~bk # same as np.logical_not, defining unknown DOFs
 Kuu = K[bu, :][:, bu]
 Muu = M[bu, :][:, bu]
 
-eigvals, U = eigh(a=Kuu, b=Muu)
+nmodes = 10
+eigvals, U = eigh(a=Kuu, b=Muu, eigvals=(0, nmodes-1))
 omegan = eigvals**0.5
 
 modes = np.asarray([[0, 1, 2], [3, 4, 5]])
-fig, axes = plt.subplots(nrows=modes.shape[0], ncols=modes.shape[1])
+fig, axes = plt.subplots(nrows=modes.shape[0], ncols=modes.shape[1],
+        figsize=(15, 10))
 for (i,j), mode in np.ndenumerate(modes):
     ax = axes[i, j]
     u = np.zeros(K.shape[0], dtype=float)
