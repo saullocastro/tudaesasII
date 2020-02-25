@@ -156,6 +156,7 @@ print('N3yx =', N3yx.simplify())
 print('N4yx =', N4yx.simplify())
 print('')
 
+detJfunc = detJ
 detJ = sympy.var('detJ')
 N1, N2, N3, N4 = sympy.var('N1, N2, N3, N4')
 N1x, N2x, N3x, N4x = sympy.var('N1x, N2x, N3x, N4x')
@@ -255,7 +256,7 @@ Egamma = Matrix([[Eu, 0, 0, 0, 0],
 # Constitutive linear stiffness matrix
 Ke = sympy.zeros(num_nodes*DOF, num_nodes*DOF)
 Me = sympy.zeros(num_nodes*DOF, num_nodes*DOF)
-Melumped = sympy.zeros(num_nodes*DOF, num_nodes*DOF)
+Me_lumped = sympy.zeros(num_nodes*DOF, num_nodes*DOF)
 
 ABDE = Matrix(
         [[A11, A12, A16, B11, B12, B16, 0, 0],
@@ -288,13 +289,39 @@ d = 0
 Me[:, :] = wij*detJ*rho*(h*Nu.T*Nu + h*Nv.T*Nv + h*Nw.T*Nw +
     h**3/12*Nphix.T*Nphix + h**3/12*Nphiy.T*Nphiy)
 
-#TODO Melumped
+calc_lumped = True
+
+if calc_lumped:
+    m1 = simplify(integrate(rho*h*detJfunc, (xi, -1, 0), (eta, -1, 0)))
+    m2 = simplify(integrate(rho*h*detJfunc, (xi, 0, +1), (eta, -1, 0)))
+    m3 = simplify(integrate(rho*h*detJfunc, (xi, 0, +1), (eta, 0, +1)))
+    m4 = simplify(integrate(rho*h*detJfunc, (xi, -1, 0), (eta, 0, +1)))
+
+    Iyy1 = simplify(integrate((xfunc-x1)**2*rho*h*detJfunc, (xi, -1, 0), (eta, -1, 0)))
+    Iyy2 = simplify(integrate((xfunc-x2)**2*rho*h*detJfunc, (xi, 0, +1), (eta, -1, 0)))
+    Iyy3 = simplify(integrate((xfunc-x3)**2*rho*h*detJfunc, (xi, 0, +1), (eta, 0, +1)))
+    Iyy4 = simplify(integrate((xfunc-x4)**2*rho*h*detJfunc, (xi, -1, 0), (eta, 0, +1)))
+
+    Ixx1 = simplify(integrate((yfunc-y1)**2*rho*h*detJfunc, (xi, -1, 0), (eta, -1, 0)))
+    Ixx2 = simplify(integrate((yfunc-y2)**2*rho*h*detJfunc, (xi, 0, +1), (eta, -1, 0)))
+    Ixx3 = simplify(integrate((yfunc-y3)**2*rho*h*detJfunc, (xi, 0, +1), (eta, 0, +1)))
+    Ixx4 = simplify(integrate((yfunc-y4)**2*rho*h*detJfunc, (xi, -1, 0), (eta, 0, +1)))
+
+    diag = (
+            m1, m1, m1, Iyy1, Ixx1,
+            m2, m2, m2, Iyy2, Ixx2,
+            m3, m3, m3, Iyy3, Ixx3,
+            m4, m4, m4, Iyy4, Ixx4
+            )
+
+    for i in range(Me.shape[0]):
+        Me_lumped[i, i] = diag[i]
 
 # K represents the global stiffness matrix
 # in case we want to apply coordinate transformations
 K = Ke
 M = Me
-Mlumped = Melumped
+M_lumped = Me_lumped
 
 def name_ind(i):
     if i >= 0*DOF and i < 1*DOF:
@@ -327,13 +354,16 @@ for ind, val in np.ndenumerate(M):
     sj = name_ind(j)
     print('    M[%d+%s, %d+%s]' % (i%DOF, si, j%DOF, sj), '+=', M[ind])
 
-if False:
+if calc_lumped:
     print()
-    for ind, val in np.ndenumerate(Mlumped):
+    print('M_lumped')
+    print()
+    for ind, val in np.ndenumerate(M_lumped):
         if val == 0:
             continue
         i, j = ind
         si = name_ind(i)
         sj = name_ind(j)
-        print('    Mlumped[%d+%s, %d+%s]' % (i%DOF, si, j%DOF, sj), '+=', Mlumped[ind])
+        print('    M[%d+%s, %d+%s]' % (i%DOF, si, j%DOF, sj), '+=',
+                M_lumped[ind])
 
