@@ -70,7 +70,12 @@ def update_K_M(truss, nid_pos, ncoords, K, M, lumped=False):
     K[1+c2, 0+c2] += A*E*c*s/le
     K[1+c2, 1+c2] += A*E*s**2/le
 
-    if not lumped:
+    if lumped:
+        M[0+c1, 0+c1] += A*le*c**2*rho/2 + A*le*rho*s**2/2
+        M[1+c1, 1+c1] += A*le*c**2*rho/2 + A*le*rho*s**2/2
+        M[0+c2, 0+c2] += A*le*c**2*rho/2 + A*le*rho*s**2/2
+        M[1+c2, 1+c2] += A*le*c**2*rho/2 + A*le*rho*s**2/2
+    else:
         M[0+c1, 0+c1] += A*le*c**2*rho/3 + A*le*rho*s**2/3
         M[0+c1, 0+c2] += A*le*c**2*rho/6 + A*le*rho*s**2/6
         M[1+c1, 1+c1] += A*le*c**2*rho/3 + A*le*rho*s**2/3
@@ -80,9 +85,4 @@ def update_K_M(truss, nid_pos, ncoords, K, M, lumped=False):
         M[1+c2, 1+c1] += A*le*c**2*rho/6 + A*le*rho*s**2/6
         M[1+c2, 1+c2] += A*le*c**2*rho/3 + A*le*rho*s**2/3
 
-    if lumped:
-        M[0+c1, 0+c1] += A*le*c**2*rho/2 + A*le*rho*s**2/2
-        M[1+c1, 1+c1] += A*le*c**2*rho/2 + A*le*rho*s**2/2
-        M[0+c2, 0+c2] += A*le*c**2*rho/2 + A*le*rho*s**2/2
-        M[1+c2, 1+c2] += A*le*c**2*rho/2 + A*le*rho*s**2/2
 

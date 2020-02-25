@@ -13,7 +13,7 @@ class Tria3PlaneStrainIso(object):
         self.nu = None
         self.rho = None
 
-def update_K_M(tria, nid_pos, ncoords, K, M):
+def update_K_M(tria, nid_pos, ncoords, K, M, lumped=False):
     """Update a global stiffness matrix K and mass matrix M
 
     Properties
@@ -27,7 +27,10 @@ def update_K_M(tria, nid_pos, ncoords, K, M):
     K : np.array
         Global stiffness matrix updated in-place
     M : np.array
-        Global mass matrix updated in-place
+        Global mass matrix updated in-place (affected by parameter `lumped`)
+    lumped : bool
+        If lumped mass matrix should be used
+
     """
     pos1 = nid_pos[tria.n1]
     pos2 = nid_pos[tria.n2]
@@ -36,6 +39,7 @@ def update_K_M(tria, nid_pos, ncoords, K, M):
     x2, y2 = ncoords[pos2]
     x3, y3 = ncoords[pos3]
     A = abs((x1*(y2 - y3) + x2*(y3 - y1) + x3*(y1 - y2))/2)
+
     N1x = (y2 - y3)/(2*A)
     N2x = (-y1 + y3)/(2*A)
     N3x = (y1 - y2)/(2*A)
@@ -91,7 +95,7 @@ def update_K_M(tria, nid_pos, ncoords, K, M):
     K[1+c3, 0+c3] += A*E*N3x*N3y*h*(nu - 1)/(2*nu**2 + nu - 1)
     K[1+c3, 1+c3] += A*E*h*(2*N3x**2*nu - N3x**2 + N3y**2*nu - N3y**2)/(2*nu**2 + nu - 1)
 
-    if tria.lumped:
+    if lumped:
         M[0+c1, 0+c1] += A*h*rho/3
         M[1+c1, 1+c1] += A*h*rho/3
         M[0+c2, 0+c2] += A*h*rho/3
