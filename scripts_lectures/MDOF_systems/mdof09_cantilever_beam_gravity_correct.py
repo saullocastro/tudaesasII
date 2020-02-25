@@ -112,7 +112,7 @@ modes = np.zeros((DOF*nx, len(gamma)))
 for i in range(modes.shape[1]):
     modes[bu, i] =  Linv.T @ V[:, i]
 
-# performing fluid-structure analysis in time domain
+# performing time-domain analysis
 tmax = 1
 time_steps = 1000
 plot_freq = 4
