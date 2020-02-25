@@ -5,9 +5,9 @@ import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.linalg import cholesky
 
 from tudaesasII.beam2d import Beam2D, update_K, update_M, DOF
+from tudaesasII.utils import plot_sparse_matrix
 
 
 m2mm = 1000
@@ -65,37 +65,7 @@ for n1, n2 in zip(n1s, n2s):
     update_M(beam, nid_pos, M, lumped=False)
     elements.append(beam)
 
-I = np.ones_like(M)
-
-# applying boundary conditions
-# uroot = 0
-# vroot = unknown
-# betaroot = 0
-# utip = unknown
-# vtip = prescribed displacement
-# betatip = unknown
-known_ind = [0, 2, (K.shape[0]-1)-1]
-bu = np.logical_not(np.in1d(np.arange(M.shape[0]), known_ind))
-bk = np.in1d(np.arange(M.shape[0]), known_ind)
-
-Muu = M[bu, :][:, bu]
-Mku = M[bk, :][:, bu]
-Muk = M[bu, :][:, bk]
-Mkk = M[bk, :][:, bk]
-
-Kuu = K[bu, :][:, bu]
-Kku = K[bk, :][:, bu]
-Kuk = K[bu, :][:, bk]
-Kkk = K[bk, :][:, bk]
-
-# finding natural frequencies and orthonormal base
-L = cholesky(Muu, lower=True)
-Linv = np.linalg.inv(L)
-Ktilde = Linv @ Kuu @ Linv.T
-
-from tudaesasII.utils import plot_sparse_matrix
-
-ax = plot_sparse_matrix(K)
+ax = plot_sparse_matrix(M)
 ax.get_figure().show()
 
 
