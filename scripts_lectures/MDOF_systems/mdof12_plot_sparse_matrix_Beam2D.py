@@ -1,8 +1,6 @@
 import sys
 sys.path.append('../..')
 
-import matplotlib
-matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -12,7 +10,7 @@ from tudaesasII.utils import plot_sparse_matrix
 
 m2mm = 1000
 # number of nodes
-n = 300
+n = 150
 
 # Material steel
 E = 200e9 # Pa

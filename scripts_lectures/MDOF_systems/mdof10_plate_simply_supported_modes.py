@@ -16,15 +16,14 @@ mode = 0
 nx = 19
 ny = 19
 
-a = 0.3
+a = 1.
 b = 0.5
 
-# Material Lastrobe Lescalloy
-E = 203.e9 # Pa
+E = 70.e9 # Pa
 nu = 0.33
 
-rho = 7.83e3 # kg/m3
-h = 0.01 # m
+rho = 2.7e3 # kg/m3
+h = 0.001 # m
 
 xtmp = np.linspace(0, a, nx)
 ytmp = np.linspace(0, b, ny)

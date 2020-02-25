@@ -1,8 +1,6 @@
 import sys
 sys.path.append('../..')
 
-import matplotlib
-matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import numpy as np
 from composites.laminate import read_isotropic
@@ -11,7 +9,7 @@ from tudaesasII.quad4r import Quad4R, update_K, update_M, DOF
 from tudaesasII.utils import plot_sparse_matrix
 
 
-nx = 10
+nx = 5
 ny = 18
 
 a = 0.3
