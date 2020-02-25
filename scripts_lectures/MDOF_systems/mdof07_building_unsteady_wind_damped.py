@@ -5,8 +5,7 @@ import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.linalg import cholesky
-from numpy.linalg import eigh
+from scipy.linalg import cholesky, eigh
 
 from tudaesasII.beam2d import Beam2D, update_K, update_M, DOF
 
@@ -93,7 +92,8 @@ Kkk = K[bk, :][:, bk]
 L = cholesky(Muu, lower=True)
 Linv = np.linalg.inv(L)
 Ktilde = Linv @ Kuu @ Linv.T
-gamma, V = eigh(Ktilde) # already gives V[:, i] normalized to 1
+nmodes = 20
+gamma, V = eigh(Ktilde, eigvals=(0, nmodes-1)) # already gives V[:, i] normalized to 1
 omegan = gamma**0.5
 print('First 5 natural frequencies', omegan[:5])
 
@@ -110,12 +110,11 @@ for i in range(5):
     plt.savefig('mdof07_plot_eigenmode_%02d.png' % i, bbox_inches='tight')
 
 # performing dynamic analysis in time domain
-nmodes = 20
 tmax = 8
 time_steps = 2000
 plot_freq = 2
 
-P = V[:, :nmodes]
+P = V
 
 t = np.linspace(0, tmax, time_steps)
 
@@ -168,7 +167,7 @@ wind_freq = np.pi # rad/s
 # modal damping, using 2% for all modes
 zeta = np.array([0.02]*nmodes)
 
-on = omegan[:nmodes]
+on = omegan
 od = on*np.sqrt(1 - zeta**2)
 
 # homogeneous solution for free damped 1DOF system using initial conditions

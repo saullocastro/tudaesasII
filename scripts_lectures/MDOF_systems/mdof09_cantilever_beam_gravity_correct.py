@@ -101,7 +101,8 @@ u0[bu] = uu0
 L = cholesky(Muu, lower=True)
 Linv = np.linalg.inv(L)
 Ktilde = Linv @ Kuu @ Linv.T
-gamma, V = eigh(Ktilde) # already gives V[:, i] normalized to 1
+nmodes = 10
+gamma, V = eigh(Ktilde, eigvals=(0, nmodes-1)) # already gives V[:, i] normalized to 1
 omegan = gamma**0.5
 
 print('modes calculated')
@@ -112,19 +113,18 @@ for i in range(modes.shape[1]):
     modes[bu, i] =  Linv.T @ V[:, i]
 
 # performing fluid-structure analysis in time domain
-nmodes = 10
 tmax = 1
 time_steps = 1000
 plot_freq = 4
 
-P = V[:, :nmodes]
+P = V
 
 t = np.linspace(0, tmax, time_steps)
 
 # assuming undamped case
 zeta = 0
 
-on = omegan[:nmodes]
+on = omegan
 od = on*np.sqrt(1 - zeta**2)
 
 # homogeneous solution for free damped 1DOF system using initial conditions

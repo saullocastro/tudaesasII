@@ -69,7 +69,8 @@ L = cholesky(Muu, lower=True)
 Linv = np.linalg.inv(L)
 Kuutilde = (Linv @ Kuu) @ Linv.T
 
-eigvals, V = eigh(Kuutilde)
+nmodes = 10
+eigvals, V = eigh(Kuutilde, eigvals=(0, nmodes-1))
 wn = eigvals**0.5
 
 u0 = np.zeros(K.shape[0])
@@ -86,8 +87,6 @@ plt.title('perturbation')
 plt.plot(ncoords[:, 0], u0[1::DOF])
 plt.show()
 
-nmodes = 10
-print('wn', wn[:nmodes])
 
 c1 = []
 c2 = []
