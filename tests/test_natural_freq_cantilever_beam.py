@@ -64,7 +64,8 @@ def test_nat_freq_cantilever_beam(plot=False, mode=0):
     Kuu = K[bu, :][:, bu]
     Muu = M[bu, :][:, bu]
 
-    eigvals, U = eigh(a=Kuu, b=Muu)
+    nmodes = 3
+    eigvals, U = eigh(a=Kuu, b=Muu, eigvals=(0, nmodes-1))
     omegan = eigvals**0.5
 
     # vector u containing displacements for all DOFs
@@ -76,8 +77,8 @@ def test_nat_freq_cantilever_beam(plot=False, mode=0):
     omega123 = alpha123**2*np.sqrt(E*Izz/(rho*A*L**4))
 
     print('Theoretical omega123', omega123)
-    print('Numerical omega123', omegan[0:3])
-    assert np.allclose(omega123, omegan[0:3], rtol=0.01)
+    print('Numerical omega123', omegan)
+    assert np.allclose(omega123, omegan, rtol=0.01)
 
     if plot:
         # plotting

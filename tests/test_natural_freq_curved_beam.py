@@ -62,12 +62,13 @@ def test_nat_freq_curved_beam():
     Kuu = K[bu, :][:, bu]
     Muu = M[bu, :][:, bu]
 
-    eigvals, U = eigh(a=Kuu, b=Muu)
+    nmodes = 3
+    eigvals, U = eigh(a=Kuu, b=Muu, eigvals=(0, nmodes-1))
     omegan = eigvals**0.5
     omega123 = [396.98, 931.22, 1797.31]
     print('Reference omega123', omega123)
-    print('Numerical omega123', omegan[0:3])
-    assert np.allclose(omega123, omegan[0:3], rtol=0.01)
+    print('Numerical omega123', omegan)
+    assert np.allclose(omega123, omegan, rtol=0.01)
 
 if __name__ == '__main__':
     test_nat_freq_curved_beam()
