@@ -12,17 +12,27 @@ Coverage status:
 
 
 TU Delft
+
 Aerospace Engineering
+
 Aerospace Structures and Computational Mechanics
+
 Stability and Analysis of Structures II
+
 Ae4-ASM-511
+
 
 This Python module can be used by the students to assist them in the
 assignments.
 
-If you use any content of this repository, please cite it as:
+
+Citing this repository
+----------------------
+
+If you use any content of this repository, you can cite it as:
 
 Castro, S.G.P. Supporting code for Stability and Analysis of Structures II, Department of Aerospace Structures and Materials, Delft University of Technology, 2020. DOI: 10.5281/zenodo.2583004.
+
 
 License
 -------
