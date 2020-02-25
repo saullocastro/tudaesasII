@@ -10,9 +10,6 @@ from composites.laminate import read_isotropic
 from tudaesasII.quad4r import Quad4R, update_K, update_M, DOF
 
 
-plot = True
-mode = 0
-
 nx = 19
 ny = 19
 
