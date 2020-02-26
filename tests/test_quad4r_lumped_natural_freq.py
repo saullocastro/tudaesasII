@@ -10,7 +10,7 @@ from tudaesasII.quad4r import Quad4R, update_K, update_M, DOF
 
 def test_nat_freq_plate(plot=False, mode=0):
     nx = 9
-    ny = 9
+    ny = 11
 
     a = 0.3
     b = 0.5
@@ -108,7 +108,7 @@ def test_nat_freq_plate(plot=False, mode=0):
         matplotlib.use('TkAgg')
         import matplotlib.pyplot as plt
         plt.clf()
-        plt.contourf(xmesh, ymesh, u[2::DOF].reshape(xmesh.shape))
+        plt.contourf(xmesh, ymesh, u[2::DOF].reshape(nx, ny).T)
         plt.show()
 
 

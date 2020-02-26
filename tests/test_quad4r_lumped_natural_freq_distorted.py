@@ -10,8 +10,8 @@ from tudaesasII.quad4r import Quad4R, update_K, update_M, DOF
 
 
 def test_nat_freq_plate(plot=False, mode=0):
-    nx = 15
-    ny = 15
+    nx = 11
+    ny = 13
 
     a = 0.3
     b = 0.5
@@ -115,6 +115,7 @@ def test_nat_freq_plate(plot=False, mode=0):
     wmn = (m**2/a**2 + n**2/b**2)*np.sqrt(D*np.pi**4/(2*rho*h))/2
 
     print('Theoretical omega123', wmn)
+    wmn_ref = 2500
     print('Numerical omega123', omegan[0:10])
 
     if plot:
@@ -136,12 +137,12 @@ def test_nat_freq_plate(plot=False, mode=0):
             plt.plot([r2[0], r3[0]], [r2[1], r3[1]], 'k-')
             plt.plot([r3[0], r4[0]], [r3[1], r4[1]], 'k-')
             plt.plot([r4[0], r1[0]], [r4[1], r1[1]], 'k-')
-        plt.contourf(xmesh, ymesh, u[2::DOF].reshape(xmesh.shape))
+        plt.contourf(xmesh, ymesh, u[2::DOF].reshape(nx, ny).T)
         plt.show()
 
-    assert np.isclose(wmn, omegan[0], rtol=0.05)
+    assert np.isclose(wmn_ref, omegan[0], rtol=0.05)
 
 
 
 if __name__ == '__main__':
-    test_nat_freq_plate(plot=True, mode=3)
+    test_nat_freq_plate(plot=True, mode=0)

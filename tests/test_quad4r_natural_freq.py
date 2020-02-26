@@ -9,8 +9,8 @@ from tudaesasII.quad4r import Quad4R, update_K, update_M, DOF
 
 
 def test_nat_freq_plate(plot=False, mode=0):
-    nx = 9
-    ny = 9
+    nx = 7
+    ny = 13
 
     a = 0.3
     b = 0.5
@@ -101,14 +101,14 @@ def test_nat_freq_plate(plot=False, mode=0):
     print('Theoretical omega123', wmn)
     print('Numerical omega123', omegan[0:10])
 
-    assert np.isclose(wmn, omegan[0], rtol=0.01)
+    assert np.isclose(wmn, omegan[0], rtol=0.05)
 
     if plot:
         import matplotlib
         matplotlib.use('TkAgg')
         import matplotlib.pyplot as plt
         plt.clf()
-        plt.contourf(xmesh, ymesh, u[2::DOF].reshape(xmesh.shape))
+        plt.contourf(xmesh, ymesh, u[2::DOF].reshape(nx, ny).T)
         plt.show()
 
 

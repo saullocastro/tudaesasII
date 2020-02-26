@@ -10,7 +10,7 @@ from tudaesasII.quad4r import Quad4R, update_K, DOF
 
 def test_static_plate_quad_point_load(plot=False):
     nx = 7
-    ny = 7
+    ny = 11
 
     # geometry
     a = 3
@@ -103,6 +103,8 @@ def test_static_plate_quad_point_load(plot=False):
 
     # obtained with bfsplate2d element, nx=ny=29
     wmax_ref = 6.594931610258557e-05
+    # obtained with Quad4R nx=7, ny=11
+    wmax_ref = 5.752660593372991e-05
     assert np.isclose(wmax_ref, w.max(), rtol=0.02)
     if plot:
         import matplotlib
