@@ -126,9 +126,9 @@ def update_K(quad, nid_pos, ncoords, K):
     gamma4 = N4xy
     Eu = 0.1*A11/(1 + 1/A)
     Ev = 0.1*A11/(1 + 1/A)
-    Ew = 0.05*D11/(1 + 1/A) + 0.05*D22/(1 + 1/A)
-    Ephix = 0.1*D11/(1 + 1/A)
-    Ephiy = 0.1*D22/(1 + 1/A)
+    Ephix = 12*0.1*D11/(1 + 1/A)
+    Ephiy = 12*0.1*D22/(1 + 1/A)
+    Ew = (Ephix + Ephiy)/2
 
     K[0+c1, 0+c1] += detJ*wij*(Eu*gamma1**2 + N1x*(A11*N1x + A16*N1y) + N1y*(A16*N1x + A66*N1y))
     K[0+c1, 1+c1] += detJ*wij*(N1x*(A16*N1x + A66*N1y) + N1y*(A12*N1x + A26*N1y))

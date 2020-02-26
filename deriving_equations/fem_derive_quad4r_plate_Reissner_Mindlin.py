@@ -210,14 +210,15 @@ BLgxz = Matrix([[0, 0, N1x, N1, 0,
 BL = Matrix([BLexx, BLeyy, BLgxy, BLkxx, BLkyy, BLkxy, BLgyz, BLgxz])
 
 # hourglass control as per Brockman 1987
+# adapted to composites replacing E*h by A11 and E*h**3 by 12*D11
 # https://onlinelibrary.wiley.com/doi/pdf/10.1002/nme.1620241208
 print('gamma1 = N1xy')
 print('gamma2 = N2xy')
 print('gamma3 = N3xy')
 print('gamma4 = N4xy')
 Eu = Ev = 0.10*A11/(1 + 1/A)
-Ephix = 0.10*D11/(1 + 1/A)
-Ephiy = 0.10*D22/(1 + 1/A)
+Ephix = 12*0.10*D11/(1 + 1/A)
+Ephiy = 12*0.10*D22/(1 + 1/A)
 Ew = (Ephix + Ephiy)/2
 print('Eu =', Eu)
 print('Ev =', Ev)
