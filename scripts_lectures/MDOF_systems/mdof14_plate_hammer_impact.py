@@ -1,8 +1,6 @@
 import sys
 sys.path.append('../..')
 
-import matplotlib
-matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import numpy as np
