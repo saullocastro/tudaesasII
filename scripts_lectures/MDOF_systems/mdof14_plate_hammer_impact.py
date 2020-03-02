@@ -150,7 +150,7 @@ acc_pos5 = np.where(np.isclose(x, a/2) & np.isclose(y, b/2))[0][0]
 
 
 # hammer loads from Excel polynomial curve-fit
-f_hammer = lambda t : -9.e15*t**6 + 2.e14*t**5 - 1.e12*t**4 + 5.e09*t**3 - 1.e7*t**2 + 17425*t
+f_hammer = lambda t: -87745588352.1543*t**4 + 1415919808.3273*t**3 - 7623386.1429*t**2 + 13762.9340*t - 0.4145
 
 for t1, t2 in zip(t[:-1], t[1:]):
     tn = (t1 + t2)/2
