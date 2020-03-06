@@ -172,10 +172,10 @@ def update_M(beam, nid_pos, M, lumped=False):
     if lumped:
         M[0+c1, 0+c1] += le*rho*(3*A1 + A2)*(cosr**2 + sinr**2)/8
         M[1+c1, 1+c1] += le*rho*(3*A1 + A2)*(cosr**2 + sinr**2)/8
-        M[2+c1, 2+c1] += le*(5*A1*le**2*rho + 3*A2*le**2*rho + 72*Izz1 + 24*Izz2)/192
+        M[2+c1, 2+c1] += le*rho*(5*A1*le**2 + 3*A2*le**2 + 72*Izz1 + 24*Izz2)/192
         M[0+c2, 0+c2] += le*rho*(A1 + 3*A2)*(cosr**2 + sinr**2)/8
         M[1+c2, 1+c2] += le*rho*(A1 + 3*A2)*(cosr**2 + sinr**2)/8
-        M[2+c2, 2+c2] += le*(3*A1*le**2*rho + 5*A2*le**2*rho + 24*Izz1 + 72*Izz2)/192
+        M[2+c2, 2+c2] += le*rho*(3*A1*le**2 + 5*A2*le**2 + 24*Izz1 + 72*Izz2)/192
 
     elif not lumped and beam.interpolation == 'hermitian_cubic':
         M[0+c1, 0+c1] += rho*(cosr**2*le**2*(105*A1 + 35*A2) + sinr**2*(120*A1*le**2 + 36*A2*le**2 + 252*Izz1 + 252*Izz2))/(420*le)

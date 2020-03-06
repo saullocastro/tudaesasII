@@ -48,14 +48,14 @@ for leg_poly in [True, False]:
     x = (xi + 1)*le/2
     mA = integrate((le/2)*rho*A, (xi, -1, 0))
     mB = integrate((le/2)*rho*A, (xi, 0, +1))
-    IzzA = integrate((le/2)*(Izz + x**2*rho*A), (xi, -1, 0))
-    IzzB = integrate((le/2)*(Izz + (le-x)**2*rho*A), (xi, 0, +1))
+    MMIA = integrate((le/2)*rho*(Izz + x**2*A), (xi, -1, 0))
+    MMIB = integrate((le/2)*rho*(Izz + (le-x)**2*A), (xi, 0, +1))
     Me_lumped = Matrix([[mA, 0, 0, 0, 0, 0],
                         [0, mA, 0, 0, 0, 0],
-                        [0, 0, IzzA, 0, 0, 0],
+                        [0, 0, MMIA, 0, 0, 0],
                         [0, 0, 0, mB, 0, 0],
                         [0, 0, 0, 0, mB, 0],
-                        [0, 0, 0, 0, 0, IzzB]])
+                        [0, 0, 0, 0, 0, MMIB]])
 
     # integrating matrices in natural coordinates
 
