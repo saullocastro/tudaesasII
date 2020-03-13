@@ -175,10 +175,14 @@ u0 = np.zeros(DOF*n)
 v0 = np.zeros(DOF*n)
 r0 = P.T @ L.T @ u0[bu]
 rdot0 = P.T @ L.T @ v0[bu]
-phi = np.zeros_like(od)
-check = r0 != 0
-phi[check] = np.arctan(od[check]*r0[check]/(zeta[check]*on[check]*r0[check] + rdot0[check]))
-A0 = np.sqrt(r0**2 + (zeta*on/od*r0 + rdot0/od)**2)
+
+on = on[:, None]
+od = od[:, None]
+zeta = zeta[:, None]
+
+# homogeneous solution
+rh = np.exp(-zeta*on*t)*(r0[:, None]*np.cos(od*t) +
+    (rdot0[:, None] + zeta*on*r0[:, None])*np.sin(od*t)/od)
 
 # dynamic analysis
 # NOTE this can be further vectorized using NumPy bradcasting, but I kept this
@@ -187,12 +191,7 @@ f = np.zeros_like(fg)
 u = np.zeros((DOF*n, len(t)))
 rpc = np.zeros((nmodes, len(t)))
 
-on = on[:, None]
-od = od[:, None]
-zeta = zeta[:, None]
-
 # convolution integral: general load as a sequence of impulse loads
-
 def r_t(t, t1, t2, on, zeta, od, fmodaln):
     tn = (t1 + t2)/2
     dt = t2 - t1
@@ -216,7 +215,6 @@ for t1, t2 in zip(t[:-1], t[1:]):
     rpc += r_t(t, t1, t2, on, zeta, od, fmodaln)
 
 # superposition between homogeneous solution and forced solution
-rh = A0[:, None]*np.exp(-zeta*on*t)*np.sin(od*t + phi[:, None])
 r = rh + rpc
 
 # transforming from r-space to displacement

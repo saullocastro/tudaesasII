@@ -117,15 +117,13 @@ u0 = np.zeros(N)
 # modal space
 r0 = P.T @ L.T @ u0[bu]
 rdot0 = P.T @ L.T @ v0[bu]
-phi = np.zeros_like(od)
-check = r0 != 0
-phi[check] = np.arctan(od[check]*r0[check]/(zeta*on[check]*r0[check] + rdot0[check]))
-A0 = np.sqrt(r0**2 + (zeta*on/od*r0 + rdot0/od)**2)
-
-rpc = np.zeros((Nmodes-dummy, len(t)))
 
 on = on[:, None]
 od = od[:, None]
+
+# homogeneous solution
+rh = np.exp(-zeta*on*t)*(r0[:, None]*np.cos(od*t) +
+    (rdot0[:, None] + zeta*on*r0[:, None])*np.sin(od*t)/od)
 
 # convolution integral: general load as a sequence of impulse loads
 def r_t(t, t1, t2, on, zeta, od, fmodaln):
@@ -138,17 +136,15 @@ def r_t(t, t1, t2, on, zeta, od, fmodaln):
     h[:, check] = 1/od*np.exp(-zeta*on*(t[check] - tn))*np.sin(od*(t[check] - tn))*H[check]
     return fmodaln*dt*h
 
-# homogeneous solution
-rh = A0[:, None]*np.exp(-zeta*on*t)*np.sin(od*t + phi[:, None])
-
-fu = np.zeros(N)[bu]
-
 force_pos1 = np.where(np.isclose(x, a/4) & np.isclose(y, b/4))[0][0]
 acc_pos5 = np.where(np.isclose(x, a/2) & np.isclose(y, b/2))[0][0]
 
 
 # hammer loads from Excel polynomial curve-fit
 f_hammer = lambda t: -87745588352.1543*t**4 + 1415919808.3273*t**3 - 7623386.1429*t**2 + 13762.9340*t - 0.4145
+
+rpc = np.zeros((Nmodes-dummy, len(t)))
+fu = np.zeros(N)[bu]
 
 for t1, t2 in zip(t[:-1], t[1:]):
     tn = (t1 + t2)/2
