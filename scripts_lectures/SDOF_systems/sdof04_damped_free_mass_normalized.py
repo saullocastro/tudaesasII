@@ -16,6 +16,4 @@ sol = dsolve(u.diff(t, t) + 2*zeta*omegan*u.diff(t) + omegan**2*u)
 # sol.lhs ==> u(t)
 # sol.rhs ==> solution
 display(sol.rhs.simplify())
-display()
-sympy.display(sol.rhs.simplify())
 

@@ -23,5 +23,6 @@ sol = dsolve(u.diff(t, t) + 2*zeta*omegan*u.diff(t) + omegan**2*u - f, ics=ics)
 
 # sol.lhs ==> u(t)
 # sol.rhs ==> solution
-display(sol.rhs.simplify())
+display(sol.rhs)
+
 
