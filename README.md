@@ -31,7 +31,7 @@ Citing this repository
 
 If you use any content of this repository, you can cite it as:
 
-Castro, S.G.P. Supporting code for Stability and Analysis of Structures II, Department of Aerospace Structures and Materials, Delft University of Technology, 2020. DOI: 10.5281/zenodo.2583004.
+Castro, S.G.P. Supporting code for Stability and Analysis of Structures II, Department of Aerospace Structures and Materials, Delft University of Technology, 2021. [DOI: 10.5281/zenodo.2583004](https://doi.org/10.5281/zenodo.2583004).
 
 
 License
