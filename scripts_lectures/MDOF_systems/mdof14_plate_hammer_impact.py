@@ -86,8 +86,8 @@ L = cholesky(Muu, lower=True)
 Linv = np.linalg.inv(L)
 Ktilde = Linv @ Kuu @ Linv.T
 
-Nmodes = 13
-gamma, V = eigh(Ktilde, eigvals=(0, Nmodes-1)) # already gives V[:, i] normalized to 1
+p = 13
+gamma, V = eigh(Ktilde, subset_by_index=(0, p-1)) # already gives V[:, i] normalized to 1
 dummy = 3
 V = V[:, dummy:]
 gamma = gamma[dummy:]
@@ -131,7 +131,7 @@ def r_t(t, t1, t2, on, zeta, od, fmodaln):
     dt = t2 - t1
     # damped function
     H = np.heaviside(t - tn, 1.)
-    h = np.zeros((Nmodes-dummy, t.shape[0]))
+    h = np.zeros((p-dummy, t.shape[0]))
     check = t >= tn
     h[:, check] = 1/od*np.exp(-zeta*on*(t[check] - tn))*np.sin(od*(t[check] - tn))*H[check]
     return fmodaln*dt*h
@@ -143,7 +143,7 @@ acc_pos5 = np.where(np.isclose(x, a/2) & np.isclose(y, b/2))[0][0]
 # hammer loads from Excel polynomial curve-fit
 f_hammer = lambda t: -87745588352.1543*t**4 + 1415919808.3273*t**3 - 7623386.1429*t**2 + 13762.9340*t - 0.4145
 
-rpc = np.zeros((Nmodes-dummy, len(t)))
+rpc = np.zeros((p-dummy, len(t)))
 fu = np.zeros(N)[bu]
 
 for t1, t2 in zip(t[:-1], t[1:]):

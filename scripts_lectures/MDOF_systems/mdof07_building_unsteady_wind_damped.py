@@ -92,8 +92,8 @@ Kkk = K[bk, :][:, bk]
 L = cholesky(Muu, lower=True)
 Linv = np.linalg.inv(L)
 Ktilde = Linv @ Kuu @ Linv.T
-nmodes = 20
-gamma, V = eigh(Ktilde, eigvals=(0, nmodes-1)) # already gives V[:, i] normalized to 1
+p = 20
+gamma, V = eigh(Ktilde, subset_by_index=(0, p-1)) # already gives V[:, i] normalized to 1
 omegan = gamma**0.5
 print('First 5 natural frequencies', omegan[:5])
 
@@ -165,7 +165,7 @@ wind_area = y*side
 wind_freq = np.pi # rad/s
 
 # modal damping, using 2% for all modes
-zeta = np.array([0.02]*nmodes)
+zeta = np.array([0.02]*p)
 
 on = omegan
 od = on*np.sqrt(1 - zeta**2)
@@ -189,7 +189,7 @@ rh = np.exp(-zeta*on*t)*(r0[:, None]*np.cos(od*t) +
 # loop in order to make the code more understandable
 f = np.zeros_like(fg)
 u = np.zeros((DOF*n, len(t)))
-rpc = np.zeros((nmodes, len(t)))
+rpc = np.zeros((p, len(t)))
 
 # convolution integral: general load as a sequence of impulse loads
 def r_t(t, t1, t2, on, zeta, od, fmodaln):

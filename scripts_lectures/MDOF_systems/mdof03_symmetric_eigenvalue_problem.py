@@ -10,7 +10,7 @@ from tudaesasII.beam2d import Beam2D, update_K, update_M, DOF
 nx = 100
 
 # geometry
-L = 10
+length = 10
 h = 1
 w = h/10
 Izz = h**3*w/12
@@ -22,7 +22,7 @@ nu = 0.33
 rho = 2.6e3
 
 # creating mesh
-xmesh = np.linspace(0, L, nx)
+xmesh = np.linspace(0, length, nx)
 ymesh = np.zeros_like(xmesh)
 ncoords = np.vstack((xmesh.T.flatten(), ymesh.T.flatten())).T
 x = ncoords[:, 0]
@@ -71,7 +71,7 @@ L = cholesky(Muu, lower=True)
 Linv = np.linalg.inv(L)
 Kuutilde = (Linv @ Kuu) @ Linv.T
 
-#NOTE checking if Kuutilde is symmetric
+#NOTE asserting that Kuutilde is symmetric
 assert np.allclose(Kuutilde, Kuutilde.T)
 
 eigvals_s, V = eigh(Kuutilde)

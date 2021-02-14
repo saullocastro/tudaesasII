@@ -10,7 +10,7 @@ from tudaesasII.beam2d import Beam2D, update_K, update_M, DOF
 nx = 100
 
 # geometry
-L = 10
+length = 10
 h = 1
 w = h/10
 Izz = h**3*w/12
@@ -22,7 +22,7 @@ nu = 0.33
 rho = 2.6e3
 
 # creating mesh
-xmesh = np.linspace(0, L, nx)
+xmesh = np.linspace(0, length, nx)
 ymesh = np.zeros_like(xmesh)
 ncoords = np.vstack((xmesh.T.flatten(), ymesh.T.flatten())).T
 x = ncoords[:, 0]
@@ -61,9 +61,11 @@ bu = ~bk # defining unknown DOFs
 Kuu = K[bu, :][:, bu]
 Muu = M[bu, :][:, bu]
 
+p = 4
+
 # solving generalized eigenvalue problem
-# NOTE: extracting ALL eigenvectors
-eigvals_g, U = eigh(a=Kuu, b=Muu)
+# NOTE: extracting only p eigenvectors
+eigvals_g, U = eigh(a=Kuu, b=Muu, subset_by_index=(0, p-1))
 wn_g = eigvals_g**0.5
 
 # solving symmetric eigenvalue problem
@@ -71,19 +73,19 @@ L = cholesky(Muu, lower=True)
 Linv = np.linalg.inv(L)
 Kuutilde = (Linv @ Kuu) @ Linv.T
 
-#NOTE checking if Kuutilde is symmetric
+#NOTE asserting that Kuutilde is symmetric
 assert np.allclose(Kuutilde, Kuutilde.T)
 
-eigvals, V = eigh(Kuutilde)
+eigvals, V = eigh(Kuutilde, subset_by_index=(0, p-1))
 wn = eigvals**0.5
 
-p = 4
-print('omegan**2', wn[:p]**2)
+print('omegan**2', wn**2)
 
-P = V[:, :p]
+P = V
 
 print('P.T @ Kuutilde @ P')
 print(np.round(P.T @ Kuutilde @ P, 2))
 print()
 print('P.T @ P')
 print(np.round(P.T @ P, 2))
+

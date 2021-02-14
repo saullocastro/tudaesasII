@@ -17,7 +17,7 @@ lumped = False
 nx = 100
 
 # geometry
-L = 10
+length = 10
 h = 1
 w = h/10
 Izz = h**3*w/12
@@ -29,7 +29,7 @@ nu = 0.33
 rho = 2.6e3
 
 # creating mesh
-xmesh = np.linspace(0, L, nx)
+xmesh = np.linspace(0, length, nx)
 ymesh = np.zeros_like(xmesh)
 ncoords = np.vstack((xmesh.T.flatten(), ymesh.T.flatten())).T
 x = ncoords[:, 0]
@@ -77,9 +77,9 @@ eigvals, U = eigh(a=Kuu, b=Muu)
 wn = eigvals**0.5
 print('wn', wn[:5])
 
-print('omega1 ref', 1.875**2*np.sqrt(E*Izz/(rho*A*L**4)))
-print('omega2 ref', 4.694**2*np.sqrt(E*Izz/(rho*A*L**4)))
-print('omega3 ref', 7.855**2*np.sqrt(E*Izz/(rho*A*L**4)))
+print('omega1 ref', 1.875**2*np.sqrt(E*Izz/(rho*A*length**4)))
+print('omega2 ref', 4.694**2*np.sqrt(E*Izz/(rho*A*length**4)))
+print('omega3 ref', 7.855**2*np.sqrt(E*Izz/(rho*A*length**4)))
 
 if plot_mesh:
     plt.plot(x, y, 'o-')

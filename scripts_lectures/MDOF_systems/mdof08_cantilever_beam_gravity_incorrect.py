@@ -16,7 +16,7 @@ from tudaesasII.beam2d import Beam2D, update_K, update_M, DOF
 nx = 100
 
 # geometry
-L = 1
+length = 1
 h = 0.05
 w = h
 Izz = h**3*w/12
@@ -28,7 +28,7 @@ nu = 0.33
 rho = 2.6e3
 
 # creating mesh
-xmesh = np.linspace(0, L, nx)
+xmesh = np.linspace(0, length, nx)
 ymesh = np.zeros_like(xmesh)
 ncoords = np.vstack((xmesh.T.flatten(), ymesh.T.flatten())).T
 x = ncoords[:, 0]
@@ -101,8 +101,8 @@ u0[bu] = uu0
 L = cholesky(Muu, lower=True)
 Linv = np.linalg.inv(L)
 Ktilde = Linv @ Kuu @ Linv.T
-nmodes = 10
-gamma, V = eigh(Ktilde, eigvals=(0, nmodes-1)) # already gives V[:, i] normalized to 1
+p = 10
+gamma, V = eigh(Ktilde, subset_by_index=(0, p-1)) # already gives V[:, i] normalized to 1
 omegan = gamma**0.5
 
 print('modes calculated')
@@ -140,7 +140,7 @@ A0 = np.sqrt(r0**2 + (zeta*on/od*r0 + rdot0/od)**2)
 # dynamic analysis
 u = np.zeros((DOF*nx, len(t)))
 
-rpc = np.zeros((nmodes, len(t)))
+rpc = np.zeros((p, len(t)))
 
 on = on[:, None]
 od = od[:, None]

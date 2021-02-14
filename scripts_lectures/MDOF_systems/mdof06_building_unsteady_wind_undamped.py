@@ -92,8 +92,8 @@ Kkk = K[bk, :][:, bk]
 L = cholesky(Muu, lower=True)
 Linv = np.linalg.inv(L)
 Ktilde = Linv @ Kuu @ Linv.T
-nmodes = 20
-gamma, V = eigh(Ktilde, eigvals=(0, nmodes-1)) # already gives V[:, i] normalized to 1
+p = 20
+gamma, V = eigh(Ktilde, subset_by_index=(0, p-1)) # already gives V[:, i] normalized to 1
 omegan = gamma**0.5
 print('First 5 natural frequencies', omegan[:5])
 
@@ -177,7 +177,7 @@ c2 = rdot0/omegan
 # loop in order to make the code more understandable
 f = np.zeros_like(fg)
 u = np.zeros((DOF*n, len(t)))
-rpc = np.zeros((nmodes, len(t)))
+rpc = np.zeros((p, len(t)))
 
 on = omegan[:, None]
 

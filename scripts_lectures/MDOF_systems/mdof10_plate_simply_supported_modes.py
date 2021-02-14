@@ -85,8 +85,8 @@ bu = ~bk # same as np.logical_not, defining unknown DOFs
 Kuu = K[bu, :][:, bu]
 Muu = M[bu, :][:, bu]
 
-nmodes = 10
-eigvals, U = eigh(a=Kuu, b=Muu, eigvals=(0, nmodes-1))
+p = 10
+eigvals, U = eigh(a=Kuu, b=Muu, subset_by_index=(0, p-1))
 omegan = eigvals**0.5
 
 modes = np.asarray([[0, 1, 2], [3, 4, 5]])

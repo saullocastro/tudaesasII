@@ -19,7 +19,7 @@ nx = 50
 ny = 10
 
 # geometry
-L = 10
+length = 10
 h = 1
 w = h/10
 I = h**3*w/12
@@ -31,7 +31,7 @@ nu = 0.33
 rho = 2.6e3
 
 # creating mesh
-xtmp = np.linspace(0, L, nx)
+xtmp = np.linspace(0, length, nx)
 ytmp = np.linspace(0, h, ny)
 xmesh, ymesh = np.meshgrid(xtmp, ytmp)
 ncoords = np.vstack((xmesh.T.flatten(), ymesh.T.flatten())).T
@@ -93,13 +93,13 @@ eigvals, U = eigh(a=Kuu, b=Muu)
 wn = eigvals**0.5
 print('wn', wn[:5])
 
-print('omega1 theoretical', 1.875**2*np.sqrt(E*I/(rho*A*L**4)))
-print('omega2 theoretical', 4.694**2*np.sqrt(E*I/(rho*A*L**4)))
-print('omega3 theoretical', 7.855**2*np.sqrt(E*I/(rho*A*L**4)))
+print('omega1 theoretical', 1.875**2*np.sqrt(E*I/(rho*A*length**4)))
+print('omega2 theoretical', 4.694**2*np.sqrt(E*I/(rho*A*length**4)))
+print('omega3 theoretical', 7.855**2*np.sqrt(E*I/(rho*A*length**4)))
 
 if plot_result:
     u = np.zeros(K.shape[0], dtype=float)
-    for mode in range(10):
+    for mode in range(20):
         u[bu] = U[:, mode]
         scale = 30
         u1 = scale*u[0::DOF].reshape(nx, ny).T

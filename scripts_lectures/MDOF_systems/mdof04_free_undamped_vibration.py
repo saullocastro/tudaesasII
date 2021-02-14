@@ -69,8 +69,8 @@ L = cholesky(Muu, lower=True)
 Linv = np.linalg.inv(L)
 Kuutilde = (Linv @ Kuu) @ Linv.T
 
-nmodes = 10
-eigvals, V = eigh(Kuutilde, eigvals=(0, nmodes-1))
+p = 10
+eigvals, V = eigh(Kuutilde, subset_by_index=(0, p-1))
 wn = eigvals**0.5
 
 u0 = np.zeros(K.shape[0])
@@ -90,13 +90,13 @@ plt.show()
 
 c1 = []
 c2 = []
-for I in range(nmodes):
+for I in range(p):
     c1.append( V[:, I] @ L.T @ u0u )
     c2.append( V[:, I] @ L.T @ v0u / wn[I] )
 
 def ufunc(t):
     tmp = 0
-    for I in range(nmodes):
+    for I in range(p):
         tmp += (c1[I]*np.cos(wn[I]*t[:, None]) +
                 c2[I]*np.sin(wn[I]*t[:, None]))*(Linv.T@V[:, I])
     return tmp
@@ -175,6 +175,6 @@ yf = 2/num*np.abs(uf[0:num//2])
 
 plt.xlabel('$rad/s$')
 plt.plot(xf, yf)
-plt.xlim(0, wn[nmodes-1]+50)
+plt.xlim(0, wn[p-1]+50)
 plt.show()
 
