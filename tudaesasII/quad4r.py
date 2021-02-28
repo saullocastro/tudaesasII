@@ -27,6 +27,7 @@ class Quad4R(object):
         self.scf13 = 5/6. # transverse shear correction factor XZ
         self.scf23 = 5/6. # transverse shear correction factor YZ
 
+
 def update_K(quad, nid_pos, ncoords, K):
     """Update global K with Ke from a quad element
 
@@ -468,7 +469,6 @@ def update_K(quad, nid_pos, ncoords, K):
     K[4+c4, 4+c4] += detJ*wij*(E44*N4**2 + Ephiy*gamma4**2 + N4x*(D26*N4y + D66*N4x) + N4y*(D22*N4y + D26*N4x))
 
 
-
 def update_M(quad, nid_pos, ncoords, M, lumped=False):
     """Update global M with Me from a quad element
 
@@ -627,3 +627,81 @@ def update_M(quad, nid_pos, ncoords, M, lumped=False):
             M[4+c4, 4+c3] += N3*N4*detJ*h**3*rho*wij/12
             M[4+c4, 4+c4] += N4**2*detJ*h**3*rho*wij/12
 
+
+def update_KA(quad, nid_pos, ncoords, KA):
+    """Update global KA with KAe from a quad element
+
+    Properties
+    ----------
+    quad : `.Quad`object
+        The quad element being added to KA
+    nid_pos : dict
+        Correspondence between node ids and their position in the global assembly
+    ncoords : list
+        Nodal coordinates of the whole model
+    KA : np.array
+        Aerodynamic matrix
+
+    """
+    pos1 = nid_pos[quad.n1]
+    pos2 = nid_pos[quad.n2]
+    pos3 = nid_pos[quad.n3]
+    pos4 = nid_pos[quad.n4]
+    x1, y1 = ncoords[pos1]
+    x2, y2 = ncoords[pos2]
+    x3, y3 = ncoords[pos3]
+    x4, y4 = ncoords[pos4]
+
+    x1, y1 = ncoords[pos1]
+    x2, y2 = ncoords[pos2]
+    x3, y3 = ncoords[pos3]
+    x4, y4 = ncoords[pos4]
+
+    A = (np.cross([x2 - x1, y2 - y1], [x4 - x1, y4 - y1])/2 +
+         np.cross([x4 - x3, y4 - y3], [x2 - x3, y2 - y3])/2)
+
+    # positions c1, c2 in the stiffness and mass matrices
+    c1 = DOF*pos1
+    c2 = DOF*pos2
+    c3 = DOF*pos3
+    c4 = DOF*pos4
+
+    h = quad.h
+    rho = quad.rho
+
+    weights_points =[[8/9, 0.],
+                     [5/9, -(3/5)**0.5 ],
+                     [5/9, +(3/5)**0.5 ],
+                     ]
+
+    for wi, xi in weights_points:
+        for wj, eta in weights_points:
+            wij = wi*wj
+            detJ = (-2*x1 + 2*x2 + (eta + 1)*(x1 - x2 + x3 - x4))*(-2*y1 + 2*y4 + (xi + 1)*(y1 - y2) + (xi + 1)*(y3 - y4))/16 - (-2*y1 + 2*y2 + (eta + 1)*(y1 - y2 + y3 - y4))*(-2*x1 + 2*x4 + (x1 - x2)*(xi + 1) + (x3 - x4)*(xi + 1))/16
+            j11 = 2*(-xi*y1 + xi*y2 - xi*y3 + xi*y4 + y1 + y2 - y3 - y4)/(eta*x1*y2 - eta*x1*y3 - eta*x2*y1 + eta*x2*y4 + eta*x3*y1 - eta*x3*y4 - eta*x4*y2 + eta*x4*y3 + x1*xi*y3 - x1*xi*y4 - x1*y2 + x1*y4 - x2*xi*y3 + x2*xi*y4 + x2*y1 - x2*y3 - x3*xi*y1 + x3*xi*y2 + x3*y2 - x3*y4 + x4*xi*y1 - x4*xi*y2 - x4*y1 + x4*y3)
+            j12 = 4*(-2*y1 + 2*y2 + (eta + 1)*(y1 - y2 + y3 - y4))/(-(-2*x1 + 2*x2 + (eta + 1)*(x1 - x2 + x3 - x4))*(-2*y1 + 2*y4 + (xi + 1)*(y1 - y2) + (xi + 1)*(y3 - y4)) + (-2*y1 + 2*y2 + (eta + 1)*(y1 - y2 + y3 - y4))*(-2*x1 + 2*x4 + (x1 - x2)*(xi + 1) + (x3 - x4)*(xi + 1)))
+            N1 = eta*xi/4 - eta/4 - xi/4 + 1/4
+            N2 = -eta*xi/4 - eta/4 + xi/4 + 1/4
+            N3 = eta*xi/4 + eta/4 + xi/4 + 1/4
+            N4 = -eta*xi/4 + eta/4 - xi/4 + 1/4
+            N1x = j11*(eta - 1)/4 + j12*(xi - 1)/4
+            N2x = -eta*j11/4 + j11/4 - j12*xi/4 - j12/4
+            N3x = j11*(eta + 1)/4 + j12*(xi + 1)/4
+            N4x = -eta*j11/4 - j11/4 - j12*xi/4 + j12/4
+
+            KA[2+c1, 2+c1] += N1*N1x*detJ*wij
+            KA[2+c1, 2+c2] += N1*N2x*detJ*wij
+            KA[2+c1, 2+c3] += N1*N3x*detJ*wij
+            KA[2+c1, 2+c4] += N1*N4x*detJ*wij
+            KA[2+c2, 2+c1] += N1x*N2*detJ*wij
+            KA[2+c2, 2+c2] += N2*N2x*detJ*wij
+            KA[2+c2, 2+c3] += N2*N3x*detJ*wij
+            KA[2+c2, 2+c4] += N2*N4x*detJ*wij
+            KA[2+c3, 2+c1] += N1x*N3*detJ*wij
+            KA[2+c3, 2+c2] += N2x*N3*detJ*wij
+            KA[2+c3, 2+c3] += N3*N3x*detJ*wij
+            KA[2+c3, 2+c4] += N3*N4x*detJ*wij
+            KA[2+c4, 2+c1] += N1x*N4*detJ*wij
+            KA[2+c4, 2+c2] += N2x*N4*detJ*wij
+            KA[2+c4, 2+c3] += N3x*N4*detJ*wij
+            KA[2+c4, 2+c4] += N4*N4x*detJ*wij

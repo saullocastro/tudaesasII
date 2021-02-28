@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 
 
 is_released = True
-version = '2021.0'
+version = '2021.1'
 
 
 def git_version():
@@ -64,7 +64,7 @@ install_requires = [
         "numpy",
         "scipy",
         "structsolve",
-        "composites",
+        "composites < 0.3.0",
         ]
 
 #Trove classifiers

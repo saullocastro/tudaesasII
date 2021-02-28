@@ -207,6 +207,8 @@ BLgxz = Matrix([[0, 0, N1x, N1, 0,
                  0, 0, N3x, N3, 0,
                  0, 0, N4x, N4, 0]])
 
+Nwx = Matrix([[0, 0, N1x, 0, 0, 0, 0, N2x, 0, 0, 0, 0, N3x, 0, 0, 0, 0, N4x, 0, 0]])
+
 BL = Matrix([BLexx, BLeyy, BLgxy, BLkxx, BLkyy, BLkxy, BLgyz, BLgxz])
 
 # hourglass control as per Brockman 1987
@@ -269,28 +271,18 @@ ABDE = Matrix(
          [0, 0, 0, 0, 0, 0, E44, E45],
          [0, 0, 0, 0, 0, 0, E45, E55]])
 
-sympy.var('wij')
+sympy.var('wij, offset')
 
 Ke[:, :] = wij*detJ*(BL.T*ABDE*BL + Bgamma.T*Egamma*Bgamma)
 
-# Mass matrix adapted from (#TODO offset yet to be checked):
-d = 0
-# Flutter of stiffened composite panels considering the stiffener's base as a structural element
-# Saullo G.P. Castro, Thiago A.M. Guimarães et al.
-# Composite Structures, 140, 4 2016
-# https://www.sciencedirect.com/science/article/pii/S0263822315011460
-#maux = Matrix([[ 1, 0, 0, -d, 0],
-               #[ 0, 1, 0, 0, -d],
-               #[ 0, 0, 1, 0, 0],
-               #[-d, 0, 0, (h**2/12 + d**2), 0],
-               #[0, -d, 0, 0, (h**2/12 + d**2)]])
-#tmp = Matrix([Nu, Nv, Nw, Nphix, Nphiy])
-#Meintegrand = rho*h*tmp.T*maux*tmp
-
 Me[:, :] = wij*detJ*rho*(h*Nu.T*Nu + h*Nv.T*Nv + h*Nw.T*Nw +
-    h**3/12*Nphix.T*Nphix + h**3/12*Nphiy.T*Nphiy)
+    h*(h**2/12 + offset**2)*Nphix.T*Nphix +
+    h*(h**2/12 + offset**2)*Nphiy.T*Nphiy)
 
-calc_lumped = True
+BA = Nwx
+KAe = wij*detJ*(Nw.T*BA)
+
+calc_lumped = False
 
 if calc_lumped:
     m1 = simplify(integrate(rho*h*detJfunc, (xi, -1, 0), (eta, -1, 0)))
@@ -321,6 +313,7 @@ if calc_lumped:
 # K represents the global stiffness matrix
 # in case we want to apply coordinate transformations
 K = Ke
+KA = KAe
 M = Me
 M_lumped = Me_lumped
 
@@ -335,6 +328,7 @@ def name_ind(i):
         return 'c4'
     else:
         raise
+
 
 print()
 for ind, val in np.ndenumerate(K):
@@ -354,6 +348,17 @@ for ind, val in np.ndenumerate(M):
     si = name_ind(i)
     sj = name_ind(j)
     print('    M[%d+%s, %d+%s]' % (i%DOF, si, j%DOF, sj), '+=', M[ind])
+
+
+print()
+for ind, val in np.ndenumerate(KA):
+    if val == 0:
+        continue
+    i, j = ind
+    si = name_ind(i)
+    sj = name_ind(j)
+    print('    KA[%d+%s, %d+%s]' % (i%DOF, si, j%DOF, sj), '+=', KA[ind])
+
 
 if calc_lumped:
     print()

@@ -1,0 +1,138 @@
+import sys
+sys.path.append('../..')
+
+from scipy.sparse import csc_matrix
+from scipy.sparse.linalg import eigs
+import numpy as np
+from composites.laminate import read_isotropic
+
+from tudaesasII.quad4r import Quad4R, update_K, update_M, update_KA, DOF
+
+
+plot = True
+# number of nodes
+nx = 21 # along x
+ny = 11 # along y
+
+# geometry
+a = 0.5
+b = 0.3
+
+# material properties (Aluminum)
+E = 70e9
+nu = 0.3
+rho = 7.8e3
+h = 0.001
+
+# creating mesh
+xtmp = np.linspace(0, a, nx)
+ytmp = np.linspace(0, b, ny)
+xmesh, ymesh = np.meshgrid(xtmp, ytmp)
+
+# node coordinates and position in the global matrix
+ncoords = np.vstack((xmesh.T.flatten(), ymesh.T.flatten())).T
+x = ncoords[:, 0]
+y = ncoords[:, 1]
+
+nids = 1 + np.arange(ncoords.shape[0])
+nid_pos = dict(zip(nids, np.arange(len(nids))))
+
+nids_mesh = nids.reshape(nx, ny)
+
+n1s = nids_mesh[:-1, :-1].flatten()
+n2s = nids_mesh[1:, :-1].flatten()
+n3s = nids_mesh[1:, 1:].flatten()
+n4s = nids_mesh[:-1, 1:].flatten()
+
+plate = read_isotropic(thickness=h, E=E, nu=nu, calc_scf=True)
+
+num_elements = len(n1s)
+print('num_elements', num_elements)
+
+K = np.zeros((DOF*nx*ny, DOF*nx*ny))
+M = np.zeros((DOF*nx*ny, DOF*nx*ny))
+KA = np.zeros((DOF*nx*ny, DOF*nx*ny))
+
+quads = []
+for n1, n2, n3, n4 in zip(n1s, n2s, n3s, n4s):
+    pos1 = nid_pos[n1]
+    pos2 = nid_pos[n2]
+    pos3 = nid_pos[n3]
+    pos4 = nid_pos[n4]
+    quad = Quad4R()
+    quad.rho = rho
+    quad.n1 = n1
+    quad.n2 = n2
+    quad.n3 = n3
+    quad.n4 = n4
+    quad.scf13 = plate.scf_k13
+    quad.scf23 = plate.scf_k23
+    quad.h = h
+    quad.ABDE = plate.ABDE
+    update_K(quad, nid_pos, ncoords, K)
+    update_KA(quad, nid_pos, ncoords, KA)
+    update_M(quad, nid_pos, ncoords, M)
+    quads.append(quad)
+
+print('elements created')
+
+# applying boundary conditions
+# simply supported
+bk = np.zeros(K.shape[0], dtype=bool)
+# constraining w at all edges
+check = (np.isclose(x, 0.) | np.isclose(x, a) | np.isclose(y, 0.) | np.isclose(y, b))
+bk[2::DOF] = check
+#NOTE uncomment for clamped
+#bk[3::DOF] = check
+#bk[4::DOF] = check
+# removing u,v
+bk[0::DOF] = True
+bk[1::DOF] = True
+
+# unconstrained nodes
+bu = ~bk # logical_not
+
+Kuu = csc_matrix(K[bu, :][:, bu])
+Muu = csc_matrix(M[bu, :][:, bu])
+KAuu = csc_matrix(KA[bu, :][:, bu])
+
+num_eigenvalues = 10
+
+def MAC(mode1, mode2):
+    return (mode1@mode2)**2/((mode1@mode1)*(mode2@mode2))
+
+MACmatrix = np.zeros((num_eigenvalues, num_eigenvalues))
+betastar = np.linspace(0, 200, 50)
+betas = betastar*E*h**3/a**3
+omegan_vec = []
+for i, beta in enumerate(betas):
+    print('analysis i', i)
+    # solving generalized eigenvalue problem
+    eigvals, eigvecsu = eigs(A=Kuu + beta*KAuu, M=Muu,
+            k=num_eigenvalues, which='LM', sigma=-1.)
+    eigvecs = np.zeros((K.shape[0], num_eigenvalues), dtype=float)
+    eigvecs[bu, :] = eigvecsu
+    omegan_vec.append(eigvals**0.5)
+
+    if i == 0:
+        eigvecs_ref = eigvecs
+
+    for j in range(num_eigenvalues):
+        for k in range(num_eigenvalues):
+            MACmatrix[j, k] = MAC(eigvecs_ref[:, j], eigvecs[:, k])
+    print(np.round(MACmatrix, 1))
+
+    eigvecs_ref = eigvecs.copy()
+
+
+omegan_vec = np.array(omegan_vec)
+
+if plot:
+    import matplotlib
+    matplotlib.use('TkAgg')
+    import matplotlib.pyplot as plt
+    for i in range(num_eigenvalues):
+        plt.plot(betastar, omegan_vec[:, i])
+    plt.show()
+
+
