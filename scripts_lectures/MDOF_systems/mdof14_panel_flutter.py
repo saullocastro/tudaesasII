@@ -12,17 +12,17 @@ from tudaesasII.quad4r import Quad4R, update_K, update_M, update_KA, DOF
 plot = True
 # number of nodes
 nx = 21 # along x
-ny = 11 # along y
+ny = 21 # along y
 
-# geometry
-a = 0.5
-b = 0.3
-
-# material properties (Aluminum)
+#material properties (Aluminum)
 E = 70e9
 nu = 0.3
 rho = 7.8e3
-h = 0.001
+
+# design variables
+h = 0.0035 # thickness in [m]
+a = 0.8 # length along x in [m]
+b = 0.5 # length along y in [m]
 
 # creating mesh
 xtmp = np.linspace(0, a, nx)
@@ -96,33 +96,41 @@ Kuu = csc_matrix(K[bu, :][:, bu])
 Muu = csc_matrix(M[bu, :][:, bu])
 KAuu = csc_matrix(KA[bu, :][:, bu])
 
-num_eigenvalues = 10
+num_eigenvalues = 6
 
 def MAC(mode1, mode2):
     return (mode1@mode2)**2/((mode1@mode1)*(mode2@mode2))
 
 MACmatrix = np.zeros((num_eigenvalues, num_eigenvalues))
-betastar = np.linspace(0, 200, 50)
-betas = betastar*E*h**3/a**3
+rho_air = 1.225 # kg/m^3
+v_sound = 343 # m/s
+v_air = np.linspace(1.1*v_sound, 10*v_sound, 200)
+Mach = v_air/v_sound
+betas = rho_air*v_air**2/np.sqrt(Mach**2 - 1)
 omegan_vec = []
 for i, beta in enumerate(betas):
     print('analysis i', i)
     # solving generalized eigenvalue problem
     eigvals, eigvecsu = eigs(A=Kuu + beta*KAuu, M=Muu,
-            k=num_eigenvalues, which='LM', sigma=-1.)
+            k=num_eigenvalues, which='LM', sigma=-1., tol=1e-8)
     eigvecs = np.zeros((K.shape[0], num_eigenvalues), dtype=float)
     eigvecs[bu, :] = eigvecsu
-    omegan_vec.append(eigvals**0.5)
 
     if i == 0:
         eigvecs_ref = eigvecs
 
+    corresp = []
     for j in range(num_eigenvalues):
         for k in range(num_eigenvalues):
             MACmatrix[j, k] = MAC(eigvecs_ref[:, j], eigvecs[:, k])
-    print(np.round(MACmatrix, 1))
+        if np.isclose(np.max(MACmatrix[j, :]), 1.):
+            corresp.append(np.argmax(MACmatrix[j, :]))
+        else:
+            corresp.append(j)
+    omegan_vec.append(eigvals[corresp]**0.5)
+    print(np.round(MACmatrix, 2))
 
-    eigvecs_ref = eigvecs.copy()
+    eigvecs_ref = eigvecs[:, corresp].copy()
 
 
 omegan_vec = np.array(omegan_vec)
@@ -132,7 +140,9 @@ if plot:
     matplotlib.use('TkAgg')
     import matplotlib.pyplot as plt
     for i in range(num_eigenvalues):
-        plt.plot(betastar, omegan_vec[:, i])
+        plt.plot(Mach, omegan_vec[:, i])
+    plt.ylabel('$\omega_n\ [rad/s]$')
+    plt.xlabel('Mach')
     plt.show()
 
 
