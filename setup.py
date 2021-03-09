@@ -62,7 +62,7 @@ def read(fname):
 
 install_requires = [
         "numpy",
-        "scipy",
+        "scipy >= 1.5.0",
         "structsolve",
         "composites < 0.3.0",
         ]
