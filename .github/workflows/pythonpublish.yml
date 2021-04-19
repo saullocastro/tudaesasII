@@ -25,11 +25,11 @@ jobs:
         pip3 install setuptools wheel twine
         pip3 install -r requirements.txt
     - name: Build Windows Python wheels
-      if: matrix.runs-on == 'windows-latest'
+      if: matrix.runs-on == 'windows-latest' && matrix.python-version == 3.9
       run: |
         python3 setup.py sdist bdist_wheel
     - name: Publish Windows Python wheels
-      if: matrix.runs-on == 'windows-latest'
+      if: matrix.runs-on == 'windows-latest' && matrix.python-version == 3.9
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}

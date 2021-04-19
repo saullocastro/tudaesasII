@@ -29,6 +29,11 @@ Ae4-ASM-511
 This Python module can be used by the students to assist them in the
 assignments.
 
+Documentation
+-------------
+
+The documentation is available on: https://saullocastro.github.io/tudaesasII/
+
 
 Citing this repository
 ----------------------

@@ -314,7 +314,7 @@ def uv(beam, u1, v1, beta1, u2, v2, beta2, n=100):
 def exx(beam, y, xi, u1, v1, beta1, u2, v2, beta2):
     """Calculate the axial strain exx for a Beam2D element
 
-    Strains are calculated assuming constant rot
+    Strains are calculated assuming a constant cross-section rotation as:
 
     exx = exx0 + y*kxx
 
