@@ -1,0 +1,292 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TU Delft, Aerospace Engineering, Stability and Analysis of Structures II &#8212; tudaesasII 2021.1 documentation</title>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">tudaesasII 2021.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">TU Delft, Aerospace Engineering, Stability and Analysis of Structures II <img class="math" src="_images/math/1cbc1aa83d92daa75a1068893362bd7b1cac7418.png" alt="tudaesasII"/></a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-tudaesasII">
+<span id="tu-delft-aerospace-engineering-stability-and-analysis-of-structures-ii-tudaesasii"></span><h1>TU Delft, Aerospace Engineering, Stability and Analysis of Structures II <img class="math" src="_images/math/1cbc1aa83d92daa75a1068893362bd7b1cac7418.png" alt="tudaesasII"/><a class="headerlink" href="#module-tudaesasII" title="Permalink to this headline">¶</a></h1>
+<p>TU Delft (TUD)
+Aerospace Engineering (AE)
+Aerospace Structures and Computational Mechanics (ASCM)
+Stability and Analysis of Structures II (SASII)
+Ae4-ASM-511</p>
+<p>tudaesasII is a Python module to assist the students who are willing to use
+Python</p>
+<p>Author: Saullo G. P. Castro</p>
+<span class="target" id="module-tudaesasII.beam2d"></span><dl class="py class">
+<dt id="tudaesasII.beam2d.Beam2D">
+<em class="property">class </em><code class="sig-prename descclassname">tudaesasII.beam2d.</code><code class="sig-name descname">Beam2D</code><a class="headerlink" href="#tudaesasII.beam2d.Beam2D" title="Permalink to this definition">¶</a></dt>
+<dd><p>Euler-Bernoulli beam element</p>
+<p>Formulated using Euler-Bernoulli beam element with two interpolation
+polynomials available:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Hermitian cubic</p></li>
+<li><p>Legendre</p></li>
+</ul>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>A1</strong></dt><dd></dd>
+<dt><strong>A2</strong></dt><dd></dd>
+<dt><strong>E</strong></dt><dd></dd>
+<dt><strong>Izz1</strong></dt><dd></dd>
+<dt><strong>Izz2</strong></dt><dd></dd>
+<dt><strong>interpolation</strong></dt><dd></dd>
+<dt><strong>le</strong></dt><dd></dd>
+<dt><strong>n1</strong></dt><dd></dd>
+<dt><strong>n2</strong></dt><dd></dd>
+<dt><strong>rho</strong></dt><dd></dd>
+<dt><strong>thetarad</strong></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="tudaesasII.beam2d.exx">
+<code class="sig-prename descclassname">tudaesasII.beam2d.</code><code class="sig-name descname">exx</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">beam</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">xi</span></em>, <em class="sig-param"><span class="n">u1</span></em>, <em class="sig-param"><span class="n">v1</span></em>, <em class="sig-param"><span class="n">beta1</span></em>, <em class="sig-param"><span class="n">u2</span></em>, <em class="sig-param"><span class="n">v2</span></em>, <em class="sig-param"><span class="n">beta2</span></em><span class="sig-paren">)</span><a class="headerlink" href="#tudaesasII.beam2d.exx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the axial strain exx for a Beam2D element</p>
+<p>Strains are calculated assuming constant rot
+exx = exx0 + y*kxx</p>
+<p><a href="#id5"><span class="problematic" id="id6">|exx0|</span></a> = <a href="#id1"><span class="problematic" id="id2">|</span></a>BL||u1, v1, beta1, u2, v2, beta2|^T
+<a href="#id3"><span class="problematic" id="id4">|</span></a>kxx |</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>beam</strong><span class="classifier">Beam2D</span></dt><dd><p>The Beam2D finite element</p>
+</dd>
+<dt><strong>y</strong><span class="classifier">float</span></dt><dd><p>Distance from the neutral axis</p>
+</dd>
+<dt><strong>xi</strong><span class="classifier">float</span></dt><dd><p>Natural coordinate along beam axis</p>
+</dd>
+<dt><strong>u1, v1, beta1, u2, v2, beta2</strong><span class="classifier">float or array-like</span></dt><dd><p>Nodal displacements and rotations in global coordinates</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>exx</strong><span class="classifier">float</span></dt><dd><p>The calculated axial strain</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="tudaesasII.beam2d.update_K">
+<code class="sig-prename descclassname">tudaesasII.beam2d.</code><code class="sig-name descname">update_K</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">beam</span></em>, <em class="sig-param"><span class="n">nid_pos</span></em>, <em class="sig-param"><span class="n">ncoords</span></em>, <em class="sig-param"><span class="n">K</span></em><span class="sig-paren">)</span><a class="headerlink" href="#tudaesasII.beam2d.update_K" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update global K with beam element</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="tudaesasII.beam2d.update_M">
+<code class="sig-prename descclassname">tudaesasII.beam2d.</code><code class="sig-name descname">update_M</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">beam</span></em>, <em class="sig-param"><span class="n">nid_pos</span></em>, <em class="sig-param"><span class="n">M</span></em>, <em class="sig-param"><span class="n">lumped</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#tudaesasII.beam2d.update_M" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update a global M with a beam element</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="tudaesasII.beam2d.uv">
+<code class="sig-prename descclassname">tudaesasII.beam2d.</code><code class="sig-name descname">uv</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">beam</span></em>, <em class="sig-param"><span class="n">u1</span></em>, <em class="sig-param"><span class="n">v1</span></em>, <em class="sig-param"><span class="n">beta1</span></em>, <em class="sig-param"><span class="n">u2</span></em>, <em class="sig-param"><span class="n">v2</span></em>, <em class="sig-param"><span class="n">beta2</span></em>, <em class="sig-param"><span class="n">n</span><span class="o">=</span><span class="default_value">100</span></em><span class="sig-paren">)</span><a class="headerlink" href="#tudaesasII.beam2d.uv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate u and v for a Beam2D</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>beam</strong><span class="classifier">Beam2D</span></dt><dd><p>The Beam2D finite element</p>
+</dd>
+<dt><strong>u1, v1, beta1, u2, v2, beta2</strong><span class="classifier">float or array-like</span></dt><dd><p>Nodal displacements and rotations</p>
+</dd>
+<dt><strong>n</strong><span class="classifier">int</span></dt><dd><p>Number of points where the axial strain should be calculated within the
+beam element</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>uv</strong><span class="classifier">(2, :, n) array-like</span></dt><dd><p>Displacements <img class="math" src="_images/math/9b444cf6329a14140aee8ff5a06ff30772cc1c2f.png" alt="u"/> and <img class="math" src="_images/math/78558cda22cd6b07b303234460af8830485aea77.png" alt="uv"/>  at all <img class="math" src="_images/math/5a939c5280da7202ca4531f175a7780ad5e1f80a.png" alt="n"/> points. The second array
+dimension depends on the dimension of the nodal displacements and
+rotations</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<span class="target" id="module-tudaesasII.quad4r"></span><dl class="py class">
+<dt id="tudaesasII.quad4r.Quad4R">
+<em class="property">class </em><code class="sig-prename descclassname">tudaesasII.quad4r.</code><code class="sig-name descname">Quad4R</code><a class="headerlink" href="#tudaesasII.quad4r.Quad4R" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reissner-Mindlin plate element with reduced integration</p>
+<p>Formulated based on the first-order shear deformation theory for plates</p>
+<p>Reduced integration is achieved by having only 1 integration point at the
+center, while integrating the stiffness matrix. This removes shear locking.</p>
+<p>An artificial hour-glass stiffness is used, according to Brockman 1987</p>
+<p><a class="reference external" href="https://onlinelibrary.wiley.com/doi/pdf/10.1002/nme.1620241208">https://onlinelibrary.wiley.com/doi/pdf/10.1002/nme.1620241208</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>ABDE</strong></dt><dd></dd>
+<dt><strong>h</strong></dt><dd></dd>
+<dt><strong>n1</strong></dt><dd></dd>
+<dt><strong>n2</strong></dt><dd></dd>
+<dt><strong>n3</strong></dt><dd></dd>
+<dt><strong>n4</strong></dt><dd></dd>
+<dt><strong>rho</strong></dt><dd></dd>
+<dt><strong>scf13</strong></dt><dd></dd>
+<dt><strong>scf23</strong></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="tudaesasII.quad4r.update_K">
+<code class="sig-prename descclassname">tudaesasII.quad4r.</code><code class="sig-name descname">update_K</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">quad</span></em>, <em class="sig-param"><span class="n">nid_pos</span></em>, <em class="sig-param"><span class="n">ncoords</span></em>, <em class="sig-param"><span class="n">K</span></em><span class="sig-paren">)</span><a class="headerlink" href="#tudaesasII.quad4r.update_K" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update global K with Ke from a quad element</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="tudaesasII.quad4r.update_KA">
+<code class="sig-prename descclassname">tudaesasII.quad4r.</code><code class="sig-name descname">update_KA</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">quad</span></em>, <em class="sig-param"><span class="n">nid_pos</span></em>, <em class="sig-param"><span class="n">ncoords</span></em>, <em class="sig-param"><span class="n">KA</span></em><span class="sig-paren">)</span><a class="headerlink" href="#tudaesasII.quad4r.update_KA" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update global KA with KAe from a quad element</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="tudaesasII.quad4r.update_M">
+<code class="sig-prename descclassname">tudaesasII.quad4r.</code><code class="sig-name descname">update_M</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">quad</span></em>, <em class="sig-param"><span class="n">nid_pos</span></em>, <em class="sig-param"><span class="n">ncoords</span></em>, <em class="sig-param"><span class="n">M</span></em>, <em class="sig-param"><span class="n">lumped</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#tudaesasII.quad4r.update_M" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update global M with Me from a quad element</p>
+</dd></dl>
+
+<span class="target" id="module-tudaesasII.tria3planestrain"></span><dl class="py function">
+<dt id="tudaesasII.tria3planestrain.update_K_M">
+<code class="sig-prename descclassname">tudaesasII.tria3planestrain.</code><code class="sig-name descname">update_K_M</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">tria</span></em>, <em class="sig-param"><span class="n">nid_pos</span></em>, <em class="sig-param"><span class="n">ncoords</span></em>, <em class="sig-param"><span class="n">K</span></em>, <em class="sig-param"><span class="n">M</span></em>, <em class="sig-param"><span class="n">lumped</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#tudaesasII.tria3planestrain.update_K_M" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update a global stiffness matrix K and mass matrix M</p>
+</dd></dl>
+
+<div class="section" id="license">
+<h2>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Copyright</span> <span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="mi">2019</span><span class="o">-</span><span class="mi">2021</span><span class="p">,</span> <span class="n">Saullo</span> <span class="n">G</span><span class="o">.</span> <span class="n">P</span><span class="o">.</span> <span class="n">Castro</span> <span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">G</span><span class="o">.</span><span class="n">P</span><span class="o">.</span><span class="n">Castro</span><span class="nd">@tudelft</span><span class="o">.</span><span class="n">nl</span><span class="p">)</span>
+<span class="n">All</span> <span class="n">rights</span> <span class="n">reserved</span><span class="o">.</span>
+
+<span class="n">Redistribution</span> <span class="ow">and</span> <span class="n">use</span> <span class="ow">in</span> <span class="n">source</span> <span class="ow">and</span> <span class="n">binary</span> <span class="n">forms</span><span class="p">,</span> <span class="k">with</span> <span class="ow">or</span> <span class="n">without</span> <span class="n">modification</span><span class="p">,</span>
+<span class="n">are</span> <span class="n">permitted</span> <span class="n">provided</span> <span class="n">that</span> <span class="n">the</span> <span class="n">following</span> <span class="n">conditions</span> <span class="n">are</span> <span class="n">met</span><span class="p">:</span>
+
+  <span class="n">Redistributions</span> <span class="n">of</span> <span class="n">source</span> <span class="n">code</span> <span class="n">must</span> <span class="n">retain</span> <span class="n">the</span> <span class="n">above</span> <span class="n">copyright</span> <span class="n">notice</span><span class="p">,</span> <span class="n">this</span>
+  <span class="nb">list</span> <span class="n">of</span> <span class="n">conditions</span> <span class="ow">and</span> <span class="n">the</span> <span class="n">following</span> <span class="n">disclaimer</span><span class="o">.</span>
+
+  <span class="n">Redistributions</span> <span class="ow">in</span> <span class="n">binary</span> <span class="n">form</span> <span class="n">must</span> <span class="n">reproduce</span> <span class="n">the</span> <span class="n">above</span> <span class="n">copyright</span> <span class="n">notice</span><span class="p">,</span> <span class="n">this</span>
+  <span class="nb">list</span> <span class="n">of</span> <span class="n">conditions</span> <span class="ow">and</span> <span class="n">the</span> <span class="n">following</span> <span class="n">disclaimer</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">documentation</span> <span class="ow">and</span><span class="o">/</span><span class="ow">or</span>
+  <span class="n">other</span> <span class="n">materials</span> <span class="n">provided</span>
+  
+<span class="n">THIS</span> <span class="n">SOFTWARE</span> <span class="n">IS</span> <span class="n">PROVIDED</span> <span class="n">BY</span> <span class="n">THE</span> <span class="n">COPYRIGHT</span> <span class="n">HOLDERS</span> <span class="n">AND</span> <span class="n">CONTRIBUTORS</span> <span class="s2">&quot;AS IS&quot;</span> <span class="n">AND</span>
+<span class="n">ANY</span> <span class="n">EXPRESS</span> <span class="n">OR</span> <span class="n">IMPLIED</span> <span class="n">WARRANTIES</span><span class="p">,</span> <span class="n">INCLUDING</span><span class="p">,</span> <span class="n">BUT</span> <span class="n">NOT</span> <span class="n">LIMITED</span> <span class="n">TO</span><span class="p">,</span> <span class="n">THE</span> <span class="n">IMPLIED</span>
+<span class="n">WARRANTIES</span> <span class="n">OF</span> <span class="n">MERCHANTABILITY</span> <span class="n">AND</span> <span class="n">FITNESS</span> <span class="n">FOR</span> <span class="n">A</span> <span class="n">PARTICULAR</span> <span class="n">PURPOSE</span> <span class="n">ARE</span>
+<span class="n">DISCLAIMED</span><span class="o">.</span> <span class="n">IN</span> <span class="n">NO</span> <span class="n">EVENT</span> <span class="n">SHALL</span> <span class="n">THE</span> <span class="n">COPYRIGHT</span> <span class="n">HOLDER</span> <span class="n">OR</span> <span class="n">CONTRIBUTORS</span> <span class="n">BE</span> <span class="n">LIABLE</span> <span class="n">FOR</span>
+<span class="n">ANY</span> <span class="n">DIRECT</span><span class="p">,</span> <span class="n">INDIRECT</span><span class="p">,</span> <span class="n">INCIDENTAL</span><span class="p">,</span> <span class="n">SPECIAL</span><span class="p">,</span> <span class="n">EXEMPLARY</span><span class="p">,</span> <span class="n">OR</span> <span class="n">CONSEQUENTIAL</span> <span class="n">DAMAGES</span>
+<span class="p">(</span><span class="n">INCLUDING</span><span class="p">,</span> <span class="n">BUT</span> <span class="n">NOT</span> <span class="n">LIMITED</span> <span class="n">TO</span><span class="p">,</span> <span class="n">PROCUREMENT</span> <span class="n">OF</span> <span class="n">SUBSTITUTE</span> <span class="n">GOODS</span> <span class="n">OR</span> <span class="n">SERVICES</span><span class="p">;</span>
+<span class="n">LOSS</span> <span class="n">OF</span> <span class="n">USE</span><span class="p">,</span> <span class="n">DATA</span><span class="p">,</span> <span class="n">OR</span> <span class="n">PROFITS</span><span class="p">;</span> <span class="n">OR</span> <span class="n">BUSINESS</span> <span class="n">INTERRUPTION</span><span class="p">)</span> <span class="n">HOWEVER</span> <span class="n">CAUSED</span> <span class="n">AND</span> <span class="n">ON</span>
+<span class="n">ANY</span> <span class="n">THEORY</span> <span class="n">OF</span> <span class="n">LIABILITY</span><span class="p">,</span> <span class="n">WHETHER</span> <span class="n">IN</span> <span class="n">CONTRACT</span><span class="p">,</span> <span class="n">STRICT</span> <span class="n">LIABILITY</span><span class="p">,</span> <span class="n">OR</span> <span class="n">TORT</span>
+<span class="p">(</span><span class="n">INCLUDING</span> <span class="n">NEGLIGENCE</span> <span class="n">OR</span> <span class="n">OTHERWISE</span><span class="p">)</span> <span class="n">ARISING</span> <span class="n">IN</span> <span class="n">ANY</span> <span class="n">WAY</span> <span class="n">OUT</span> <span class="n">OF</span> <span class="n">THE</span> <span class="n">USE</span> <span class="n">OF</span> <span class="n">THIS</span>
+<span class="n">SOFTWARE</span><span class="p">,</span> <span class="n">EVEN</span> <span class="n">IF</span> <span class="n">ADVISED</span> <span class="n">OF</span> <span class="n">THE</span> <span class="n">POSSIBILITY</span> <span class="n">OF</span> <span class="n">SUCH</span> <span class="n">DAMAGE</span><span class="o">.</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">TU Delft, Aerospace Engineering, Stability and Analysis of Structures II <img class="math" src="_images/math/1cbc1aa83d92daa75a1068893362bd7b1cac7418.png" alt="tudaesasII"/></a><ul>
+<li><a class="reference internal" href="#license">License</a></li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">tudaesasII 2021.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">TU Delft, Aerospace Engineering, Stability and Analysis of Structures II <img class="math" src="_images/math/1cbc1aa83d92daa75a1068893362bd7b1cac7418.png" alt="tudaesasII"/></a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019-2021, Saullo G. P. Castro.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.4.3.
+    </div>
+  </body>
+</html>
