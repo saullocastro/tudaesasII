@@ -13,5 +13,16 @@ Python
 
 Author: Saullo G. P. Castro
 
+
+.. automodule:: tudaesasII.beam2d
+    :members:
+
+.. automodule:: tudaesasII.quad4r
+    :members:
+
+.. automodule:: tudaesasII.tria3planestrain
+    :members:
+
+
 """
 pass

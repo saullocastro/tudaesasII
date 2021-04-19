@@ -4,16 +4,6 @@ TU Delft, Aerospace Engineering, Stability and Analysis of Structures II `tudaes
 .. automodule:: tudaesasII
     :members:
 
-.. automodule:: tudaesasII.beam2d
-    :members:
-
-.. automodule:: tudaesasII.quad4r
-    :members:
-
-.. automodule:: tudaesasII.tria3planestrain
-    :members:
-
-
 
 License
 -------
