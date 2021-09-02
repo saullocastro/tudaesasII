@@ -190,18 +190,23 @@ BLkxx = Matrix([[0, 0, 0, N1x, 0,
                  0, 0, 0, N2x, 0,
                  0, 0, 0, N3x, 0,
                  0, 0, 0, N4x, 0]])
+#kyy = phiy,y = (dxi/dy)*phiy,xi + (deta/dy)*phiy,eta
 BLkyy = Matrix([[0, 0, 0, 0, N1y,
                  0, 0, 0, 0, N2y,
                  0, 0, 0, 0, N3y,
                  0, 0, 0, 0, N4y]])
+#kxy = phix,y + phiy,x = (dxi/dy)*phix,xi + (deta/dy)*phix,eta
+#                       +(dxi/dx)*phiy,xi + (deta/dx)*phiy,eta
 BLkxy = Matrix([[0, 0, 0, N1y, N1x,
                  0, 0, 0, N2y, N2x,
                  0, 0, 0, N3y, N3x,
                  0, 0, 0, N4y, N4x]])
+#gyz = phiy + w,y
 BLgyz = Matrix([[0, 0, N1y, 0, N1,
                  0, 0, N2y, 0, N2,
                  0, 0, N3y, 0, N3,
                  0, 0, N4y, 0, N4]])
+#gxz = phix + w,x
 BLgxz = Matrix([[0, 0, N1x, N1, 0,
                  0, 0, N2x, N2, 0,
                  0, 0, N3x, N3, 0,
