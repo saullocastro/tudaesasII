@@ -75,7 +75,7 @@ def test_nat_freq_plate(plot=False, mode=0):
     check = np.isclose(x, 0.) | np.isclose(x, a) | np.isclose(y, 0) | np.isclose(y, b)
     bk[2::DOF] = check
 
-    #eliminating all u,v displacements
+    # eliminating all u,v displacements
     bk[0::DOF] = True
     bk[1::DOF] = True
 
