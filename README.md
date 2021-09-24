@@ -26,8 +26,7 @@ Stability and Analysis of Structures II
 Ae4-ASM-511
 
 
-This Python module can be used by the students to assist them in the
-assignments.
+This Python module can be used by the students to assist in the course assignments.
 
 Documentation
 -------------
