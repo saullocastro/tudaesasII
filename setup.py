@@ -6,8 +6,8 @@ import subprocess
 from setuptools import setup, find_packages
 
 
-is_released = True
-version = '2021.6'
+is_released = False
+version = '2022.0'
 
 
 def git_version():
@@ -64,7 +64,7 @@ install_requires = [
         "numpy",
         "scipy >= 1.5.0",
         "structsolve",
-        "composites < 0.3.0",
+        "composites",
         ]
 
 #Trove classifiers
