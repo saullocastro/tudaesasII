@@ -3,7 +3,7 @@ sys.path.append('..')
 
 import numpy as np
 from scipy.linalg import eigh
-from composites.laminate import read_isotropic
+from composites import isotropic_plate
 
 from tudaesasII.quad4r import Quad4R, update_K, update_M, DOF
 
@@ -37,7 +37,7 @@ def test_nat_freq_plate(plot=False, mode=0):
     n3s = nids_mesh[1:, 1:].flatten()
     n4s = nids_mesh[:-1, 1:].flatten()
 
-    plate = read_isotropic(thickness=h, E=E, nu=nu, calc_scf=True)
+    plate = isotropic_plate(thickness=h, E=E, nu=nu, calc_scf=True)
 
     K = np.zeros((DOF*nx*ny, DOF*nx*ny))
     M = np.zeros((DOF*nx*ny, DOF*nx*ny))

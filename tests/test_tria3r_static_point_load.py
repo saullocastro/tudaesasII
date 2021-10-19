@@ -4,7 +4,7 @@ sys.path.append('..')
 import numpy as np
 from scipy.spatial import Delaunay
 from scipy.linalg import solve
-from composites.laminate import read_isotropic
+from composites import isotropic_plate
 
 from tudaesasII.tria3r import Tria3R, update_K, DOF
 
@@ -24,7 +24,7 @@ if True:
     E = 200e9
     nu = 0.3
 
-    plate = read_isotropic(thickness=h, E=E, nu=nu, calc_scf=True)
+    plate = isotropic_plate(thickness=h, E=E, nu=nu, calc_scf=True)
 
     xtmp = np.linspace(0, a, nx)
     ytmp = np.linspace(0, b, ny)
