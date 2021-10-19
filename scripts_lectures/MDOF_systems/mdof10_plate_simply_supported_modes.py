@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 import numpy as np
 from scipy.linalg import eigh
-from composites.laminate import read_isotropic
+from composites import isotropic_plate
 
 from tudaesasII.quad4r import Quad4R, update_K, update_M, DOF
 
@@ -37,7 +37,7 @@ n2s = nids_mesh[1:, :-1].flatten()
 n3s = nids_mesh[1:, 1:].flatten()
 n4s = nids_mesh[:-1, 1:].flatten()
 
-plate = read_isotropic(thickness=h, E=E, nu=nu, calc_scf=True)
+plate = isotropic_plate(thickness=h, E=E, nu=nu, calc_scf=True)
 
 K = np.zeros((DOF*nx*ny, DOF*nx*ny))
 M = np.zeros((DOF*nx*ny, DOF*nx*ny))
