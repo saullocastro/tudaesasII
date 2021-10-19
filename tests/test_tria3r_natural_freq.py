@@ -9,9 +9,7 @@ from composites import isotropic_plate
 from tudaesasII.tria3r import Tria3R, update_K, update_M, DOF
 
 
-#def test_nat_freq_plate(plot=False, mode=0):
-plot = False
-if True:
+def test_tria3r_natural_freq(plot=False, mode=0):
     nx = 9
     ny = 9
 
@@ -124,5 +122,5 @@ if True:
         #plt.show()
 
 
-#if __name__ == '__main__':
-    #test_nat_freq_plate(plot=True, mode=0)
+if __name__ == '__main__':
+    test_tria3r_natural_freq(plot=True, mode=0)
