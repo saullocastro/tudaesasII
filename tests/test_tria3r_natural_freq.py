@@ -4,14 +4,12 @@ sys.path.append('..')
 import numpy as np
 from scipy.spatial import Delaunay
 from scipy.linalg import eigh
-from composites.laminate import read_isotropic
+from composites import isotropic_plate
 
 from tudaesasII.tria3r import Tria3R, update_K, update_M, DOF
 
 
-#def test_nat_freq_plate(plot=False, mode=0):
-plot = False
-if True:
+def test_tria3r_natural_freq(plot=False, mode=0):
     nx = 9
     ny = 9
 
@@ -52,7 +50,7 @@ if True:
         plt.plot(ncoords[:, 0], ncoords[:, 1], 'o', ms=2)
         plt.show()
 
-    plate = read_isotropic(thickness=h, E=E, nu=nu, calc_scf=True)
+    plate = isotropic_plate(thickness=h, E=E, nu=nu, calc_scf=True)
     print('scf', plate.scf_k13, plate.scf_k23)
 
     K = np.zeros((DOF*nx*ny, DOF*nx*ny))
@@ -124,5 +122,5 @@ if True:
         #plt.show()
 
 
-#if __name__ == '__main__':
-    #test_nat_freq_plate(plot=True, mode=0)
+if __name__ == '__main__':
+    test_tria3r_natural_freq(plot=True, mode=0)

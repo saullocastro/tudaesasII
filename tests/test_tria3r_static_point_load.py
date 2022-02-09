@@ -4,16 +4,14 @@ sys.path.append('..')
 import numpy as np
 from scipy.spatial import Delaunay
 from scipy.linalg import solve
-from composites.laminate import read_isotropic
+from composites import isotropic_plate
 
 from tudaesasII.tria3r import Tria3R, update_K, DOF
 
 
-#def test_nat_freq_plate(plot=False, mode=0):
-plot = False
-if True:
-    nx = 9
-    ny = 9
+def test_tria3r_static_point_load(plot=False):
+    nx = 15
+    ny = 15
 
     # geometry
     a = 3
@@ -24,7 +22,7 @@ if True:
     E = 200e9
     nu = 0.3
 
-    plate = read_isotropic(thickness=h, E=E, nu=nu, calc_scf=True)
+    plate = isotropic_plate(thickness=h, E=E, nu=nu, calc_scf=True)
 
     xtmp = np.linspace(0, a, nx)
     ytmp = np.linspace(0, b, ny)
@@ -115,9 +113,11 @@ if True:
 
     # obtained with bfsplate2d element, nx=ny=29
     wmax_ref = 6.594931610258557e-05
-    print('w.max() ref', wmax_ref)
+    # obtained with mesh of 15 x 15
+    wmax_ref_tria3r = 7.969154104606162e-05
+    print('w.max() ref_tria3r', wmax_ref_tria3r)
     print('w.max()', w.max())
-    #assert np.isclose(wmax_ref, w.max(), rtol=0.02)
+    assert np.isclose(wmax_ref_tria3r, w.max())
     if plot:
         import matplotlib
         matplotlib.use('TkAgg')
@@ -129,5 +129,5 @@ if True:
         plt.show()
 
 
-#if __name__ == '__main__':
-    #test_nat_freq_plate(plot=True, mode=0)
+if __name__ == '__main__':
+    test_tria3r_static_point_load(plot=True)

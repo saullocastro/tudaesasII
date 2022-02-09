@@ -5,7 +5,7 @@ import numpy as np
 from numpy import isclose
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import eigs
-from composites.laminate import read_isotropic
+from composites import isotropic_plate
 
 from tudaesasII.quad4r import Quad4R, update_K, update_M, update_KA, DOF
 
@@ -53,7 +53,7 @@ def test_panel_flutter_plate(plot=False):
     n3s = nids_mesh[1:, 1:].flatten()
     n4s = nids_mesh[:-1, 1:].flatten()
 
-    plate = read_isotropic(thickness=h, E=E, nu=nu, calc_scf=True)
+    plate = isotropic_plate(thickness=h, E=E, nu=nu, calc_scf=True)
 
     K = np.zeros((DOF*nx*ny, DOF*nx*ny))
     M = np.zeros((DOF*nx*ny, DOF*nx*ny))
