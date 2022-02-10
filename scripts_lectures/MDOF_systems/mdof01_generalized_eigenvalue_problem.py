@@ -14,7 +14,7 @@ plot_result = True
 lumped = False
 
 # number of nodes along x
-nx = 100
+nx = 10
 
 # geometry
 length = 10
@@ -73,7 +73,8 @@ Muu = M[bu, :][:, bu]
 
 # solving
 # NOTE: extracting ALL eigenvectors
-eigvals, U = eigh(a=Kuu, b=Muu)
+num_modes = 5
+eigvals, U = eigh(a=Kuu, b=Muu, subset_by_index=(0, num_modes))
 wn = eigvals**0.5
 print('wn', wn[:5])
 
@@ -87,7 +88,7 @@ if plot_mesh:
 
 if plot_result:
     u = np.zeros(K.shape[0], dtype=float)
-    for mode in range(20):
+    for mode in range(num_modes):
         u[bu] = U[:, mode]
         scale = 10
         u1 = scale*u[0::DOF]
