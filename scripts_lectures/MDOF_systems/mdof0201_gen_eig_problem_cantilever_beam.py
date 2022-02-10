@@ -14,7 +14,7 @@ plot_result = True
 lumped = False
 
 # number of nodes along x
-nx = 10
+nx = 20
 
 # geometry
 length = 10
@@ -89,16 +89,14 @@ if plot_result:
     u = np.zeros(K.shape[0], dtype=float)
     for mode in range(num_modes):
         u[bu] = U[:, mode]
-        scale = 10
-        u1 = scale*u[0::DOF]
-        u2 = scale*u[1::DOF]
+        u1 = u[0::DOF]
+        u2 = u[1::DOF]
         plt.clf()
-        plt.ylim(-scale/10, scale/10)
         plt.title('mode %02d, $\omega_n$ %1.2f rad/s' % (mode+1, wn[mode]))
-        plt.gca().set_aspect('equal')
         mag = u2
         levels = np.linspace(mag.min(), mag.max(), 100)
         xplot = xmesh + u1
         yplot = ymesh + u2
         plt.plot(xplot, yplot)
+        plt.ylim(yplot.min(), yplot.max())
         plt.show()
