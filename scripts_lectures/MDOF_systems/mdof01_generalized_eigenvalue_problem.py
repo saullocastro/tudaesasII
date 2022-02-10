@@ -75,8 +75,8 @@ Muu = M[bu, :][:, bu]
 # NOTE: extracting ALL eigenvectors
 num_modes = 5
 eigvals, U = eigh(a=Kuu, b=Muu, subset_by_index=(0, num_modes))
-wn = eigvals**0.5
-print('wn', wn[:5])
+wn = np.sqrt(eigvals)
+print('wn', wn[:num_modes])
 
 print('omega1 ref', 1.875**2*np.sqrt(E*Izz/(rho*A*length**4)))
 print('omega2 ref', 4.694**2*np.sqrt(E*Izz/(rho*A*length**4)))
