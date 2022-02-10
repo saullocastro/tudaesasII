@@ -12,11 +12,9 @@ from tudaesasII.tria3planestress import Tria3PlaneStressIso, update_K_M, DOF
 plot_mesh = False
 plot_result = True
 
-lumped = False
-
 # number of nodes in each direction
-nx = 50
-ny = 10
+nx = 60
+ny = 15
 
 # geometry
 length = 10
@@ -69,12 +67,8 @@ for s in d.simplices:
     elem.nu = nu
     elem.h = h
     elem.rho = rho
-    update_K_M(elem, nid_pos, ncoords, K, M, lumped=lumped)
+    update_K_M(elem, nid_pos, ncoords, K, M)
     elems.append(elem)
-
-if lumped:
-    assert np.count_nonzero(M-np.diag(np.diagonal(M))) == 0
-
 
 # applying boundary conditions
 bk = np.zeros(K.shape[0], dtype=bool) # defining known DOFs
@@ -88,10 +82,10 @@ Kuu = K[bu, :][:, bu]
 Muu = M[bu, :][:, bu]
 
 # solving
-# NOTE: extracting ALL eigenvectors
-eigvals, U = eigh(a=Kuu, b=Muu)
-wn = eigvals**0.5
-print('wn', wn[:5])
+num_modes = 40
+eigvals, U = eigh(a=Kuu, b=Muu, subset_by_index=(0, num_modes))
+wn = np.sqrt(eigvals)
+print('wn', wn[:num_modes])
 
 print('omega1 theoretical', 1.875**2*np.sqrt(E*I/(rho*A*length**4)))
 print('omega2 theoretical', 4.694**2*np.sqrt(E*I/(rho*A*length**4)))
@@ -99,13 +93,13 @@ print('omega3 theoretical', 7.855**2*np.sqrt(E*I/(rho*A*length**4)))
 
 if plot_result:
     u = np.zeros(K.shape[0], dtype=float)
-    for mode in range(20):
+    for mode in range(num_modes):
         u[bu] = U[:, mode]
         scale = 30
         u1 = scale*u[0::DOF].reshape(nx, ny).T
         u2 = scale*u[1::DOF].reshape(nx, ny).T
         plt.clf()
-        plt.title('mode %02d, $\omega_n$ %1.2f rad/s' % (mode+1, wn[mode]))
+        plt.title('mode %02d, $\omega_n$ %1.2f rad/s (%1.2f Hz)' % (mode+1, wn[mode], wn[mode]/(2*np.pi)))
         plt.gca().set_aspect('equal')
         mag = u2
         levels = np.linspace(mag.min(), mag.max(), 100)
@@ -113,7 +107,8 @@ if plot_result:
         yplot = ymesh + u2
         plt.contourf(xplot, yplot, mag, levels=levels, cmap=cm.jet)
         coords_plot = np.vstack((xplot.T.flatten(), yplot.T.flatten())).T
-        plt.triplot(coords_plot[:, 0], coords_plot[:, 1], d.simplices, lw=0.5)
+        plt.triplot(coords_plot[:, 0], coords_plot[:, 1], d.simplices, lw=0.3)
         #plt.colorbar()
         plt.show()
-        #plt.savefig('plot_truss_mode_%02d.png' % (mode+1), bbox_inches='tight')
+        #plt.savefig('plot_beam_mode_%02d.png' % (mode+1), bbox_inches='tight')
+
