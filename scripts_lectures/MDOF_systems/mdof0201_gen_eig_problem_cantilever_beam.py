@@ -72,7 +72,6 @@ Kuu = K[bu, :][:, bu]
 Muu = M[bu, :][:, bu]
 
 # solving
-# NOTE: extracting ALL eigenvectors
 num_modes = 5
 eigvals, U = eigh(a=Kuu, b=Muu, subset_by_index=(0, num_modes))
 wn = np.sqrt(eigvals)
