@@ -6,6 +6,8 @@ from scipy.linalg import eigh, cholesky
 
 from tudaesasII.beam2d import Beam2D, update_K, update_M, DOF
 
+
+lumped = False
 # number of nodes along x
 nx = 100
 
@@ -34,7 +36,7 @@ K = np.zeros((DOF*nx, DOF*nx))
 M = np.zeros((DOF*nx, DOF*nx))
 
 elems = []
-# creating beam elements
+# creating and assemblying beam elements
 nids = list(nid_pos.keys())
 for n1, n2 in zip(nids[:-1], nids[1:]):
     elem = Beam2D()
@@ -46,7 +48,7 @@ for n1, n2 in zip(nids[:-1], nids[1:]):
     elem.rho = rho
     elem.interpolation = 'legendre'
     update_K(elem, nid_pos, ncoords, K)
-    update_M(elem, nid_pos, M)
+    update_M(elem, nid_pos, M, lumped=lumped)
     elems.append(elem)
 
 # applying boundary conditions
@@ -62,23 +64,31 @@ Kuu = K[bu, :][:, bu]
 Muu = M[bu, :][:, bu]
 
 # solving generalized eigenvalue problem
-# NOTE: extracting ALL eigenvectors
-eigvals_g, U = eigh(a=Kuu, b=Muu)
-wn_g = eigvals_g**0.5
+num_modes = 3
+eigvals_g, U = eigh(a=Kuu, b=Muu, subset_by_index=[0, num_modes-1])
+wn_g = np.sqrt(eigvals_g)
 
 # solving symmetric eigenvalue problem
 L = cholesky(Muu, lower=True)
 Linv = np.linalg.inv(L)
 Kuutilde = (Linv @ Kuu) @ Linv.T
 
+if lumped:
+    L_lumped = np.sqrt(Muu)
+    Linv_lumped = np.zeros_like(L_lumped)
+    Linv_lumped[np.diag_indices_from(Linv_lumped)] = 1/L_lumped.diagonal()
+
+    assert np.allclose(L_lumped, L)
+    assert np.allclose(Linv_lumped, Linv)
+
 #NOTE asserting that Kuutilde is symmetric
 assert np.allclose(Kuutilde, Kuutilde.T)
 
-eigvals_s, V = eigh(Kuutilde)
+eigvals_s, V = eigh(Kuutilde, subset_by_index=[0, num_modes-1])
 wn_s = eigvals_s**0.5
 
-print('eigenvalues (wn_generalized**2)', wn_g[:3]**2)
-print('eigenvalues (wn_symmetric**2)  ', wn_s[:3]**2)
+print('eigenvalues (wn_generalized**2)', wn_g[:num_modes]**2)
+print('eigenvalues (wn_symmetric**2)  ', wn_s[:num_modes]**2)
 print()
 print('checks for U')
 for I, J in [[0, 0], [0, 1], [0, 2], [1, 1], [1, 2], [2, 2]]:
@@ -92,4 +102,3 @@ for I, J in [[0, 0], [0, 1], [0, 2], [1, 1], [1, 2], [2, 2]]:
     print('I =', I, 'J =', J,
           '\tVI . VJ %1.2f' % (V[:, I] @ V[:, J]),
           '\tVI K_tilde VJ %1.2f' % (V[:, I] @ Kuutilde @ V[:, J]))
-
