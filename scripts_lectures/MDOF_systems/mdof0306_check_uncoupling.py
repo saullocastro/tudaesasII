@@ -66,7 +66,7 @@ p = 4
 # solving generalized eigenvalue problem
 # NOTE: extracting only p eigenvectors
 eigvals_g, U = eigh(a=Kuu, b=Muu, subset_by_index=(0, p-1))
-wn_g = eigvals_g**0.5
+wn_g = np.sqrt(eigvals_g)
 
 # solving symmetric eigenvalue problem
 L = cholesky(Muu, lower=True)
