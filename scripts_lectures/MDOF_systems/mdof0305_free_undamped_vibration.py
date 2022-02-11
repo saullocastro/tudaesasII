@@ -10,6 +10,7 @@ from scipy.linalg import eigh, cholesky, solve
 from tudaesasII.beam2d import Beam2D, update_K, update_M, DOF
 
 case = 2
+p = num_modes = 5
 
 # number of nodes along x
 nx = 11 #NOTE keep nx an odd number to have a node in the middle
@@ -117,9 +118,9 @@ L = cholesky(Muu, lower=True)
 Linv = np.linalg.inv(L)
 Kuutilde = (Linv @ Kuu) @ Linv.T
 
-num_modes = 10
 eigvals, V = eigh(Kuutilde, subset_by_index=(0, num_modes-1))
-wn = eigvals**0.5
+wn = np.sqrt(eigvals)
+print('wn [rad/s] =', wn)
 
 u0u = u0[bu]
 v0u = np.zeros_like(u0u)
@@ -146,7 +147,8 @@ def ufunc(t):
 
 # to plot
 num = 1000
-t = np.linspace(0, 3, num)
+cycles = 20
+t = np.linspace(0, cycles/(wn[0]/(2*np.pi)), num)
 uu = ufunc(t)
 u_xt = np.zeros((t.shape[0], K.shape[0]))
 u_xt[:, bu] = uu
@@ -174,7 +176,7 @@ for i, ti in enumerate(t):
     axes[0].set_xticks([])
     axes[0].set_yticks([])
     axes[0].set_xlim(0, 1.02*length)
-    axes[0].set_ylim(-1, 1)
+    axes[0].set_ylim(-0.1, 0.1)
     axes[0].set_title('t = %1.3f' % ti)
     xplot = xmesh + u1
     yplot = ymesh + u2
