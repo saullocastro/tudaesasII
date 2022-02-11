@@ -34,7 +34,7 @@ K = np.zeros((DOF*nx, DOF*nx))
 M = np.zeros((DOF*nx, DOF*nx))
 
 elems = []
-# creating beam elements
+# creating and assemblying beam elements
 nids = list(nid_pos.keys())
 for n1, n2 in zip(nids[:-1], nids[1:]):
     elem = Beam2D()
@@ -63,13 +63,16 @@ Muu = M[bu, :][:, bu]
 
 # solving
 # NOTE: extracting ALL eigenvectors
-eigvals, U = eigh(a=Kuu, b=Muu)
-wn = eigvals**0.5
+num_modes = 3
+eigvals, U = eigh(a=Kuu, b=Muu, subset_by_index=[0, num_modes])
+wn = np.sqrt(eigvals)
 
-print('eigenvalues (wn**2)', wn[:3]**2)
+print()
+print('natural frequencies [rad/s] (wn)', wn[:num_modes])
+print('wn**2', wn[:num_modes]**2)
+print()
 for I, J in [[0, 0], [0, 1], [0, 2], [1, 1], [1, 2], [2, 2]]:
     print('I =', I, 'J =', J,
           '\tUI . UJ %1.2f' % (U[:, I] @ U[:, J]),
           '\tUI M UJ %1.2f' % (U[:, I] @ Muu @ U[:, J]),
           '\tUI K UJ %1.2f' % (U[:, I] @ Kuu @ U[:, J]))
-
