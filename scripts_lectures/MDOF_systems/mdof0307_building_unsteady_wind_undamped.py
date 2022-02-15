@@ -107,7 +107,7 @@ for i in range(5):
     plt.clf()
     plt.title(r'$\omega_n = %1.2f\ Hz$' % omegan[i])
     plt.plot(x+modes[0::DOF, i], y+modes[1::DOF, i])
-    plt.savefig('mdof06_plot_eigenmode_%02d.png' % i, bbox_inches='tight')
+    plt.savefig('mdof0307_plot_eigenmode_%02d.png' % i, bbox_inches='tight')
 
 # performing dynamic analysis in time domain
 tmax = 8
