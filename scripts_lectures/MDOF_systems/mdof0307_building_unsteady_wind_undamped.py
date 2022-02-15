@@ -121,16 +121,16 @@ t = np.linspace(0, tmax, time_steps)
 # gravity acceleration
 g = -9.81 #m/s^2
 # acceleration vector
-d2udt2 = np.zeros(DOF*n)
-d2udt2[1::DOF] = g
+uddot = np.zeros(DOF*n)
+uddot[1::DOF] = g
 # acceleration vector at known DOFs
-d2ukgdt2 = d2udt2[bk]
+uddotk = uddot[bk]
 # acceleration vector at unknown DOFs
-d2uugdt2 = d2udt2[bu]
+uddotug = uddot[bu]
 
-# force due to gravity (explained Assignment documents)
+# force due to gravity
 fg = np.zeros(DOF*n)
-fg[bu] = Muu @ d2uugdt2 + Muk @ d2ukgdt2
+fg[bu] = Muu @ uddotug + Muk @ uddotk
 
 # force due to wind
 # - using dynamic pressure q = rhoair*wind_speed**2/2
@@ -160,37 +160,43 @@ for yi, vx in zip(y[::n//10], wind_speed[::n//10]):
     plt.arrow(0, yi, vx, 0, width=0.3, length_includes_head=True)
 plt.show()
 
-# - oscillatory wind
+# oscillatory wind parameters
 wind_area = y*side
 wind_freq = np.pi # rad/s
 
-# homogeneous solution using initial conditions
+# initial conditions in physical space
 u0 = np.zeros(DOF*n)
-v0 = np.zeros(DOF*n)
+udot0 = np.zeros(DOF*n)
+# initial conditions in modal space
 r0 = P.T @ L.T @ u0[bu]
-rdot0 = P.T @ L.T @ v0[bu]
-c1 = r0
-c2 = rdot0/omegan
+rdot0 = P.T @ L.T @ udot0[bu]
 
 # dynamic analysis
 # NOTE this can be further vectorized using NumPy bradcasting, but I kept this
 # loop in order to make the code more understandable
 f = np.zeros_like(fg)
 u = np.zeros((DOF*n, len(t)))
-rpc = np.zeros((p, len(t)))
+rp = np.zeros((p, len(t)))
 
+#NOTE adding new np.array axis to vectorize calculations
 on = omegan[:, None]
 
-# convolution integral: general load as a sequence of impulse loads
-
 def r_t(t, t1, t2, on, fmodaln):
+    """SDOF solution for an undamped single impulse
+    """
     tn = (t1 + t2)/2
     dt = t2 - t1
-    # undamped function
     H = np.heaviside(t - tn, 1.)
     h = 1/on*np.sin(on*(t - tn))*H
     return fmodaln*dt*h
 
+# homogeneous solution an undamped SDOF system
+c1 = r0
+c2 = rdot0/omegan
+rh = c1[:, None]*np.sin(on*t) + c2[:, None]*np.cos(on*t)
+
+# particular solution
+# discrete approximation of Duhamel's convolution integral
 for t1, t2 in zip(t[:-1], t[1:]):
     tn = (t1 + t2)/2
     f[:] = fg #gravitational forces
@@ -201,11 +207,10 @@ for t1, t2 in zip(t[:-1], t[1:]):
     # calculating modal forces
     fmodaln = (P.T @ Linv @ f[bu])[:, None]
     # convolution
-    rpc += r_t(t, t1, t2, on, fmodaln)
+    rp += r_t(t, t1, t2, on, fmodaln)
 
-# superposition with homogeneous solution (using initial conditions)
-rh = c1[:, None]*np.sin(on*t) + c2[:, None]*np.cos(on*t)
-r = rh + rpc
+# superposition between homogeneous and particular solutions
+r = rh + rp
 
 # transforming from r-space to displacement
 u[bu] = Linv.T @ P @ r

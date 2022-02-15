@@ -121,16 +121,16 @@ t = np.linspace(0, tmax, time_steps)
 # gravity acceleration
 g = -9.81 #m/s^2
 # acceleration vector
-d2udt2 = np.zeros(DOF*n)
-d2udt2[1::DOF] = g
+uddot = np.zeros(DOF*n)
+uddot[1::DOF] = g
 # acceleration vector at known DOFs
-d2ukgdt2 = d2udt2[bk]
+uddotk = uddot[bk]
 # acceleration vector at unknown DOFs
-d2uugdt2 = d2udt2[bu]
+uddotug = uddot[bu]
 
-# force due to gravity (explained Assignment documents)
+# force due to gravity
 fg = np.zeros(DOF*n)
-fg[bu] = Muu @ d2uugdt2 + Muk @ d2ukgdt2
+fg[bu] = Muu @ uddotug + Muk @ uddotk
 
 # force due to wind
 # - using dynamic pressure q = rhoair*wind_speed**2/2
@@ -160,29 +160,26 @@ for yi, vx in zip(y[::n//10], wind_speed[::n//10]):
     plt.arrow(0, yi, vx, 0, width=0.3, length_includes_head=True)
 plt.show()
 
-# - oscillatory wind
+# oscillatory wind parameters
 wind_area = y*side
 wind_freq = np.pi # rad/s
 
 # modal damping, using 2% for all modes
-zeta = np.array([0.02]*p)
+zeta = 0.02
 
 on = omegan
 od = on*np.sqrt(1 - zeta**2)
 
-# homogeneous solution for free damped 1DOF system using initial conditions
+# initial conditions in physical space
 u0 = np.zeros(DOF*n)
-v0 = np.zeros(DOF*n)
+udot0 = np.zeros(DOF*n)
+# initial conditions in modal space
 r0 = P.T @ L.T @ u0[bu]
-rdot0 = P.T @ L.T @ v0[bu]
+rdot0 = P.T @ L.T @ udot0[bu]
 
+#NOTE adding new np.array axis to vectorize calculations
 on = on[:, None]
 od = od[:, None]
-zeta = zeta[:, None]
-
-# homogeneous solution
-rh = np.exp(-zeta*on*t)*(r0[:, None]*np.cos(od*t) +
-    (rdot0[:, None] + zeta*on*r0[:, None])*np.sin(od*t)/od)
 
 # dynamic analysis
 # NOTE this can be further vectorized using NumPy bradcasting, but I kept this
@@ -191,17 +188,21 @@ f = np.zeros_like(fg)
 u = np.zeros((DOF*n, len(t)))
 rpc = np.zeros((p, len(t)))
 
-# convolution integral: general load as a sequence of impulse loads
 def r_t(t, t1, t2, on, zeta, od, fmodaln):
+    """SDOF solution for a damped single impulse
+    """
     tn = (t1 + t2)/2
     dt = t2 - t1
-    # damped function
     H = np.heaviside(t - tn, 1.)
-    h = np.zeros((fmodaln.shape[0], t.shape[0]))
-    check = t >= tn
-    h[:, check] = 1/od*np.exp(-zeta*on*(t[check] - tn))*np.sin(od*(t[check] - tn))*H[check]
+    h = 1/od*np.exp(-zeta*on*(t - tn))*np.sin(od*(t - tn))*H
     return fmodaln*dt*h
 
+# homogeneous solution a damped SDOF system
+rh = np.exp(-zeta*on*t)*(r0[:, None]*np.cos(od*t) +
+    (rdot0[:, None] + zeta*on*r0[:, None])*np.sin(od*t)/od)
+
+# particular solution
+# discrete approximation of Duhamel's convolution integral
 for t1, t2 in zip(t[:-1], t[1:]):
     tn = (t1 + t2)/2
     f[:] = fg #gravitational forces
@@ -214,7 +215,7 @@ for t1, t2 in zip(t[:-1], t[1:]):
     # convolution
     rpc += r_t(t, t1, t2, on, zeta, od, fmodaln)
 
-# superposition between homogeneous solution and forced solution
+# superposition between homogeneous and particular solutions
 r = rh + rpc
 
 # transforming from r-space to displacement
