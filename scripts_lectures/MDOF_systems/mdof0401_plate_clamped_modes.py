@@ -64,7 +64,7 @@ for n1, n2, n3, n4 in zip(n1s, n2s, n3s, n4s):
     quad.h = h
     quad.ABDE = plate.ABDE
     update_K(quad, nid_pos, ncoords, K)
-    update_M(quad, nid_pos, ncoords, M)
+    update_M(quad, nid_pos, ncoords, M, lumped=False)
     quads.append(quad)
 
 print('elements created')
