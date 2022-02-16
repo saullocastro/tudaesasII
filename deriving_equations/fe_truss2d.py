@@ -1,8 +1,8 @@
 import numpy as np
 import sympy
-from sympy import Matrix
+from sympy import Matrix, integrate
 
-DOF = 2
+DOF = 3
 
 def name_ind(i):
     if i >=0 and i < DOF:
@@ -14,37 +14,49 @@ def name_ind(i):
     else:
         raise
 
-sympy.var('A, le, xi')
+sympy.var('Izz, A, le, xi')
 sympy.var('rho, E, nu, c, s')
 
 N1 = (1-xi)/2
 N2 = (1+xi)/2
 
-Nu = Matrix([[N1, 0, N2, 0]])
-Nv = Matrix([[0, N1, 0, N2]])
+Nu = Matrix([[N1, 0, 0, N2, 0, 0]])
+Nv = Matrix([[0, N1, 0, 0, N2, 0]])
+Nbeta = Matrix([[0, 0, N1, 0, 0, N2]])
 
 # Constitutive linear stiffness matrix
 #c
-R = Matrix([[c, s, 0, 0],
-            [-s, c, 0, 0],
-            [0, 0, c, s],
-            [0, 0, -s, c]])
+R = Matrix([[c, s, 0, 0, 0, 0],
+            [-s, c, 0, 0, 0, 0],
+            [ 0,  0 , 1, 0, 0, 0],
+            [0, 0, 0, c, s, 0],
+            [0, 0, 0, -s, c, 0],
+            [ 0,  0 , 0, 0, 0, 1]])
 
 num_nodes = 2
 
 BLu = Matrix([[(2/le)*N1.diff(xi), 0, (2/le)*N2.diff(xi), 0]])
 
-Ke = A*E/le*Matrix([[1, 0, -1, 0],
-                    [0, 0, 0, 0],
-                    [-1, 0, 1, 0],
-                    [0, 0, 0, 0]])
+Ke = A*E/le*Matrix([[1, 0, 0, -1, 0, 0],
+                    [0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0],
+                    [-1, 0, 0, 1, 0, 0],
+                    [0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0]])
 
-Me = (le/2)*sympy.integrate(rho*A*(Nu.T*Nu + Nv.T*Nv), (xi, -1, +1))
-Me_lumped = A*rho*le/2*Matrix(
-                  [[1, 0, 0, 0],
-                   [0, 1, 0, 0],
-                   [0, 0, 1, 0],
-                   [0, 0, 0, 1]])
+Me = (le/2)*sympy.integrate(rho*A*(Nu.T*Nu + Nv.T*Nv) + Izz*rho*Nbeta.T*Nbeta,
+        (xi, -1, +1))
+mA = integrate((le/2)*rho*A, (xi, -1, 0))
+mB = integrate((le/2)*rho*A, (xi, 0, +1))
+x = (xi + 1)*le/2
+MMIA = integrate((le/2)*rho*(Izz + x**2*A), (xi, -1, 0))
+MMIB = integrate((le/2)*rho*(Izz + (le-x)**2*A), (xi, 0, +1))
+Me_lumped = Matrix([[mA, 0, 0, 0, 0, 0],
+                    [0, mA, 0, 0, 0, 0],
+                    [0, 0, MMIA, 0, 0, 0],
+                    [0, 0, 0, mB, 0, 0],
+                    [0, 0, 0, 0, mB, 0],
+                    [0, 0, 0, 0, 0, MMIB]])
 
 print('printing Me')
 for ind, val in np.ndenumerate(Me):

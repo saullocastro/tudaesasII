@@ -18,6 +18,7 @@ def test_truss2d_natural_freq():
         a = 10
         b = 1
         A = 0.01**2
+        Izz = 0.01**3*0.01/12
 
         # material properties
         E = 70e9
@@ -56,6 +57,7 @@ def test_truss2d_natural_freq():
             elem.n2 = n2
             elem.E = E
             elem.A = A
+            elem.Izz = Izz
             elem.rho = rho
             update_K_M(elem, nid_pos, ncoords, K, M, lumped=lumped)
             elems.append(elem)
@@ -68,6 +70,7 @@ def test_truss2d_natural_freq():
         check = np.isclose(x, 0.)
         bk[0::DOF] = check
         bk[1::DOF] = check
+        bk[2::DOF] = True
         bu = ~bk # defining unknown DOFs
 
         # sub-matrices corresponding to unknown DOFs

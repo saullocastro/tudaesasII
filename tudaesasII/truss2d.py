@@ -1,12 +1,9 @@
 import numpy as np
 
-#NOTE be careful when using the Beam2D with the Truss2D because currently the
-#     Truss2D is derived with only 2 DOFs per node, while the Beam2D is defined
-#     with 3 DOFs per node
-DOF = 2
+DOF = 3
 
 class Truss2D(object):
-    __slots__ = ['n1', 'n2', 'E', 'A', 'le', 'rho', 'thetarad']
+    __slots__ = ['n1', 'n2', 'E', 'A', 'Izz', 'le', 'rho', 'thetarad']
     def __init__(self):
         self.n1 = None
         self.n2 = None
@@ -14,6 +11,7 @@ class Truss2D(object):
         self.E = 203.e9 # Pa
         self.rho = 7.83e3 # kg/m3
         self.A = None
+        self.Izz = None
         self.le = None
         self.thetarad = None
 
@@ -45,6 +43,7 @@ def update_K_M(truss, nid_pos, ncoords, K, M, lumped=False):
     c = np.cos(theta)
     s = np.sin(theta)
     A = truss.A
+    Izz = truss.Izz
     E = truss.E
     truss.le = le
     rho = truss.rho
@@ -71,18 +70,24 @@ def update_K_M(truss, nid_pos, ncoords, K, M, lumped=False):
     K[1+c2, 1+c2] += A*E*s**2/le
 
     if lumped:
-        M[0+c1, 0+c1] += A*le*c**2*rho/2 + A*le*rho*s**2/2
-        M[1+c1, 1+c1] += A*le*c**2*rho/2 + A*le*rho*s**2/2
-        M[0+c2, 0+c2] += A*le*c**2*rho/2 + A*le*rho*s**2/2
-        M[1+c2, 1+c2] += A*le*c**2*rho/2 + A*le*rho*s**2/2
+        M[0+c1, 0+c1] += A*c**2*le*rho/2 + A*le*rho*s**2/2
+        M[1+c1, 1+c1] += A*c**2*le*rho/2 + A*le*rho*s**2/2
+        M[2+c1, 2+c1] += A*le**3*rho/24 + Izz*le*rho/2
+        M[0+c2, 0+c2] += A*c**2*le*rho/2 + A*le*rho*s**2/2
+        M[1+c2, 1+c2] += A*c**2*le*rho/2 + A*le*rho*s**2/2
+        M[2+c2, 2+c2] += A*le**3*rho/24 + Izz*le*rho/2
     else:
-        M[0+c1, 0+c1] += A*le*c**2*rho/3 + A*le*rho*s**2/3
-        M[0+c1, 0+c2] += A*le*c**2*rho/6 + A*le*rho*s**2/6
-        M[1+c1, 1+c1] += A*le*c**2*rho/3 + A*le*rho*s**2/3
-        M[1+c1, 1+c2] += A*le*c**2*rho/6 + A*le*rho*s**2/6
-        M[0+c2, 0+c1] += A*le*c**2*rho/6 + A*le*rho*s**2/6
-        M[0+c2, 0+c2] += A*le*c**2*rho/3 + A*le*rho*s**2/3
-        M[1+c2, 1+c1] += A*le*c**2*rho/6 + A*le*rho*s**2/6
-        M[1+c2, 1+c2] += A*le*c**2*rho/3 + A*le*rho*s**2/3
+        M[0+c1, 0+c1] += A*c**2*le*rho/3 + A*le*rho*s**2/3
+        M[0+c1, 0+c2] += A*c**2*le*rho/6 + A*le*rho*s**2/6
+        M[1+c1, 1+c1] += A*c**2*le*rho/3 + A*le*rho*s**2/3
+        M[1+c1, 1+c2] += A*c**2*le*rho/6 + A*le*rho*s**2/6
+        M[2+c1, 2+c1] += Izz*le*rho/3
+        M[2+c1, 2+c2] += Izz*le*rho/6
+        M[0+c2, 0+c1] += A*c**2*le*rho/6 + A*le*rho*s**2/6
+        M[0+c2, 0+c2] += A*c**2*le*rho/3 + A*le*rho*s**2/3
+        M[1+c2, 1+c1] += A*c**2*le*rho/6 + A*le*rho*s**2/6
+        M[1+c2, 1+c2] += A*c**2*le*rho/3 + A*le*rho*s**2/3
+        M[2+c2, 2+c1] += Izz*le*rho/6
+        M[2+c2, 2+c2] += Izz*le*rho/3
 
 
