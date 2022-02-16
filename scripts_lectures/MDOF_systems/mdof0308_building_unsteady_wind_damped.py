@@ -186,7 +186,6 @@ od = od[:, None]
 # loop in order to make the code more understandable
 f = np.zeros_like(fg)
 u = np.zeros((DOF*n, len(t)))
-rpc = np.zeros((p, len(t)))
 
 def r_t(t, t1, t2, on, zeta, od, fmodaln):
     """SDOF solution for a damped single impulse
@@ -203,6 +202,7 @@ rh = np.exp(-zeta*on*t)*(r0[:, None]*np.cos(od*t) +
 
 # particular solution
 # discrete approximation of Duhamel's convolution integral
+rp = 0
 for t1, t2 in zip(t[:-1], t[1:]):
     tn = (t1 + t2)/2
     f[:] = fg #gravitational forces
@@ -213,10 +213,10 @@ for t1, t2 in zip(t[:-1], t[1:]):
     # calculating modal forces
     fmodaln = (P.T @ Linv @ f[bu])[:, None]
     # convolution
-    rpc += r_t(t, t1, t2, on, zeta, od, fmodaln)
+    rp += r_t(t, t1, t2, on, zeta, od, fmodaln)
 
 # superposition between homogeneous and particular solutions
-r = rh + rpc
+r = rh + rp
 
 # transforming from r-space to displacement
 u[bu] = Linv.T @ P @ r

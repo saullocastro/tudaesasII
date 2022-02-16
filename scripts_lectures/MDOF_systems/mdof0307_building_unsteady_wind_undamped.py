@@ -176,7 +176,6 @@ rdot0 = P.T @ L.T @ udot0[bu]
 # loop in order to make the code more understandable
 f = np.zeros_like(fg)
 u = np.zeros((DOF*n, len(t)))
-rp = np.zeros((p, len(t)))
 
 #NOTE adding new np.array axis to vectorize calculations
 on = omegan[:, None]
@@ -197,6 +196,7 @@ rh = c1[:, None]*np.sin(on*t) + c2[:, None]*np.cos(on*t)
 
 # particular solution
 # discrete approximation of Duhamel's convolution integral
+rp = 0
 for t1, t2 in zip(t[:-1], t[1:]):
     tn = (t1 + t2)/2
     f[:] = fg #gravitational forces
