@@ -112,7 +112,7 @@ for i, beta in enumerate(betas):
     print('analysis i', i)
     # solving generalized eigenvalue problem
     eigvals, eigvecsu = eigs(A=Kuu + beta*KAuu, M=Muu,
-            k=num_eigenvalues, which='LM', sigma=-1., tol=1e-8)
+            k=num_eigenvalues, which='LM', sigma=-1., tol=1e-10)
     eigvecs = np.zeros((K.shape[0], num_eigenvalues), dtype=float)
     eigvecs[bu, :] = eigvecsu
 
