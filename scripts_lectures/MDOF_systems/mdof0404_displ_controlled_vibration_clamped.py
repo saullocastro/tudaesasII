@@ -105,7 +105,7 @@ V[bu, :] = Vu
 P = V
 
 # modal damping ratio
-zeta = 0.02
+zeta = 0.04
 # calculating damping matrix C from modal damping
 Dm = np.zeros((num_modes, num_modes))
 Dm[np.diag_indices_from(Dm)] = 2*zeta*omegan
