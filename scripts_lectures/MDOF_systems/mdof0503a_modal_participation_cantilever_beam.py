@@ -56,8 +56,6 @@ for n1, n2 in zip(nids[:-1], nids[1:]):
 unit_u = np.zeros(M.shape[0])
 unit_u[0::DOF] = 1
 mass = unit_u.T @ M @ unit_u
-unit_u[1::DOF] = 1
-print('attempt DEBUG',  np.linalg.norm(unit_u.T @ M))
 
 # boundary conditions for the dynamic problem
 bk = np.zeros(K.shape[0], dtype=bool) # defining known DOFs
@@ -99,7 +97,6 @@ u0[bu] = uu
 
 # influence vector
 R = u0.copy()
-print('DEBUG norm R', np.linalg.norm(R))
 
 # solving generalized eigenvalue problem
 num_modes = 60
