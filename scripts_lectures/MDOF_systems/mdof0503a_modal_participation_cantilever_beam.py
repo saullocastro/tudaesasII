@@ -24,9 +24,6 @@ E = 70e9
 nu = 0.33
 rho = 2.6e3
 
-mass = length*A*rho
-print('mass = ', mass)
-
 # creating mesh
 xmesh = np.linspace(0, length, nx)
 ymesh = np.zeros_like(xmesh)
@@ -55,7 +52,12 @@ for n1, n2 in zip(nids[:-1], nids[1:]):
     update_M(elem, nid_pos, M, lumped=False)
     elems.append(elem)
 
-# applying boundary conditions for the initial static equilibrium
+# calculating total mass of the system using the mass matrix
+unit_u = np.zeros(M.shape[0])
+unit_u[0::DOF] = 1
+mass = unit_u.T @ M @ unit_u
+
+# boundary conditions for the dynamic problem
 bk = np.zeros(K.shape[0], dtype=bool) # defining known DOFs
 at_clamp = np.isclose(x, 0.)
 bk[0::DOF] = at_clamp
@@ -72,6 +74,7 @@ Kkk = K[bk, :][:, bk]
 Muu = M[bu, :][:, bu]
 
 
+# creating the perturbation for different cases
 u0 = np.zeros(K.shape[0])
 case = 1
 if case == 1:
@@ -92,8 +95,8 @@ fext[bu] += -Kuk@uk
 uu = solve(Kuu, fext[bu])
 u0[bu] = uu
 
+# influence vector
 R = u0.copy()
-
 
 # solving generalized eigenvalue problem
 num_modes = 60
@@ -104,11 +107,7 @@ U = np.zeros((K.shape[0], num_modes))
 U[bu] = Uu
 
 MPFs = []
-MPFs_u = []
-MPFs_v = []
 EMMs = []
-EMMs_u = []
-EMMs_v = []
 for mode in range(num_modes):
     U_I = U[:, mode]
     generalized_modal_mass = U_I.T @ M @ U_I
@@ -118,27 +117,8 @@ for mode in range(num_modes):
     MPFs.append(MPF)
     EMMs.append(EMM)
 
-    # obtaining MPF and EMM in each direction u,v (would be u,v,w for 3D # problems)
-    U_I = U[0::DOF, mode]
-    Lbar_u = U_I.T @ M[0::DOF, 0::DOF] @ R[0::DOF]
-    MPF_u = Lbar_u/generalized_modal_mass
-    EMM_u = Lbar_u**2/generalized_modal_mass
-    MPFs_u.append(MPF_u)
-    EMMs_u.append(EMM_u)
-
-    U_I = U[1::DOF, mode]
-    Lbar_v = U_I.T @ M[1::DOF, 1::DOF] @ R[1::DOF]
-    MPF_v = Lbar_v/generalized_modal_mass
-    EMM_v = Lbar_v**2/generalized_modal_mass
-    MPFs_v.append(MPF_v)
-    EMMs_v.append(EMM_v)
-
 print('sum(MPFs)', sum(MPFs))
-print('sum(MPFs_u)', sum(MPFs_u))
-print('sum(MPFs_v)', sum(MPFs_v))
 print('sum(EMMs)', sum(EMMs))
-print('sum(EMMs_u)', sum(EMMs_u))
-print('sum(EMMs_v)', sum(EMMs_v))
 plt.clf()
 plt.bar(np.arange(num_modes)+1, MPFs)
 plt.title('Modal Participation Factor')
@@ -159,31 +139,8 @@ plt.bar(np.arange(num_modes)+1, np.cumsum(EMMs), alpha=0.50)
 plt.hlines([0.8*mass, 0.95*mass], xmin=0, xmax=num_modes, colors=['r', 'g'], linestyles=['--', '--'])
 plt.text(x=2, y=0.8*mass, s='80% of total mass', va='bottom', ha='left')
 plt.text(x=12, y=0.95*mass, s='95% of total mass', va='bottom', ha='left')
-plt.title('Effective Modal Mass in Resultant Direction')
+plt.title('Effective Modal Mass')
 plt.xlabel('mode')
 plt.ylabel('EMM cumulative sum [kg]')
 plt.xlim(1-0.5, num_modes+0.5)
 plt.show()
-
-plt.clf()
-plt.bar(np.arange(num_modes)+1, np.cumsum(EMMs_u), alpha=0.50)
-plt.hlines([0.8*mass, 0.95*mass], xmin=0, xmax=num_modes, colors=['r', 'g'], linestyles=['--', '--'])
-plt.text(x=2, y=0.8*mass, s='80% of total mass', va='bottom', ha='left')
-plt.text(x=12, y=0.95*mass, s='95% of total mass', va='bottom', ha='left')
-plt.title('Effective Modal Mass in u direction')
-plt.xlabel('mode')
-plt.ylabel('EMM cumulative sum [kg]')
-plt.xlim(1-0.5, num_modes+0.5)
-plt.show()
-
-plt.clf()
-plt.bar(np.arange(num_modes)+1, np.cumsum(EMMs_v), alpha=0.50)
-plt.hlines([0.8*mass, 0.95*mass], xmin=0, xmax=num_modes, colors=['r', 'g'], linestyles=['--', '--'])
-plt.text(x=2, y=0.8*mass, s='80% of total mass', va='bottom', ha='left')
-plt.text(x=12, y=0.95*mass, s='95% of total mass', va='bottom', ha='left')
-plt.title('Effective Modal Mass in v direction')
-plt.xlabel('mode')
-plt.ylabel('EMM cumulative sum [kg]')
-plt.xlim(1-0.5, num_modes+0.5)
-plt.show()
-
