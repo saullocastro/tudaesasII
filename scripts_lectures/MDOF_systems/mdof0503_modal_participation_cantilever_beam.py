@@ -53,6 +53,7 @@ for n1, n2 in zip(nids[:-1], nids[1:]):
     elems.append(elem)
 
 # calculating total mass of the system using the mass matrix
+# unitary translation vector
 unit_u = np.zeros(M.shape[0])
 unit_u[0::DOF] = 1
 mass = unit_u.T @ M @ unit_u
@@ -76,7 +77,7 @@ Muu = M[bu, :][:, bu]
 
 # creating the perturbation for different cases
 u0 = np.zeros(K.shape[0])
-case = 3
+case = 1
 if case == 1:
     u0[0] = 1.
     u0[1] = 0.
@@ -88,6 +89,8 @@ elif case == 3:
     u0[1] = np.sqrt(2)/2
 else:
     raise RuntimeError('invalid case')
+u0 /= (np.linalg.norm(u0.reshape(-1, 3), axis=1)).max()
+
 uk = u0[bk]
 
 fext = np.zeros(K.shape[0])
@@ -97,9 +100,10 @@ u0[bu] = uu
 
 # influence vector
 R = u0.copy()
+R[np.isclose(R, 0)] = 0
 
 # solving generalized eigenvalue problem
-num_modes = 60
+num_modes = 70
 eigvals, Uu = eigh(a=Kuu, b=Muu, subset_by_index=[0, num_modes-1])
 wn = np.sqrt(eigvals)
 print('Natural frequencies [rad/s] =', wn)
