@@ -103,7 +103,7 @@ R = u0.copy()
 R[np.isclose(R, 0)] = 0
 
 # solving generalized eigenvalue problem
-num_modes = 70
+num_modes = 60
 eigvals, Uu = eigh(a=Kuu, b=Muu, subset_by_index=[0, num_modes-1])
 wn = np.sqrt(eigvals)
 print('Natural frequencies [rad/s] =', wn)
@@ -136,6 +136,10 @@ plt.title('Effective Modal Mass')
 plt.xlabel('mode')
 plt.ylabel('EMM [kg]')
 plt.xlim(1-0.5, num_modes+0.5)
+plt.hlines([0.01*mass, 0.02*mass], xmin=0, xmax=num_modes, colors=['r', 'g'], linestyles=['--', '--'])
+plt.text(x=20, y=0.01*mass, s='1% of total mass', va='bottom', ha='left')
+plt.text(x=30, y=0.02*mass, s='2% of total mass', va='bottom', ha='left')
+plt.ylim(0, 0.2*mass)
 plt.show()
 
 plt.clf()
@@ -143,7 +147,7 @@ plt.bar(np.arange(num_modes)+1, np.cumsum(EMMs), alpha=0.50)
 plt.hlines([0.8*mass, 0.95*mass], xmin=0, xmax=num_modes, colors=['r', 'g'], linestyles=['--', '--'])
 plt.text(x=2, y=0.8*mass, s='80% of total mass', va='bottom', ha='left')
 plt.text(x=12, y=0.95*mass, s='95% of total mass', va='bottom', ha='left')
-plt.title('Effective Modal Mass')
+plt.title('Cumulative Effective Modal Mass')
 plt.xlabel('mode')
 plt.ylabel('EMM cumulative sum [kg]')
 plt.xlim(1-0.5, num_modes+0.5)
