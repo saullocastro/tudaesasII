@@ -107,13 +107,12 @@ def test_NL_pre_stress_simply_supported_beam():
                 KT = calc_KT(u) #NOTE full Newton-Raphson since KT is calculated in every iteration
             assert i < 99
 
-        print('Ppreload', Ppreload)
-
         nmodes = 3
         KT = calc_KT(u)[bu, :][:, bu]
         eigvals, U = eigh(a=KT, b=Muu, eigvals=(0, nmodes-1))
         omegan = np.sqrt(eigvals)
         print('Natural frequency [rad/s]', omegan)
+        assert np.isclose(omegan[0], 1.9948, rtol=1e-3)
 
 if __name__ == '__main__':
     test_NL_pre_stress_simply_supported_beam()
