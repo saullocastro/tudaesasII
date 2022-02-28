@@ -7,10 +7,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.linalg import eigh, cholesky, solve
 
-from tudaesasII.beam2d import Beam2D, update_K, update_KG, update_M, DOF
+from tudaesasII.beam2d import (Beam2D, update_K, update_KG, update_KNL,
+        update_M, DOF)
 
 # number of nodes along x
-nx = 71 #NOTE keep nx an odd number to have a node in the middle
+nx = 11 #NOTE keep nx an odd number to have a node in the middle
 
 # geometry
 length = 2
@@ -38,21 +39,21 @@ K = np.zeros((DOF*nx, DOF*nx))
 KG = np.zeros((DOF*nx, DOF*nx))
 M = np.zeros((DOF*nx, DOF*nx))
 
-elems = []
+beams = []
 # creating beam elements
 nids = list(nid_pos.keys())
 for n1, n2 in zip(nids[:-1], nids[1:]):
-    elem = Beam2D()
-    elem.n1 = n1
-    elem.n2 = n2
-    elem.E = E
-    elem.A1 = elem.A2 = A
-    elem.Izz1 = elem.Izz2 = Izz
-    elem.rho = rho
-    elem.interpolation = 'legendre'
-    update_K(elem, nid_pos, ncoords, K)
-    update_M(elem, nid_pos, M, lumped=False)
-    elems.append(elem)
+    beam = Beam2D()
+    beam.n1 = n1
+    beam.n2 = n2
+    beam.E = E
+    beam.A1 = beam.A2 = A
+    beam.Izz1 = beam.Izz2 = Izz
+    beam.rho = rho
+    beam.interpolation = 'legendre'
+    update_K(beam, nid_pos, ncoords, K)
+    update_M(beam, nid_pos, M, lumped=False)
+    beams.append(beam)
 
 # calculating total mass of the system using the mass matrix
 # unitary translation vector
@@ -77,8 +78,8 @@ Muu = M[bu, :][:, bu]
 
 # geometric stiffness matrix
 KG *= 0
-for elem in elems:
-    update_KG(elem, 1., nid_pos, ncoords, KG)
+for beam in beams:
+    update_KG(beam, 1., nid_pos, ncoords, KG)
 KGuu = KG[bu, :][:, bu]
 
 # linear buckling analysis
@@ -87,19 +88,64 @@ linbuck_eigvals, _ = eigh(a=Kuu, b=KGuu, subset_by_index=[0, num_modes-1])
 
 Ppreload_list = np.linspace(-0.9999*linbuck_eigvals[0], +linbuck_eigvals[0], 200)
 first_omegan = []
+
 # pre-load effect on natural frequencies
+
+#CASE 1, assuming KT = KC0 + KG
 for Ppreload in Ppreload_list:
     # solving generalized eigenvalue problem
     num_modes = 3
     eigvals, Uu = eigh(a=Kuu + Ppreload*KGuu, b=Muu, subset_by_index=[0, num_modes-1])
     omegan = np.sqrt(eigvals)
     first_omegan.append(omegan[0])
-    print('Pre-load [N], Natural frequency [rad/s]', Ppreload, omegan[0])
+
+#CASE 2, finding KT with Newton-Raphson
+def calc_KT(u):
+    KNL = np.zeros((DOF*nx, DOF*nx))
+    KG = np.zeros((DOF*nx, DOF*nx))
+    for beam in beams:
+        update_KNL(beam, u, nid_pos, ncoords, KNL)
+        update_KG(beam, u, nid_pos, ncoords, KG)
+    assert np.allclose(K + KNL + KG, (K + KNL + KG).T)
+    return K + KNL + KG
+
+first_omegan_NL = []
+for Ppreload in Ppreload_list[::2]:
+    u = np.zeros(K.shape[0])
+    load_steps = Ppreload*np.linspace(0.1, 1., 10)
+    for load in load_steps:
+        fext = np.zeros(K.shape[0])
+        fext[0::DOF][at_tip] = load
+        if np.isclose(load, 0.1*Ppreload):
+            KT = K
+            uu = np.linalg.solve(Kuu, fext[bu])
+            u[bu] = uu
+        for i in range(100):
+            R = (KT @ u) - fext
+            check = np.abs(R[bu]).max()
+            if check < 1.:
+                break
+            duu = np.linalg.solve(KT[bu, :][:, bu], -R[bu])
+            u[bu] += duu
+            KT = calc_KT(u) #NOTE full Newton-Raphson since KT is calculated in every iteration
+        assert i < 99
+
+    nmodes = 3
+    KTuu = calc_KT(u)[bu, :][:, bu]
+    num_modes = 3
+    eigvals, Uu = eigh(a=KTuu, b=Muu, subset_by_index=[0, num_modes-1])
+    omegan = np.sqrt(eigvals)
+    first_omegan_NL.append(omegan[0])
+
 
 plt.clf()
-plt.plot(Ppreload_list, first_omegan, 'ko--', mfc='None')
+plt.plot(Ppreload_list, first_omegan, 'ko--', mfc='None',
+    label=r'$K_T \approx K + K_G$')
+plt.plot(Ppreload_list[::2], first_omegan_NL, 'rs-', mfc='None',
+    label=r'$K_T$ calculated')
 plt.title('Pre-stress effect for a simply-supported beam')
 plt.xlabel('Pre-load [N]')
 plt.ylabel('First natural frequency [rad/s]')
 plt.yscale('linear')
+plt.legend()
 plt.show()
