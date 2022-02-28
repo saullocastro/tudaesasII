@@ -1,7 +1,7 @@
 import numpy as np
 import sympy
-from sympy import Matrix, simplify, integrate
-sympy.var('xi, le, E, cosr, sinr, rho, A1, A2, Izz1, Izz2, Ppreload')
+from sympy import zeros, symbols, Matrix, simplify, integrate
+sympy.var('xi, le, E, cosr, sinr, rho, A1, A2, Izz1, Izz2, Ppreload, ux, vx')
 
 A = A1 + (A2 - A1)*(xi - (-1))/(1 - (-1))
 Izz = Izz1 + (Izz2 - Izz1)*(xi - (-1))/(1 - (-1))
@@ -35,16 +35,30 @@ for leg_poly in [True, False]:
     Nvxi = sympy.diff(Nv, xi)
     Nbetaxi = Nbeta.diff(xi)
 
-    Ke = sympy.zeros(6, 6)
-    KGe = sympy.zeros(6, 6)
+    Ke = zeros(6, 6)
+    KNLe = zeros(6, 6)
+    KGconste = zeros(6, 6)
+    KGe = zeros(6, 6)
     Me = sympy.zeros(6, 6)
 
-    BL = sympy.Matrix([(2/le)*Nuxi,
-                       (2/le)*Nbetaxi])
+    BL = Matrix([(2/le)*Nuxi,
+                 (2/le)*Nbetaxi])
+    BNL = Matrix([vx*(2/le)*Nvxi + ux*(2/le)*Nuxi,
+                  0*Nuxi])
+
     print('BL (nodal displacements in global coordinates) =', BL*R)
+    u = Matrix([symbols(r'u[%d]' % i) for i in range(0, BL.shape[1])])
+    print('ux =', (2/le)*Nuxi*R*u)
+    print('vx =', (2/le)*Nvxi*R*u)
+
+    sigmaxx = (E*(BL + BNL)*R*u)[0, 0]
 
     Ke[:, :] = (2/le)*E*Izz*Nbetaxi.T*Nbetaxi + (2/le)*E*A*Nuxi.T*Nuxi
-    KGe[:, :] = (le/2)*Ppreload*(2/le)**2*(Nuxi.T*Nuxi + Nvxi.T*Nvxi)
+    KNLe[:, :] = ((2/le)*E*A*(2/le)**2*(vx*Nuxi.T*Nvxi + vx*Nvxi.T*Nuxi +
+                                        2*ux*Nuxi.T*Nuxi)
+                + (2/le)*E*A*(2/le)**2*(vx**2*Nvxi.T*Nvxi + ux**2*Nuxi.T*Nuxi))
+    KGconste[:, :] = (le/2)*Ppreload*(2/le)**2*(Nuxi.T*Nuxi + Nvxi.T*Nvxi)
+    KGe[:, :] = (le/2)*sigmaxx*A*(2/le)**2*(Nuxi.T*Nuxi + Nvxi.T*Nvxi)
     Me[:, :] = (le/2)*rho*(A*Nu.T*Nu + A*Nv.T*Nv + Izz*Nbeta.T*Nbeta)
 
     #NOTE procedure to compute lumped matrix when cross section changes
@@ -65,8 +79,16 @@ for leg_poly in [True, False]:
     for ind, val in np.ndenumerate(Ke):
         Ke[ind] = simplify(integrate(val, (xi, -1, 1)))
 
+    for ind, val in np.ndenumerate(KNLe):
+        #NOTE to be integrated numerically
+        KNLe[ind] = val
+
+    for ind, val in np.ndenumerate(KGconste):
+        KGconste[ind] = simplify(integrate(val, (xi, -1, 1)))
+
     for ind, val in np.ndenumerate(KGe):
-        KGe[ind] = simplify(integrate(val, (xi, -1, 1)))
+        #NOTE to be integrated numerically
+        KGe[ind] = val
 
     for ind, val in np.ndenumerate(Me):
         Me[ind] = simplify(integrate(val, (xi, -1, 1)))
@@ -79,6 +101,7 @@ for leg_poly in [True, False]:
     print(Me_lumped)
 
     K = simplify(R.T*Ke*R)
+    KNL = simplify(R.T*KNLe*R)
 
     if leg_poly:
         print('K integrated with Legendre polynomial')
@@ -91,6 +114,41 @@ for leg_poly in [True, False]:
         si = 'c1' if i < 3 else 'c2'
         sj = 'c1' if j < 3 else 'c2'
         print('        K[%d+%s, %d+%s]' % (i%3, si, j%3, sj), '+=', K[ind])
+
+    if leg_poly:
+        print('KNL integrated with Legendre polynomial')
+    else:
+        print('KNL integrated with Hermitian cubic polynomial')
+
+    print('printing KNL for code')
+    for ind, val in np.ndenumerate(KNL):
+        i, j = ind
+        si = 'c1' if i < 3 else 'c2'
+        sj = 'c1' if j < 3 else 'c2'
+        print('        KNL[%d+%s, %d+%s]' % (i%3, si, j%3, sj), '+=', KNL[ind])
+
+    if leg_poly:
+        print('KG integrated with Legendre polynomial')
+    else:
+        print('KG integrated with Hermitian cubic polynomial')
+
+    KGconst = simplify(R.T*KGconste*R)
+
+    print('printing KGconst for code')
+    for ind, val in np.ndenumerate(KGconst):
+        i, j = ind
+        si = 'c1' if i < 3 else 'c2'
+        sj = 'c1' if j < 3 else 'c2'
+        print('        KG[%d+%s, %d+%s]' % (i%3, si, j%3, sj), '+=', KGconst[ind])
+
+    KG = simplify(R.T*KGe*R)
+
+    print('printing KG for code')
+    for ind, val in np.ndenumerate(KG):
+        i, j = ind
+        si = 'c1' if i < 3 else 'c2'
+        sj = 'c1' if j < 3 else 'c2'
+        print('        KG[%d+%s, %d+%s]' % (i%3, si, j%3, sj), '+=', KG[ind])
 
     if leg_poly:
         print('M integrated with Legendre polynomial')
@@ -135,13 +193,4 @@ for leg_poly in [True, False]:
         si = 'c1' if i < 3 else 'c2'
         sj = 'c1' if j < 3 else 'c2'
         print('        M[%d+%s, %d+%s]' % (i%3, si, j%3, sj), '+=', M_lumped[ind])
-
-    KG = simplify(R.T*KGe*R)
-
-    print('printing KG for code')
-    for ind, val in np.ndenumerate(KG):
-        i, j = ind
-        si = 'c1' if i < 3 else 'c2'
-        sj = 'c1' if j < 3 else 'c2'
-        print('        KG[%d+%s, %d+%s]' % (i%3, si, j%3, sj), '+=', KG[ind])
 
