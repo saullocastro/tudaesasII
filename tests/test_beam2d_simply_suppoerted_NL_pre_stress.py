@@ -88,7 +88,7 @@ def test_NL_pre_stress_simply_supported_beam():
             return K + KNL + KG
 
         u = np.zeros(K.shape[0])
-        loads = np.abs(Ppreload)*np.linspace(0.1, 0.983, 10)
+        loads = np.abs(Ppreload)*np.linspace(0.1, 0.98355, 10)
         for load in loads:
             fext = np.zeros(K.shape[0])
             fext[0::DOF][at_tip] = -load
@@ -100,7 +100,7 @@ def test_NL_pre_stress_simply_supported_beam():
             for i in range(100):
                 R = (KT @ u) - fext
                 check = np.abs(R[bu]).max()
-                if check < 10.:
+                if check < 1.:
                     break
                 duu = np.linalg.solve(KT[bu, :][:, bu], -R[bu])
                 u[bu] += duu
@@ -112,7 +112,7 @@ def test_NL_pre_stress_simply_supported_beam():
         eigvals, U = eigh(a=KT, b=Muu, eigvals=(0, nmodes-1))
         omegan = np.sqrt(eigvals)
         print('Natural frequency [rad/s]', omegan)
-        assert np.isclose(omegan[0], 1.9948, rtol=1e-3)
+        assert np.isclose(omegan[0], 0.31731)
 
 if __name__ == '__main__':
     test_NL_pre_stress_simply_supported_beam()
