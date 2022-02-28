@@ -1,7 +1,7 @@
 import numpy as np
 import sympy
 from sympy import Matrix, simplify, integrate
-sympy.var('xi, le, E, cosr, sinr, rho, A1, A2, Izz1, Izz2, Pprestress')
+sympy.var('xi, le, E, cosr, sinr, rho, A1, A2, Izz1, Izz2, Ppreload')
 
 A = A1 + (A2 - A1)*(xi - (-1))/(1 - (-1))
 Izz = Izz1 + (Izz2 - Izz1)*(xi - (-1))/(1 - (-1))
@@ -44,7 +44,7 @@ for leg_poly in [True, False]:
     print('BL (nodal displacements in global coordinates) =', BL*R)
 
     Ke[:, :] = (2/le)*E*Izz*Nbetaxi.T*Nbetaxi + (2/le)*E*A*Nuxi.T*Nuxi
-    KGe[:, :] = (le/2)*Pprestress*(2/le)**2*(Nuxi.T*Nuxi + Nvxi.T*Nvxi)
+    KGe[:, :] = (le/2)*Ppreload*(2/le)**2*(Nuxi.T*Nuxi + Nvxi.T*Nvxi)
     Me[:, :] = (le/2)*rho*(A*Nu.T*Nu + A*Nv.T*Nv + Izz*Nbeta.T*Nbeta)
 
     #NOTE procedure to compute lumped matrix when cross section changes

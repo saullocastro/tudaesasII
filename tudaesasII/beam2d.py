@@ -138,14 +138,14 @@ def update_K(beam, nid_pos, ncoords, K):
         raise NotImplementedError('beam interpolation "%s" not implemented' % beam.interpolation)
 
 
-def update_KG(beam, Pprestress, nid_pos, ncoords, KG):
+def update_KG(beam, Ppreload, nid_pos, ncoords, KG):
     """Update geometric stiffness matrix KG with beam element
 
     Properties
     ----------
     beam : `.Beam` object
         The beam element being added to K
-    Pprestress : float
+    Ppreload : float
         The force applied to pre-stress the beam element
     nid_pos : dict
         Correspondence between node ids and their position in the global assembly
@@ -169,42 +169,42 @@ def update_KG(beam, Pprestress, nid_pos, ncoords, KG):
     c1 = DOF*pos1
     c2 = DOF*pos2
 
-    KG[0+c1, 0+c1] += Pprestress*(5*cosr**2 + 6*sinr**2)/(5*le)
-    KG[0+c1, 1+c1] += -Pprestress*cosr*sinr/(5*le)
-    KG[0+c1, 2+c1] += -Pprestress*sinr/10
-    KG[0+c1, 0+c2] += -Pprestress*(5*cosr**2 + 6*sinr**2)/(5*le)
-    KG[0+c1, 1+c2] += Pprestress*cosr*sinr/(5*le)
-    KG[0+c1, 2+c2] += -Pprestress*sinr/10
-    KG[1+c1, 0+c1] += -Pprestress*cosr*sinr/(5*le)
-    KG[1+c1, 1+c1] += Pprestress*(6*cosr**2 + 5*sinr**2)/(5*le)
-    KG[1+c1, 2+c1] += Pprestress*cosr/10
-    KG[1+c1, 0+c2] += Pprestress*cosr*sinr/(5*le)
-    KG[1+c1, 1+c2] += -Pprestress*(6*cosr**2 + 5*sinr**2)/(5*le)
-    KG[1+c1, 2+c2] += Pprestress*cosr/10
-    KG[2+c1, 0+c1] += -Pprestress*sinr/10
-    KG[2+c1, 1+c1] += Pprestress*cosr/10
-    KG[2+c1, 2+c1] += 2*Pprestress*le/15
-    KG[2+c1, 0+c2] += Pprestress*sinr/10
-    KG[2+c1, 1+c2] += -Pprestress*cosr/10
-    KG[2+c1, 2+c2] += -Pprestress*le/30
-    KG[0+c2, 0+c1] += -Pprestress*(5*cosr**2 + 6*sinr**2)/(5*le)
-    KG[0+c2, 1+c1] += Pprestress*cosr*sinr/(5*le)
-    KG[0+c2, 2+c1] += Pprestress*sinr/10
-    KG[0+c2, 0+c2] += Pprestress*(5*cosr**2 + 6*sinr**2)/(5*le)
-    KG[0+c2, 1+c2] += -Pprestress*cosr*sinr/(5*le)
-    KG[0+c2, 2+c2] += Pprestress*sinr/10
-    KG[1+c2, 0+c1] += Pprestress*cosr*sinr/(5*le)
-    KG[1+c2, 1+c1] += -Pprestress*(6*cosr**2 + 5*sinr**2)/(5*le)
-    KG[1+c2, 2+c1] += -Pprestress*cosr/10
-    KG[1+c2, 0+c2] += -Pprestress*cosr*sinr/(5*le)
-    KG[1+c2, 1+c2] += Pprestress*(6*cosr**2 + 5*sinr**2)/(5*le)
-    KG[1+c2, 2+c2] += -Pprestress*cosr/10
-    KG[2+c2, 0+c1] += -Pprestress*sinr/10
-    KG[2+c2, 1+c1] += Pprestress*cosr/10
-    KG[2+c2, 2+c1] += -Pprestress*le/30
-    KG[2+c2, 0+c2] += Pprestress*sinr/10
-    KG[2+c2, 1+c2] += -Pprestress*cosr/10
-    KG[2+c2, 2+c2] += 2*Pprestress*le/15
+    KG[0+c1, 0+c1] += Ppreload*(5*cosr**2 + 6*sinr**2)/(5*le)
+    KG[0+c1, 1+c1] += -Ppreload*cosr*sinr/(5*le)
+    KG[0+c1, 2+c1] += -Ppreload*sinr/10
+    KG[0+c1, 0+c2] += -Ppreload*(5*cosr**2 + 6*sinr**2)/(5*le)
+    KG[0+c1, 1+c2] += Ppreload*cosr*sinr/(5*le)
+    KG[0+c1, 2+c2] += -Ppreload*sinr/10
+    KG[1+c1, 0+c1] += -Ppreload*cosr*sinr/(5*le)
+    KG[1+c1, 1+c1] += Ppreload*(6*cosr**2 + 5*sinr**2)/(5*le)
+    KG[1+c1, 2+c1] += Ppreload*cosr/10
+    KG[1+c1, 0+c2] += Ppreload*cosr*sinr/(5*le)
+    KG[1+c1, 1+c2] += -Ppreload*(6*cosr**2 + 5*sinr**2)/(5*le)
+    KG[1+c1, 2+c2] += Ppreload*cosr/10
+    KG[2+c1, 0+c1] += -Ppreload*sinr/10
+    KG[2+c1, 1+c1] += Ppreload*cosr/10
+    KG[2+c1, 2+c1] += 2*Ppreload*le/15
+    KG[2+c1, 0+c2] += Ppreload*sinr/10
+    KG[2+c1, 1+c2] += -Ppreload*cosr/10
+    KG[2+c1, 2+c2] += -Ppreload*le/30
+    KG[0+c2, 0+c1] += -Ppreload*(5*cosr**2 + 6*sinr**2)/(5*le)
+    KG[0+c2, 1+c1] += Ppreload*cosr*sinr/(5*le)
+    KG[0+c2, 2+c1] += Ppreload*sinr/10
+    KG[0+c2, 0+c2] += Ppreload*(5*cosr**2 + 6*sinr**2)/(5*le)
+    KG[0+c2, 1+c2] += -Ppreload*cosr*sinr/(5*le)
+    KG[0+c2, 2+c2] += Ppreload*sinr/10
+    KG[1+c2, 0+c1] += Ppreload*cosr*sinr/(5*le)
+    KG[1+c2, 1+c1] += -Ppreload*(6*cosr**2 + 5*sinr**2)/(5*le)
+    KG[1+c2, 2+c1] += -Ppreload*cosr/10
+    KG[1+c2, 0+c2] += -Ppreload*cosr*sinr/(5*le)
+    KG[1+c2, 1+c2] += Ppreload*(6*cosr**2 + 5*sinr**2)/(5*le)
+    KG[1+c2, 2+c2] += -Ppreload*cosr/10
+    KG[2+c2, 0+c1] += -Ppreload*sinr/10
+    KG[2+c2, 1+c1] += Ppreload*cosr/10
+    KG[2+c2, 2+c1] += -Ppreload*le/30
+    KG[2+c2, 0+c2] += Ppreload*sinr/10
+    KG[2+c2, 1+c2] += -Ppreload*cosr/10
+    KG[2+c2, 2+c2] += 2*Ppreload*le/15
 
 
 def update_M(beam, nid_pos, M, lumped=False):
