@@ -65,10 +65,9 @@ volume = unit_u.T @ V @ unit_u
 
 # boundary conditions for the dynamic problem
 bk = np.zeros(K.shape[0], dtype=bool) # defining known DOFs
-at_clamp = np.isclose(x, 0.)
-bk[0::DOF] = at_clamp
-bk[1::DOF] = at_clamp
-#bk[2::DOF] = at_clamp
+at_base = np.isclose(x, 0.)
+bk[0::DOF] = at_base
+bk[1::DOF] = at_base
 at_tip = np.isclose(x, length)
 bk[1::DOF] += at_tip
 
