@@ -1,7 +1,7 @@
 import numpy as np
 import sympy
 from sympy import Matrix, simplify, integrate
-sympy.var('xi, le, E, cosr, sinr, rho, A1, A2, Izz1, Izz2')
+sympy.var('xi, le, E, cosr, sinr, rho, A1, A2, Izz1, Izz2, Pprestress')
 
 A = A1 + (A2 - A1)*(xi - (-1))/(1 - (-1))
 Izz = Izz1 + (Izz2 - Izz1)*(xi - (-1))/(1 - (-1))
@@ -32,9 +32,11 @@ for leg_poly in [True, False]:
     Nbeta = -(2/le)*sympy.diff(Nv, xi)
 
     Nuxi = sympy.diff(Nu, xi)
+    Nvxi = sympy.diff(Nv, xi)
     Nbetaxi = Nbeta.diff(xi)
 
     Ke = sympy.zeros(6, 6)
+    KGe = sympy.zeros(6, 6)
     Me = sympy.zeros(6, 6)
 
     BL = sympy.Matrix([(2/le)*Nuxi,
@@ -42,6 +44,7 @@ for leg_poly in [True, False]:
     print('BL (nodal displacements in global coordinates) =', BL*R)
 
     Ke[:, :] = (2/le)*E*Izz*Nbetaxi.T*Nbetaxi + (2/le)*E*A*Nuxi.T*Nuxi
+    KGe[:, :] = (le/2)*Pprestress*(2/le)**2*(Nuxi.T*Nuxi + Nvxi.T*Nvxi)
     Me[:, :] = (le/2)*rho*(A*Nu.T*Nu + A*Nv.T*Nv + Izz*Nbeta.T*Nbeta)
 
     #NOTE procedure to compute lumped matrix when cross section changes
@@ -61,6 +64,9 @@ for leg_poly in [True, False]:
 
     for ind, val in np.ndenumerate(Ke):
         Ke[ind] = simplify(integrate(val, (xi, -1, 1)))
+
+    for ind, val in np.ndenumerate(KGe):
+        KGe[ind] = simplify(integrate(val, (xi, -1, 1)))
 
     for ind, val in np.ndenumerate(Me):
         Me[ind] = simplify(integrate(val, (xi, -1, 1)))
@@ -129,4 +135,13 @@ for leg_poly in [True, False]:
         si = 'c1' if i < 3 else 'c2'
         sj = 'c1' if j < 3 else 'c2'
         print('        M[%d+%s, %d+%s]' % (i%3, si, j%3, sj), '+=', M_lumped[ind])
+
+    KG = simplify(R.T*KGe*R)
+
+    print('printing KG for code')
+    for ind, val in np.ndenumerate(KG):
+        i, j = ind
+        si = 'c1' if i < 3 else 'c2'
+        sj = 'c1' if j < 3 else 'c2'
+        print('        KG[%d+%s, %d+%s]' % (i%3, si, j%3, sj), '+=', KG[ind])
 
