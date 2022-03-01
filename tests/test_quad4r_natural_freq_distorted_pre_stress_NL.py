@@ -11,8 +11,8 @@ from tudaesasII.quad4r import (Quad4R, update_K, update_KG, update_KNL,
 
 
 def test_nat_freq_plate_pre_stress_NL(plot=False, mode=0):
-    nx = 11
-    ny = 13
+    nx = 9
+    ny = 11
 
     a = 0.3
     b = 0.5
@@ -157,9 +157,9 @@ def test_nat_freq_plate_pre_stress_NL(plot=False, mode=0):
     KGuu = KG[bu, :][:, bu]
 
     # linear buckling analysis
-    num_modes = 3
+    num_modes = 2
     linbuck_eigvals, linbuck_eigvecsu = eigh(a=KGuu, b=Kuu, subset_by_index=[0, num_modes-1])
-    lambda_CR = -0.99999999*1/linbuck_eigvals[0]
+    lambda_CR = -0.999999*1/linbuck_eigvals[0]
     linbuck_eigvecs = np.zeros((N, num_modes))
     linbuck_eigvecs[bu] = linbuck_eigvecsu
 
@@ -186,16 +186,18 @@ def test_nat_freq_plate_pre_stress_NL(plot=False, mode=0):
         plt.colorbar()
         plt.show()
 
-    num_modes = 10
+    num_modes = 2
     eigvals, U = eigh(a=Kuu, b=Muu, subset_by_index=(0, num_modes-1))
     omegan = np.sqrt(eigvals)
     print('Natural frequencies [rad/s]', omegan)
+
+    assert np.isclose(omegan[0], 323.7, atol=1.)
 
     eigvals, U = eigh(a=Kuu+lambda_CR*KGuu, b=Muu, subset_by_index=(0, num_modes-1))
     omegan = np.sqrt(eigvals)
     print('Pre-stressed natural frequencies [rad/s]', omegan)
 
-    assert np.isclose(omegan[0], 0.1, atol=0.1)
+    assert np.isclose(omegan[0], 0.33, atol=0.1)
 
     #NOTE reaching nonlinear equilibrium pre-stress state with Newton-Raphson
 
@@ -220,7 +222,7 @@ def test_nat_freq_plate_pre_stress_NL(plot=False, mode=0):
         for i in range(100):
             R = (KT @ u) - fext
             check = np.abs(R[bu]).max()
-            if check < 0.001:
+            if check < 0.1:
                 break
             duu = np.linalg.solve(KT[bu, :][:, bu], -R[bu])
             u[bu] += duu
@@ -231,7 +233,7 @@ def test_nat_freq_plate_pre_stress_NL(plot=False, mode=0):
     eigvals, U = eigh(a=KTuu, b=Muu, subset_by_index=(0, num_modes-1))
     omegan = np.sqrt(eigvals)
     print('NL pre-stressed natural frequencies [rad/s]', omegan)
-    assert np.isclose(omegan[0], 1., atol=1.)
+    assert np.isclose(omegan[0], 2.47, atol=1.)
 
 
 if __name__ == '__main__':
