@@ -106,24 +106,24 @@ def test_nat_freq_plate_pre_stress_NL(plot=False, mode=0):
     # static case to calculate linear buckling load
     def calc_fext(load):
         fext = np.zeros(N)
-        ftotal = -load
+        ftotal = load
         # at x=0
         check = (isclose(x, 0) & ~isclose(y, 0) & ~isclose(y, b))
         fext[0::DOF][check] = -ftotal/(ny - 1)
         check = ((isclose(x, 0) & isclose(y, 0))
                 |(isclose(x, 0) & isclose(y, b)))
         fext[0::DOF][check] = -ftotal/(ny - 1)/2
-        assert np.isclose(fext.sum(), -ftotal)
+        assert isclose(fext.sum(), -ftotal)
         # at x=a
         check = (isclose(x, a) & ~isclose(y, 0) & ~isclose(y, b))
         fext[0::DOF][check] = ftotal/(ny - 1)
         check = ((isclose(x, a) & isclose(y, 0))
                 |(isclose(x, a) & isclose(y, b)))
         fext[0::DOF][check] = ftotal/(ny - 1)/2
-        assert np.isclose(fext.sum(), 0)
+        assert isclose(fext.sum(), 0)
         return fext
 
-    fext = calc_fext(1.)
+    fext = calc_fext(-1.)
     u0 = np.zeros(N)
     u0u = np.linalg.solve(Kuu, fext[bu])
     u0[bu] = u0u
@@ -191,13 +191,13 @@ def test_nat_freq_plate_pre_stress_NL(plot=False, mode=0):
     omegan = np.sqrt(eigvals)
     print('Natural frequencies [rad/s]', omegan)
 
-    assert np.isclose(omegan[0], 323.7, atol=1.)
+    assert isclose(omegan[0], 323.7, atol=1.)
 
     eigvals, U = eigh(a=Kuu+lambda_CR*KGuu, b=Muu, subset_by_index=(0, num_modes-1))
     omegan = np.sqrt(eigvals)
     print('Pre-stressed natural frequencies [rad/s]', omegan)
 
-    assert np.isclose(omegan[0], 0.33, atol=0.1)
+    assert isclose(omegan[0], 0.33, atol=0.1)
 
     #NOTE reaching nonlinear equilibrium pre-stress state with Newton-Raphson
 
@@ -213,9 +213,9 @@ def test_nat_freq_plate_pre_stress_NL(plot=False, mode=0):
     u = np.zeros(K.shape[0])
     loads = np.abs(lambda_CR)*np.linspace(0.1, 0.9999, 3)
     for load in loads:
-        fext = calc_fext(load)
+        fext = calc_fext(-load)
         print('load', -load)
-        if np.isclose(load, 0.1*np.abs(lambda_CR)):
+        if isclose(load, 0.1*np.abs(lambda_CR)):
             KT = K
             uu = np.linalg.solve(Kuu, fext[bu])
             u[bu] = uu
@@ -233,7 +233,7 @@ def test_nat_freq_plate_pre_stress_NL(plot=False, mode=0):
     eigvals, U = eigh(a=KTuu, b=Muu, subset_by_index=(0, num_modes-1))
     omegan = np.sqrt(eigvals)
     print('NL pre-stressed natural frequencies [rad/s]', omegan)
-    assert np.isclose(omegan[0], 2.47, atol=1.)
+    assert isclose(omegan[0], 2.47, atol=1.)
 
 
 if __name__ == '__main__':
