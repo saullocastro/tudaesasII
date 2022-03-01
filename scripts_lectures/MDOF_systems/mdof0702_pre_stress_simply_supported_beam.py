@@ -110,7 +110,7 @@ def calc_KT(u):
     return K + KNL + KG
 
 first_omegan_NL = []
-for Ppreload in Ppreload_list[::2]:
+for Ppreload in Ppreload_list:
     u = np.zeros(K.shape[0])
     load_steps = Ppreload*np.linspace(0.1, 1., 10)
     for load in load_steps:
@@ -141,7 +141,7 @@ for Ppreload in Ppreload_list[::2]:
 plt.clf()
 plt.plot(Ppreload_list, first_omegan, 'ko--', mfc='None',
     label=r'$K_T \approx K + K_G$')
-plt.plot(Ppreload_list[::2], first_omegan_NL, 'rs-', mfc='None',
+plt.plot(Ppreload_list, first_omegan_NL, 'rs-', mfc='None',
     label=r'$K_T$ calculated')
 plt.title('Pre-stress effect for a simply-supported beam')
 plt.xlabel('Pre-load [N]')
