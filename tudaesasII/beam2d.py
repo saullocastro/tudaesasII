@@ -144,7 +144,7 @@ def update_KG(beam, Ppreload_u0, nid_pos, ncoords, KG):
     Properties
     ----------
     beam : `.Beam` object
-        The beam element being added to K
+        The beam element being added to KG
     Ppreload_u0: float or array-like
         A constant load applied to pre-stress the beam element ``Ppreload``; or
         a displacement state ``u0`` in global coordinates.
@@ -314,12 +314,12 @@ def update_KG(beam, Ppreload_u0, nid_pos, ncoords, KG):
 
 
 def update_KNL(beam, u0, nid_pos, ncoords, KNL):
-    """Update global K with beam element
+    """Update the nonlinear part of global constitutive stiffness KNL with beam element
 
     Properties
     ----------
     beam : `.Beam` object
-        The beam element being added to K
+        The beam element being added to KNL
     u0: array-like
         Displacement state ``u0`` in global coordinates.
     nid_pos : dict
@@ -327,7 +327,7 @@ def update_KNL(beam, u0, nid_pos, ncoords, KNL):
     ncoords : list
         Nodal coordinates
     KNL : np.array
-        Global stiffness matrix
+        Nonlinear part of global constitutive stiffness matrix
 
     """
     pos1 = nid_pos[beam.n1]
