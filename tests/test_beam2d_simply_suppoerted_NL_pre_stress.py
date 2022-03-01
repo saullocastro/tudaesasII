@@ -108,8 +108,8 @@ def test_NL_pre_stress_simply_supported_beam():
             assert i < 99
 
         nmodes = 3
-        KT = calc_KT(u)[bu, :][:, bu]
-        eigvals, U = eigh(a=KT, b=Muu, eigvals=(0, nmodes-1))
+        KTuu = calc_KT(u)[bu, :][:, bu]
+        eigvals, U = eigh(a=KTuu, b=Muu, eigvals=(0, nmodes-1))
         omegan = np.sqrt(eigvals)
         print('Natural frequency [rad/s]', omegan)
         assert np.isclose(omegan[0], 0.0558398244)
