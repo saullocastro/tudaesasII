@@ -55,12 +55,6 @@ for n1, n2 in zip(nids[:-1], nids[1:]):
     update_M(beam, nid_pos, M, lumped=False)
     beams.append(beam)
 
-# calculating total mass of the system using the mass matrix
-# unitary translation vector
-unit_u = np.zeros(M.shape[0])
-unit_u[0::DOF] = 1
-mass = unit_u.T @ M @ unit_u
-
 # boundary conditions for the dynamic problem
 bk = np.zeros(K.shape[0], dtype=bool) # defining known DOFs
 at_base = np.isclose(x, 0.)
@@ -74,7 +68,6 @@ bu = ~bk # defining unknown DOFs
 # partitioned matrices
 Kuu = K[bu, :][:, bu]
 Muu = M[bu, :][:, bu]
-
 
 # geometric stiffness matrix
 KG *= 0
@@ -136,7 +129,6 @@ for Ppreload in Ppreload_list:
     eigvals, Uu = eigh(a=KTuu, b=Muu, subset_by_index=[0, num_modes-1])
     omegan = np.sqrt(eigvals)
     first_omegan_NL.append(omegan[0])
-
 
 plt.clf()
 plt.plot(Ppreload_list, first_omegan, 'ko--', mfc='None',
