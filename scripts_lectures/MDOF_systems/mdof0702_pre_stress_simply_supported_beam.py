@@ -116,14 +116,13 @@ for Ppreload in Ppreload_list:
         for i in range(100):
             R = (KT @ u) - fext
             check = np.abs(R[bu]).max()
-            if check < 1.:
+            if check < 0.1:
                 break
             duu = np.linalg.solve(KT[bu, :][:, bu], -R[bu])
             u[bu] += duu
             KT = calc_KT(u) #NOTE full Newton-Raphson since KT is calculated in every iteration
         assert i < 99
 
-    nmodes = 3
     KTuu = calc_KT(u)[bu, :][:, bu]
     num_modes = 3
     eigvals, Uu = eigh(a=KTuu, b=Muu, subset_by_index=[0, num_modes-1])
@@ -134,7 +133,7 @@ plt.clf()
 plt.plot(Ppreload_list, first_omegan, 'ko--', mfc='None',
     label=r'$K_T \approx K + K_G$')
 plt.plot(Ppreload_list, first_omegan_NL, 'rs-', mfc='None',
-    label=r'$K_T$ calculated')
+    label=r'$K_T$ from NL equilibrium')
 plt.title('Pre-stress effect for a simply-supported beam')
 plt.xlabel('Pre-load [N]')
 plt.ylabel('First natural frequency [rad/s]')
