@@ -7,7 +7,7 @@ Github Actions status:
 
 Coverage status:
 
-[![Coverage Status](https://coveralls.io/repos/github/saullocastro/tudaesasII/badge.svg?branch=master)](https://coveralls.io/github/saullocastro/tudaesasII?branch=master)
+[![Coveralls Status](https://coveralls.io/repos/github/saullocastro/tudaesasII/badge.svg?branch=master)](https://coveralls.io/github/saullocastro/tudaesasII?branch=master)
 [![Codecov Status](https://codecov.io/gh/saullocastro/tudaesasII/branch/master/graph/badge.svg?token=KD9D8G8D2P)](https://codecov.io/gh/saullocastro/tudaesasII)
 
 
