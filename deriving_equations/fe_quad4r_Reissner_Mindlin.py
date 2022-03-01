@@ -1,6 +1,6 @@
 import numpy as np
 import sympy
-from sympy import simplify, integrate, Matrix
+from sympy import simplify, integrate, Matrix, symbols
 from sympy.vector import CoordSys3D, cross
 
 r"""
@@ -23,6 +23,8 @@ sympy.var('A11, A12, A16, A22, A26, A66')
 sympy.var('B11, B12, B16, B22, B26, B66')
 sympy.var('D11, D12, D16, D22, D26, D66')
 sympy.var('E44, E45, E55')
+sympy.var('Nxx, Nyy, Nxy')
+sympy.var('ux, uy, vx, vy, wx, wy')
 #NOTE shear correction factor should be applied to E44, E45 and E55
 #     in the finite element code
 
@@ -175,16 +177,28 @@ BLexx = Matrix([[N1x, 0, 0, 0, 0,
                  N2x, 0, 0, 0, 0,
                  N3x, 0, 0, 0, 0,
                  N4x, 0, 0, 0, 0]])
+BNLexx = Matrix([[ux*N1x, vx*N1x, wx*N1x, 0, 0,
+                  ux*N2x, vx*N2x, wx*N2x, 0, 0,
+                  ux*N3x, vx*N3x, wx*N3x, 0, 0,
+                  ux*N4x, vx*N4x, wx*N4x, 0, 0]])
 #eyy = v,y = (dxi/dy)*v,xi + (deta/dy)*v,eta = j21 v,xi + j22 v,eta
 BLeyy = Matrix([[0, N1y, 0, 0, 0,
                  0, N2y, 0, 0, 0,
                  0, N3y, 0, 0, 0,
                  0, N4y, 0, 0, 0]])
+BNLeyy = Matrix([[uy*N1y, vy*N1y, wy*N1y, 0, 0,
+                  uy*N2y, vy*N2y, wy*N2y, 0, 0,
+                  uy*N3y, vy*N3y, wy*N3y, 0, 0,
+                  uy*N4y, vy*N4y, wy*N4y, 0, 0]])
 #gxy = u,y + v,x = (dxi/dy)*u,xi + (deta/dy)*u,eta + (dxi/dx)*v,xi + (deta/dy)*v,eta
 BLgxy = Matrix([[N1y, N1x, 0, 0, 0,
                  N2y, N2x, 0, 0, 0,
                  N3y, N3x, 0, 0, 0,
                  N4y, N4x, 0, 0, 0]])
+BNLgxy = Matrix([[uy*N1x + ux*N1y, vy*N1x + vx*N1y, wy*N1x + wx*N1y, 0, 0,
+                  uy*N2x + ux*N2y, vy*N2x + vx*N2y, wy*N2x + wx*N2y, 0, 0,
+                  uy*N3x + ux*N3y, vy*N3x + vx*N3y, wy*N3x + wx*N3y, 0, 0,
+                  uy*N4x + ux*N4y, vy*N4x + vx*N4y, wy*N4x + wx*N4y, 0, 0]])
 #kxx = phix,x = (dxi/dx)*phix,xi + (deta/dx)*phix,eta
 BLkxx = Matrix([[0, 0, 0, N1x, 0,
                  0, 0, 0, N2x, 0,
@@ -212,9 +226,16 @@ BLgxz = Matrix([[0, 0, N1x, N1, 0,
                  0, 0, N3x, N3, 0,
                  0, 0, N4x, N4, 0]])
 
+Nux = Matrix([[N1x, 0, 0, 0, 0, N2x, 0, 0, 0, 0, N3x, 0, 0, 0, 0, N4x, 0, 0, 0, 0]])
+Nuy = Matrix([[N1y, 0, 0, 0, 0, N2y, 0, 0, 0, 0, N3y, 0, 0, 0, 0, N4y, 0, 0, 0, 0]])
+Nvx = Matrix([[0, N1x, 0, 0, 0, 0, N2x, 0, 0, 0, 0, N3x, 0, 0, 0, 0, N4x, 0, 0, 0]])
+Nvy = Matrix([[0, N1y, 0, 0, 0, 0, N2y, 0, 0, 0, 0, N3y, 0, 0, 0, 0, N4y, 0, 0, 0]])
 Nwx = Matrix([[0, 0, N1x, 0, 0, 0, 0, N2x, 0, 0, 0, 0, N3x, 0, 0, 0, 0, N4x, 0, 0]])
+Nwy = Matrix([[0, 0, N1y, 0, 0, 0, 0, N2y, 0, 0, 0, 0, N3y, 0, 0, 0, 0, N4y, 0, 0]])
 
 BL = Matrix([BLexx, BLeyy, BLgxy, BLkxx, BLkyy, BLkxy, BLgyz, BLgxz])
+ZERO = 0*BNLexx
+BNL = Matrix([BNLexx, BNLeyy, BNLgxy, ZERO, ZERO, ZERO, ZERO, ZERO])
 
 # hourglass control as per Brockman 1987
 # adapted to composites replacing E*h by A11 and E*h**3 by 12*D11
@@ -263,6 +284,8 @@ Egamma = Matrix([[Eu, 0, 0, 0, 0],
 
 # Constitutive linear stiffness matrix
 Ke = sympy.zeros(num_nodes*DOF, num_nodes*DOF)
+KNLe = sympy.zeros(num_nodes*DOF, num_nodes*DOF)
+KGe = sympy.zeros(num_nodes*DOF, num_nodes*DOF)
 Me = sympy.zeros(num_nodes*DOF, num_nodes*DOF)
 Me_lumped = sympy.zeros(num_nodes*DOF, num_nodes*DOF)
 
@@ -276,9 +299,30 @@ ABDE = Matrix(
          [0, 0, 0, 0, 0, 0, E44, E45],
          [0, 0, 0, 0, 0, 0, E45, E55]])
 
+#NOTE this 2D library does not allow rotation from global to local coordinates
+#     thus, we assume that u = ue
+u = Matrix([symbols(r'u[%d]' % i) for i in range(0, BL.shape[1])])
+print('Nxx =', (ABDE*(BL + BNL/2)*u)[0, 0])
+print('Nyy =', (ABDE*(BL + BNL/2)*u)[1, 0])
+print('Nxy =', (ABDE*(BL + BNL/2)*u)[2, 0])
+print('ux =', (Nux*u)[0, 0])
+print('uy =', (Nuy*u)[0, 0])
+print('vx =', (Nvx*u)[0, 0])
+print('vy =', (Nvy*u)[0, 0])
+print('wx =', (Nwx*u)[0, 0])
+print('wy =', (Nwy*u)[0, 0])
+
 sympy.var('wij, offset')
 
 Ke[:, :] = wij*detJ*(BL.T*ABDE*BL + Bgamma.T*Egamma*Bgamma)
+
+KNLe[:, :] = wij*detJ*(BL.T*ABDE*BNL + BNL.T*ABDE*BL + BNL.T*ABDE*BNL)
+
+KGe[:, :] = wij*detJ*(
+          Nxx*(Nux.T*Nux + Nvx.T*Nvx + Nwx.T*Nwx)
+        + Nyy*(Nuy.T*Nuy + Nvy.T*Nvy + Nwy.T*Nwy)
+        + Nxy*(Nux.T*Nuy + Nuy.T*Nux + Nvx.T*Nvy + Nvy.T*Nvx + Nwx.T*Nwy + Nwy.T*Nwx)
+        )
 
 Me[:, :] = wij*detJ*rho*(h*Nu.T*Nu + h*Nv.T*Nv + h*Nw.T*Nw +
     h*(h**2/12 + offset**2)*Nphix.T*Nphix +
@@ -318,6 +362,8 @@ if calc_lumped:
 # K represents the global stiffness matrix
 # in case we want to apply coordinate transformations
 K = Ke
+KNL = KNLe
+KG = KGe
 KA = KAe
 M = Me
 M_lumped = Me_lumped
@@ -334,7 +380,6 @@ def name_ind(i):
     else:
         raise
 
-
 print()
 for ind, val in np.ndenumerate(K):
     if val == 0:
@@ -344,6 +389,23 @@ for ind, val in np.ndenumerate(K):
     sj = name_ind(j)
     print('    K[%d+%s, %d+%s]' % (i%DOF, si, j%DOF, sj), '+=', K[ind])
 
+print()
+for ind, val in np.ndenumerate(KNL):
+    if val == 0:
+        continue
+    i, j = ind
+    si = name_ind(i)
+    sj = name_ind(j)
+    print('    KNL[%d+%s, %d+%s]' % (i%DOF, si, j%DOF, sj), '+=', KNL[ind])
+
+print()
+for ind, val in np.ndenumerate(KG):
+    if val == 0:
+        continue
+    i, j = ind
+    si = name_ind(i)
+    sj = name_ind(j)
+    print('    KG[%d+%s, %d+%s]' % (i%DOF, si, j%DOF, sj), '+=', KG[ind])
 
 print()
 for ind, val in np.ndenumerate(M):
@@ -354,7 +416,6 @@ for ind, val in np.ndenumerate(M):
     sj = name_ind(j)
     print('    M[%d+%s, %d+%s]' % (i%DOF, si, j%DOF, sj), '+=', M[ind])
 
-
 print()
 for ind, val in np.ndenumerate(KA):
     if val == 0:
@@ -363,7 +424,6 @@ for ind, val in np.ndenumerate(KA):
     si = name_ind(i)
     sj = name_ind(j)
     print('    KA[%d+%s, %d+%s]' % (i%DOF, si, j%DOF, sj), '+=', KA[ind])
-
 
 if calc_lumped:
     print()
