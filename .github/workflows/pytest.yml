@@ -44,3 +44,8 @@ jobs:
         files: ./.coverage
         fail_ci_if_error: true
         verbose: true
+
+    - name: "Coveralls GitHub Action"
+      uses: coverallsapp/github-action@master
+      with:
+        token: ${{ secrets.COVERALLS_UPLOAD_TOKEN }} 
