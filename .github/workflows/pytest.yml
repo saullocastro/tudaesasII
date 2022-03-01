@@ -48,4 +48,4 @@ jobs:
     - name: "Coveralls GitHub Action"
       uses: coverallsapp/github-action@master
       with:
-        token: ${{ secrets.COVERALLS_UPLOAD_TOKEN }} 
+        github-token: ${{ secrets.COVERALLS_UPLOAD_TOKEN }} 
