@@ -36,6 +36,7 @@ jobs:
       run: |
         #coverage run -m py.test tests
         coverage run --source tudaesasII -m py.test
+        coverage lcov
         coverage report
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
@@ -49,4 +50,4 @@ jobs:
       uses: coverallsapp/github-action@master
       with:
         github-token: ${{ secrets.COVERALLS_UPLOAD_TOKEN }} 
-        path-to-lcov: ./.coverage
+        path-to-lcov: ./coverage.lcov
