@@ -51,5 +51,5 @@ jobs:
       env:
         COVERALLS_REPO_TOKEN : ${{ secrets.COVERALLS_REPO_TOKEN }}
       with:
-        github-token: ${{ secrets.COVERALLS_UPLOAD_TOKEN }} 
+        github-token: ${{ secrets.GITHUB_TOKEN }} 
         path-to-lcov: ./coverage.lcov
