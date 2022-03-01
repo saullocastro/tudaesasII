@@ -112,7 +112,7 @@ def test_NL_pre_stress_simply_supported_beam():
         eigvals, U = eigh(a=KTuu, b=Muu, eigvals=(0, nmodes-1))
         omegan = np.sqrt(eigvals)
         print('Natural frequency [rad/s]', omegan)
-        assert np.isclose(omegan[0], 0.0558398244)
+        assert np.isclose(omegan[0], 0.0558398244, atol=0.01)
 
 if __name__ == '__main__':
     test_NL_pre_stress_simply_supported_beam()
