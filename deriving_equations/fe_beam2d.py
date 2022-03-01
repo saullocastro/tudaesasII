@@ -1,7 +1,7 @@
 import numpy as np
 import sympy
 from sympy import zeros, symbols, Matrix, simplify, integrate
-sympy.var('xi, le, E, cosr, sinr, rho, A1, A2, Izz1, Izz2, Ppreload, ux, vx')
+sympy.var('xi, le, E, cosr, sinr, rho, A1, A2, Izz1, Izz2, Ppreload, sigmaxx, ux, vx')
 
 A = A1 + (A2 - A1)*(xi - (-1))/(1 - (-1))
 Izz = Izz1 + (Izz2 - Izz1)*(xi - (-1))/(1 - (-1))
@@ -51,7 +51,7 @@ for leg_poly in [True, False]:
     print('ux =', (2/le)*Nuxi*R*u)
     print('vx =', (2/le)*Nvxi*R*u)
 
-    sigmaxx = (E*(BL + BNL)*R*u)[0, 0]
+    print('sigmaxx =', (E*(BL + BNL/2)*R*u)[0, 0])
 
     Ke[:, :] = (2/le)*E*Izz*Nbetaxi.T*Nbetaxi + (2/le)*E*A*Nuxi.T*Nuxi
     KNLe[:, :] = ((2/le)*E*A*(2/le)**2*(vx*Nuxi.T*Nvxi + vx*Nvxi.T*Nuxi +
