@@ -79,12 +79,13 @@ KGuu = KG[bu, :][:, bu]
 num_modes = 3
 linbuck_eigvals, _ = eigh(a=Kuu, b=KGuu, subset_by_index=[0, num_modes-1])
 
-Ppreload_list = np.linspace(-0.9999*linbuck_eigvals[0], +linbuck_eigvals[0], 200)
-first_omegan = []
+PCR = linbuck_eigvals[0]
+Ppreload_list = np.linspace(-0.9999*PCR, +PCR, 200)
 
 # pre-load effect on natural frequencies
 
 #CASE 1, assuming KT = KC0 + KG
+first_omegan = []
 for Ppreload in Ppreload_list:
     # solving generalized eigenvalue problem
     num_modes = 3
