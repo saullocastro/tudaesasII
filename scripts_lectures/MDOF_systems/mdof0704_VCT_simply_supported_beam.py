@@ -184,7 +184,7 @@ def first_order_fit(x, a, b):
 def second_order_fit(x, a, b, c):
     return a + b*x + c*x**2
 
-load_ratios = [0.2, 0.5, 0.8, 0.9]
+load_ratios = [0.2, 0.5, 0.8, 0.96]
 symbols = ['s', 'o', '^', '1']
 colors = ['blue', 'orange', 'green', 'red']
 
