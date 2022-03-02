@@ -86,7 +86,7 @@ linbuck_eigvals, _ = eigh(a=Kuu, b=KGuu, subset_by_index=[0, num_modes-1])
 
 PCR = -linbuck_eigvals[0]
 print('PCR', PCR)
-Ppreload_list = np.linspace(0.1*PCR, 0.99*PCR, 100)
+Ppreload_list = np.linspace(0.1*PCR, 0.9999*PCR, 100)
 
 #CASE 1, assuming KT = KC0 + KG
 first_omegan = []
@@ -111,6 +111,7 @@ first_omegan_NL = []
 estimated_PCR = []
 one_minus_P_PCR_square = []
 one_minus_omegan_omegan0_square = []
+one_minus_omegan_omegan0_fourth = []
 for Ppreload in Ppreload_list:
     u = np.zeros(K.shape[0])
     load_steps = Ppreload*np.linspace(0.1, 1., 10)
@@ -138,6 +139,7 @@ for Ppreload in Ppreload_list:
     estimated_PCR.append(Ppreload/(1 - (omegan[0]/omegan0)**2))
     one_minus_P_PCR_square.append((1 - Ppreload/PCR)**2)
     one_minus_omegan_omegan0_square.append(1 - (omegan[0]/omegan0)**2)
+    one_minus_omegan_omegan0_fourth.append(1 - (omegan[0]/omegan0)**4)
     first_omegan_NL.append(omegan[0])
 
 VCT_omegan = omegan0*np.sqrt(1 - Ppreload_list/PCR)
@@ -176,12 +178,36 @@ plt.xlabel('Pre-load $P$ [N]')
 plt.show()
 
 
+def first_order_fit(x, a, b):
+    return a + b*x
+
 def second_order_fit(x, a, b, c):
     return a + b*x + c*x**2
 
 load_ratios = [0.2, 0.5, 0.8, 0.9]
 symbols = ['s', 'o', '^', '1']
 colors = ['blue', 'orange', 'green', 'red']
+
+for load_ratio, symbol, color in zip(load_ratios, symbols, colors):
+    plt.clf()
+    threshold = load_ratio*PCR
+    valid_values = Ppreload_list > threshold
+    xdata = np.asarray(one_minus_omegan_omegan0_fourth)[valid_values]
+    ydata = np.asarray(one_minus_P_PCR_square)[valid_values]
+    (a, b), corr = curve_fit(first_order_fit, xdata, ydata)
+    xi2_omegan_0 = first_order_fit(1, a, b)
+    xplot = np.asarray(one_minus_omegan_omegan0_fourth[:-4])
+    plt.plot(xdata, ydata, marker=symbol, mec=color, mfc='None')
+    plt.plot(xplot, first_order_fit(xplot, a, b), '-', color=color,
+        label=r'First-order curve fit with data up to {0:1.0f}%'.format(load_ratio*100) + ' of $P_{CR}$')
+    plt.xlim(0.15, 1.1)
+    plt.ylim(-0.05, 0.85)
+    plt.legend(loc='upper right')
+    plt.text(0.16, 0.01, r'Nonlinear buckling load ($\omega_n \to 0$) = %1.2f' % (PCR*(1 - xi2_omegan_0**0.5)), ha='left', va='bottom')
+    plt.xlabel(r'$1 - (\omega_n/{\omega_n}_0)^4$')
+    plt.ylabel(r'$(1 - P/P_{CR})^2$')
+    plt.savefig('mdof0704_VCT_Sosa_%02d.png' % (load_ratio*100), bbox_inches='tight')
+
 for load_ratio, symbol, color in zip(load_ratios, symbols, colors):
     plt.clf()
     threshold = load_ratio*PCR
@@ -191,6 +217,7 @@ for load_ratio, symbol, color in zip(load_ratios, symbols, colors):
     (a, b, c), corr = curve_fit(second_order_fit, xdata, ydata)
     xmin = -b/(2*c)
     xi2 = second_order_fit(xmin, a, b, c)
+    xi2_omegan_0 = second_order_fit(1, a, b, c)
     plt.hlines([xi2], 0, 2, colors=color, linestyles='--', lw=0.5)
     xplot = np.asarray(one_minus_omegan_omegan0_square[:-4])
     plt.plot(xdata, ydata, marker=symbol, mec=color, mfc='None')
@@ -199,11 +226,12 @@ for load_ratio, symbol, color in zip(load_ratios, symbols, colors):
     plt.xlim(0, 1.0)
     plt.ylim(-0.05, 0.85)
     plt.legend()
-    plt.text(0.05, 0.05, 'Estimated nonlinear buckling load = %1.2f' % (PCR*(1 -
+    plt.text(0.01, 0.1, r'Nonlinear buckling load ($\omega_n \to 0$) = %1.2f' % (PCR*(1 - xi2_omegan_0**0.5)), ha='left', va='bottom')
+    plt.text(0.01, 0.05, 'Nonlinear buckling load (Arbelo et al.) = %1.2f' % (PCR*(1 -
         xi2**0.5)), ha='left', va='bottom')
     #plt.xlabel(r'$\left(1 - \left(\frac{\omega_n}{{\omega_n}_0}\right)^2\right)$')
     #plt.ylabel(r'$\left(1 - \frac{P}{P_{CR}}\right)^2$')
     plt.xlabel(r'$1 - (\omega_n/{\omega_n}_0)^2$')
     plt.ylabel(r'$(1 - P/P_{CR})^2$')
-    plt.savefig('mdof0704_VCT_%02d.png' % (load_ratio*100), bbox_inches='tight')
+    plt.savefig('mdof0704_VCT_Arbelo_%02d.png' % (load_ratio*100), bbox_inches='tight')
 
