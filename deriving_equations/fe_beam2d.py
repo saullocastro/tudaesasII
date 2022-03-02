@@ -56,7 +56,9 @@ for leg_poly in [True, False]:
     Ke[:, :] = (2/le)*E*Izz*Nbetaxi.T*Nbetaxi + (2/le)*E*A*Nuxi.T*Nuxi
     KNLe[:, :] = ((2/le)*E*A*(2/le)**2*(vx*Nuxi.T*Nvxi + vx*Nvxi.T*Nuxi +
                                         2*ux*Nuxi.T*Nuxi)
-                + (2/le)*E*A*(2/le)**2*(vx**2*Nvxi.T*Nvxi + ux**2*Nuxi.T*Nuxi))
+                + (2/le)*E*A*(2/le)**2*(ux**2*Nuxi.T*Nuxi +
+                    ux*vx*Nuxi.T*Nvxi + vx*ux*Nvxi.T*Nuxi +
+                    vx**2*Nvxi.T*Nvxi))
     KGconste[:, :] = (le/2)*Ppreload*(2/le)**2*(Nuxi.T*Nuxi + Nvxi.T*Nvxi)
     KGe[:, :] = (le/2)*sigmaxx*A*(2/le)**2*(Nuxi.T*Nuxi + Nvxi.T*Nvxi)
     Me[:, :] = (le/2)*rho*(A*Nu.T*Nu + A*Nv.T*Nv + Izz*Nbeta.T*Nbeta)
