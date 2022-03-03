@@ -9,7 +9,7 @@ from scipy.linalg import eigh, cholesky, solve
 from scipy.optimize import curve_fit
 
 from tudaesasII.beam2d import (Beam2D, update_K, update_KG, update_KNL,
-        update_M, DOF)
+        calc_fint, update_M, DOF)
 
 # number of nodes along x
 nx = 11 #NOTE keep nx an odd number to have a node in the middle
@@ -118,23 +118,23 @@ for Ppreload in Ppreload_list:
     for load in load_steps:
         fext = np.zeros(K.shape[0])
         fext[0::DOF][at_tip] = load
-        if np.isclose(load, 0.1*Ppreload):
+        if np.isclose(load, load_steps[0]):
             KT = K
             uu = np.linalg.solve(Kuu, fext[bu])
             u[bu] = uu
         for i in range(100):
-            R = (KT @ u) - fext
+            fint = calc_fint(beams, u, nid_pos, ncoords)
+            R = fint - fext
             check = np.abs(R[bu]).max()
-            if check < 0.1:
+            if check < 0.01:
+                KT = calc_KT(u) #NOTE modified Newton-Raphson since KT in only calculated after each load step
                 break
             duu = np.linalg.solve(KT[bu, :][:, bu], -R[bu])
             u[bu] += duu
-            KT = calc_KT(u) #NOTE full Newton-Raphson since KT is calculated in every iteration
         assert i < 99
 
-    KTuu = calc_KT(u)[bu, :][:, bu]
     num_modes = 3
-    eigvals, Uu = eigh(a=KTuu, b=Muu, subset_by_index=[0, num_modes-1])
+    eigvals, Uu = eigh(a=KT[bu, :][:, bu], b=Muu, subset_by_index=[0, num_modes-1])
     omegan = np.sqrt(eigvals)
     estimated_PCR.append(Ppreload/(1 - (omegan[0]/omegan0)**2))
     one_minus_P_PCR_square.append((1 - Ppreload/PCR)**2)
@@ -175,6 +175,8 @@ plt.plot(Ppreload_list, estimated_PCR, 'ks--', mfc='None')
 plt.title('VCT to estimate $P_{CR}$ of a simply-supported beam')
 plt.ylabel('Estimated $P_{CR}$ [N]')
 plt.xlabel('Pre-load $P$ [N]')
+plt.yscale('linear')
+plt.ylim(min(estimated_PCR)-1, max(estimated_PCR)+1)
 plt.show()
 
 

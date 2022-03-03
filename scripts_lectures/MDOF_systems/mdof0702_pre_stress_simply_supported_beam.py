@@ -8,7 +8,7 @@ import numpy as np
 from scipy.linalg import eigh, cholesky, solve
 
 from tudaesasII.beam2d import (Beam2D, update_K, update_KG, update_KNL,
-        update_M, DOF)
+        calc_fint, update_M, DOF)
 
 # number of nodes along x
 nx = 11 #NOTE keep nx an odd number to have a node in the middle
@@ -110,18 +110,19 @@ for Ppreload in Ppreload_list:
     for load in load_steps:
         fext = np.zeros(K.shape[0])
         fext[0::DOF][at_tip] = load
-        if np.isclose(load, 0.1*Ppreload):
+        if np.isclose(load, load_steps[0]):
             KT = K
             uu = np.linalg.solve(Kuu, fext[bu])
             u[bu] = uu
         for i in range(100):
-            R = (KT @ u) - fext
+            fint = calc_fint(beams, u, nid_pos, ncoords)
+            R = fint - fext
             check = np.abs(R[bu]).max()
-            if check < 0.1:
+            if check < 0.01:
+                KT = calc_KT(u) #NOTE modified Newton-Raphson since KT is only updated after each load step
                 break
             duu = np.linalg.solve(KT[bu, :][:, bu], -R[bu])
             u[bu] += duu
-            KT = calc_KT(u) #NOTE full Newton-Raphson since KT is calculated in every iteration
         assert i < 99
 
     KTuu = calc_KT(u)[bu, :][:, bu]
