@@ -33,7 +33,7 @@ def update_K(quad, nid_pos, ncoords, K):
 
     Properties
     ----------
-    quad : `.Quad`object
+    quad : `.Quad4R`object
         The quad element being added to K
     nid_pos : dict
         Correspondence between node ids and their position in the global assembly
@@ -469,7 +469,7 @@ def update_KG(quad, u0, nid_pos, ncoords, KG):
 
     Properties
     ----------
-    quad : `.Quad`object
+    quad : `.Quad4R`object
         The quad element being added to KG
     u0: array-like
         A displacement state ``u0`` in global coordinates.
@@ -600,7 +600,7 @@ def update_KNL(quad, u0, nid_pos, ncoords, KNL):
 
     Properties
     ----------
-    quad : `.Quad`object
+    quad : `.Quad4R`object
         The quad element being added to KNL
     u0: array-like
         A displacement state ``u0`` in global coordinates.
@@ -1016,8 +1016,8 @@ def calc_fint(quads, u0, nid_pos, ncoords):
 
     Properties
     ----------
-    quads : list of `.Quad`objects
-        The quads elements to be added to the internal force vector
+    quads : list of `.Quad4R`objects
+        The quad elements to be added to the internal force vector
     u0: array-like
         A displacement state ``u0`` in global coordinates
     nid_pos : dict
@@ -1133,12 +1133,13 @@ def calc_fint(quads, u0, nid_pos, ncoords):
                 fint[4 + c4] += Mxy*N4x*detJ*wij + Myy*N4y*detJ*wij + N4*Qx*detJ*wij
     return fint
 
+
 def update_M(quad, nid_pos, ncoords, M, lumped=False):
     """Update global M with Me from a quad element
 
     Properties
     ----------
-    quad : `.Quad` object
+    quad : `.Quad4R` object
         The quad element being added to M
     nid_pos : dict
         Correspondence between node ids and their position in the global assembly
@@ -1297,7 +1298,7 @@ def update_KA(quad, nid_pos, ncoords, KA):
 
     Properties
     ----------
-    quad : `.Quad`object
+    quad : `.Quad4R`object
         The quad element being added to KA
     nid_pos : dict
         Correspondence between node ids and their position in the global assembly
