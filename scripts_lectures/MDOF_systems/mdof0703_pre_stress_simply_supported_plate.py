@@ -177,7 +177,7 @@ for lambda_i in preload_list_NL:
         assert i < 99
 
     num_modes = 3
-    eigvals, Uu = eigsh(A=KTuu, M=Muu, k=num_modes, sigma=-1., which='LM')
+    eigvals, Uu = eigsh(A=KT[bu, :][:, bu], M=Muu, k=num_modes, sigma=-1., which='LM')
     omegan = np.sqrt(eigvals)
     first_omegan_NL.append(omegan[0])
 
