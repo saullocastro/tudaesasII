@@ -5,7 +5,7 @@ import numpy as np
 from scipy.linalg import eigh
 
 from tudaesasII.beam2d import (Beam2D, update_K, update_KG, update_KNL,
-        update_M, DOF)
+        calc_fint, update_M, DOF)
 
 
 def test_NL_pre_stress_simply_supported_beam():
@@ -88,7 +88,7 @@ def test_NL_pre_stress_simply_supported_beam():
             return K + KNL + KG
 
         u = np.zeros(K.shape[0])
-        loads = np.abs(Ppreload)*np.linspace(0.1, 0.983454, 10)
+        loads = np.abs(Ppreload)*np.linspace(0.1, 0.9999, 10)
         for load in loads:
             fext = np.zeros(K.shape[0])
             fext[0::DOF][at_tip] = -load
@@ -98,13 +98,14 @@ def test_NL_pre_stress_simply_supported_beam():
                 uu = np.linalg.solve(Kuu, fext[bu])
                 u[bu] = uu
             for i in range(100):
-                R = (KT @ u) - fext
+                fint = calc_fint(beams, u, nid_pos, ncoords)
+                R = fint - fext
                 check = np.abs(R[bu]).max()
-                if check < 1.:
+                if check < 0.01:
+                    KT = calc_KT(u) #NOTE modified Newton-Raphson since KT is updated only after each load step
                     break
                 duu = np.linalg.solve(KT[bu, :][:, bu], -R[bu])
                 u[bu] += duu
-                KT = calc_KT(u) #NOTE full Newton-Raphson since KT is calculated in every iteration
             assert i < 99
 
         nmodes = 3
@@ -112,7 +113,7 @@ def test_NL_pre_stress_simply_supported_beam():
         eigvals, U = eigh(a=KTuu, b=Muu, eigvals=(0, nmodes-1))
         omegan = np.sqrt(eigvals)
         print('Natural frequency [rad/s]', omegan)
-        assert np.isclose(omegan[0], 0.0558398244, atol=0.01)
+        assert np.isclose(omegan[0], 0.2, atol=0.1)
 
 if __name__ == '__main__':
     test_NL_pre_stress_simply_supported_beam()
