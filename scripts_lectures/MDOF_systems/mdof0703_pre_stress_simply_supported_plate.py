@@ -11,7 +11,7 @@ from scipy.sparse.linalg import spsolve, eigsh
 from composites import isotropic_plate
 
 from tudaesasII.quad4r import (Quad4R, update_K, update_KG, update_KNL,
-        update_M, DOF)
+        calc_fint, update_M, DOF)
 
 
 nx = 19
@@ -166,16 +166,16 @@ for lambda_i in preload_list_NL:
             uu = spsolve(Kuu, fext[bu])
             u[bu] = uu
         for i in range(100):
-            R = (KT @ u) - fext
+            fint = calc_fint(quads, u, nid_pos, ncoords)
+            R = fint - fext
             check = np.abs(R[bu]).max()
             if check < 0.1:
+                KT = calc_KT(u) #NOTE modified Newton-Raphson since KT is calculated only after each load step
                 break
             duu = spsolve(KT[bu, :][:, bu], -R[bu])
             u[bu] += duu
-            KT = calc_KT(u) #NOTE full Newton-Raphson since KT is calculated in every iteration
         assert i < 99
 
-    KTuu = calc_KT(u)[bu, :][:, bu]
     num_modes = 3
     eigvals, Uu = eigsh(A=KTuu, M=Muu, k=num_modes, sigma=-1., which='LM')
     omegan = np.sqrt(eigvals)

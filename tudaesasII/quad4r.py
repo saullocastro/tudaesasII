@@ -1011,6 +1011,128 @@ def update_KNL(quad, u0, nid_pos, ncoords, KNL):
             KNL[4+c4, 2+c4] += detJ*wij*(N4x*wx*(B12*N4y + B16*N4x) + N4y*wy*(B22*N4y + B26*N4x) + (B26*N4y + B66*N4x)*(N4x*wy + N4y*wx))
 
 
+def calc_fint(quads, u0, nid_pos, ncoords):
+    """Calculate the internal force vector
+
+    Properties
+    ----------
+    quads : list of `.Quad`objects
+        The quads elements to be added to the internal force vector
+    u0: array-like
+        A displacement state ``u0`` in global coordinates
+    nid_pos : dict
+        Correspondence between node ids and their position in the global assembly
+    ncoords : list
+        Nodal coordinates of the whole model
+
+    """
+    fint = np.zeros_like(u0)
+
+    for quad in quads:
+        pos1 = nid_pos[quad.n1]
+        pos2 = nid_pos[quad.n2]
+        pos3 = nid_pos[quad.n3]
+        pos4 = nid_pos[quad.n4]
+        x1, y1 = ncoords[pos1]
+        x2, y2 = ncoords[pos2]
+        x3, y3 = ncoords[pos3]
+        x4, y4 = ncoords[pos4]
+
+        A11 = quad.ABDE[0, 0]
+        A12 = quad.ABDE[0, 1]
+        A16 = quad.ABDE[0, 2]
+        A22 = quad.ABDE[1, 1]
+        A26 = quad.ABDE[1, 2]
+        A66 = quad.ABDE[2, 2]
+        B11 = quad.ABDE[3, 0]
+        B12 = quad.ABDE[3, 1]
+        B16 = quad.ABDE[3, 2]
+        B22 = quad.ABDE[4, 1]
+        B26 = quad.ABDE[4, 2]
+        B66 = quad.ABDE[5, 2]
+        D11 = quad.ABDE[3, 3]
+        D12 = quad.ABDE[3, 4]
+        D16 = quad.ABDE[3, 5]
+        D22 = quad.ABDE[4, 4]
+        D26 = quad.ABDE[4, 5]
+        D66 = quad.ABDE[5, 5]
+        E44 = quad.ABDE[6, 6]
+        E45 = quad.ABDE[6, 7]
+        E55 = quad.ABDE[7, 7]
+
+        # positions c1, c2 in the stiffness and mass matrices
+        c1 = DOF*pos1
+        c2 = DOF*pos2
+        c3 = DOF*pos3
+        c4 = DOF*pos4
+
+        u = np.concatenate((u0[c1:c1+DOF], u0[c2:c2+DOF], u0[c3:c3+DOF], u0[c4:c4+DOF]))
+
+        #NOTE full 2-point Gauss-Legendre quadrature integration for KNL
+        weights_points =[[1., -0.577350269189625764509148780501957455647601751270126876],
+                         [1., +0.577350269189625764509148780501957455647601751270126876]]
+
+        #NOTE reduced integration with 1 point at center
+        #NOTE this seems to work the same as using the full integration
+        weights_points =[[2., 0]]
+
+        for wi, xi in weights_points:
+            for wj, eta in weights_points:
+                wij = wi*wj
+                detJ = (-2*x1 + 2*x2 + (eta + 1)*(x1 - x2 + x3 - x4))*(-2*y1 + 2*y4 + (xi + 1)*(y1 - y2) + (xi + 1)*(y3 - y4))/16 - (-2*y1 + 2*y2 + (eta + 1)*(y1 - y2 + y3 - y4))*(-2*x1 + 2*x4 + (x1 - x2)*(xi + 1) + (x3 - x4)*(xi + 1))/16
+                j11 = 2*(-xi*y1 + xi*y2 - xi*y3 + xi*y4 + y1 + y2 - y3 - y4)/(eta*x1*y2 - eta*x1*y3 - eta*x2*y1 + eta*x2*y4 + eta*x3*y1 - eta*x3*y4 - eta*x4*y2 + eta*x4*y3 + x1*xi*y3 - x1*xi*y4 - x1*y2 + x1*y4 - x2*xi*y3 + x2*xi*y4 + x2*y1 - x2*y3 - x3*xi*y1 + x3*xi*y2 + x3*y2 - x3*y4 + x4*xi*y1 - x4*xi*y2 - x4*y1 + x4*y3)
+                j12 = 4*(-2*y1 + 2*y2 + (eta + 1)*(y1 - y2 + y3 - y4))/(-(-2*x1 + 2*x2 + (eta + 1)*(x1 - x2 + x3 - x4))*(-2*y1 + 2*y4 + (xi + 1)*(y1 - y2) + (xi + 1)*(y3 - y4)) + (-2*y1 + 2*y2 + (eta + 1)*(y1 - y2 + y3 - y4))*(-2*x1 + 2*x4 + (x1 - x2)*(xi + 1) + (x3 - x4)*(xi + 1)))
+                j21 = 4*(-2*x1 + 2*x4 + (x1 - x2)*(xi + 1) + (x3 - x4)*(xi + 1))/(-(-2*x1 + 2*x2 + (eta + 1)*(x1 - x2 + x3 - x4))*(-2*y1 + 2*y4 + (xi + 1)*(y1 - y2) + (xi + 1)*(y3 - y4)) + (-2*y1 + 2*y2 + (eta + 1)*(y1 - y2 + y3 - y4))*(-2*x1 + 2*x4 + (x1 - x2)*(xi + 1) + (x3 - x4)*(xi + 1)))
+                j22 = 4*(2*x1 - 2*x2 - (eta + 1)*(x1 - x2 + x3 - x4))/(-(-2*x1 + 2*x2 + (eta + 1)*(x1 - x2 + x3 - x4))*(-2*y1 + 2*y4 + (xi + 1)*(y1 - y2) + (xi + 1)*(y3 - y4)) + (-2*y1 + 2*y2 + (eta + 1)*(y1 - y2 + y3 - y4))*(-2*x1 + 2*x4 + (x1 - x2)*(xi + 1) + (x3 - x4)*(xi + 1)))
+                N1 = eta*xi/4 - eta/4 - xi/4 + 1/4
+                N2 = -eta*xi/4 - eta/4 + xi/4 + 1/4
+                N3 = eta*xi/4 + eta/4 + xi/4 + 1/4
+                N4 = -eta*xi/4 + eta/4 - xi/4 + 1/4
+                N1x = j11*(eta - 1)/4 + j12*(xi - 1)/4
+                N2x = -eta*j11/4 + j11/4 - j12*xi/4 - j12/4
+                N3x = j11*(eta + 1)/4 + j12*(xi + 1)/4
+                N4x = -eta*j11/4 - j11/4 - j12*xi/4 + j12/4
+                N1y = j21*(eta - 1)/4 + j22*(xi - 1)/4
+                N2y = -eta*j21/4 + j21/4 - j22*xi/4 - j22/4
+                N3y = j21*(eta + 1)/4 + j22*(xi + 1)/4
+                N4y = -eta*j21/4 - j21/4 - j22*xi/4 + j22/4
+                ux = N1x*u[0] + N2x*u[5] + N3x*u[10] + N4x*u[15]
+                uy = N1y*u[0] + N2y*u[5] + N3y*u[10] + N4y*u[15]
+                vx = N1x*u[1] + N2x*u[6] + N3x*u[11] + N4x*u[16]
+                vy = N1y*u[1] + N2y*u[6] + N3y*u[11] + N4y*u[16]
+                wx = N1x*u[2] + N2x*u[7] + N3x*u[12] + N4x*u[17]
+                wy = N1y*u[2] + N2y*u[7] + N3y*u[12] + N4y*u[17]
+                Nxx = u[0]*(A11*(N1x*ux/2 + N1x) + A12*N1y*uy/2 + A16*(N1x*uy/2 + N1y*ux/2 + N1y)) + u[10]*(A11*(N3x*ux/2 + N3x) + A12*N3y*uy/2 + A16*(N3x*uy/2 + N3y*ux/2 + N3y)) + u[11]*(A11*N3x*vx/2 + A12*(N3y*vy/2 + N3y) + A16*(N3x*vy/2 + N3x + N3y*vx/2)) + u[12]*(A11*N3x*wx/2 + A12*N3y*wy/2 + A16*(N3x*wy/2 + N3y*wx/2)) + u[13]*(B11*N3x + B16*N3y) + u[14]*(B12*N3y + B16*N3x) + u[15]*(A11*(N4x*ux/2 + N4x) + A12*N4y*uy/2 + A16*(N4x*uy/2 + N4y*ux/2 + N4y)) + u[16]*(A11*N4x*vx/2 + A12*(N4y*vy/2 + N4y) + A16*(N4x*vy/2 + N4x + N4y*vx/2)) + u[17]*(A11*N4x*wx/2 + A12*N4y*wy/2 + A16*(N4x*wy/2 + N4y*wx/2)) + u[18]*(B11*N4x + B16*N4y) + u[19]*(B12*N4y + B16*N4x) + u[1]*(A11*N1x*vx/2 + A12*(N1y*vy/2 + N1y) + A16*(N1x*vy/2 + N1x + N1y*vx/2)) + u[2]*(A11*N1x*wx/2 + A12*N1y*wy/2 + A16*(N1x*wy/2 + N1y*wx/2)) + u[3]*(B11*N1x + B16*N1y) + u[4]*(B12*N1y + B16*N1x) + u[5]*(A11*(N2x*ux/2 + N2x) + A12*N2y*uy/2 + A16*(N2x*uy/2 + N2y*ux/2 + N2y)) + u[6]*(A11*N2x*vx/2 + A12*(N2y*vy/2 + N2y) + A16*(N2x*vy/2 + N2x + N2y*vx/2)) + u[7]*(A11*N2x*wx/2 + A12*N2y*wy/2 + A16*(N2x*wy/2 + N2y*wx/2)) + u[8]*(B11*N2x + B16*N2y) + u[9]*(B12*N2y + B16*N2x)
+                Nyy = u[0]*(A12*(N1x*ux/2 + N1x) + A22*N1y*uy/2 + A26*(N1x*uy/2 + N1y*ux/2 + N1y)) + u[10]*(A12*(N3x*ux/2 + N3x) + A22*N3y*uy/2 + A26*(N3x*uy/2 + N3y*ux/2 + N3y)) + u[11]*(A12*N3x*vx/2 + A22*(N3y*vy/2 + N3y) + A26*(N3x*vy/2 + N3x + N3y*vx/2)) + u[12]*(A12*N3x*wx/2 + A22*N3y*wy/2 + A26*(N3x*wy/2 + N3y*wx/2)) + u[13]*(B12*N3x + B26*N3y) + u[14]*(B22*N3y + B26*N3x) + u[15]*(A12*(N4x*ux/2 + N4x) + A22*N4y*uy/2 + A26*(N4x*uy/2 + N4y*ux/2 + N4y)) + u[16]*(A12*N4x*vx/2 + A22*(N4y*vy/2 + N4y) + A26*(N4x*vy/2 + N4x + N4y*vx/2)) + u[17]*(A12*N4x*wx/2 + A22*N4y*wy/2 + A26*(N4x*wy/2 + N4y*wx/2)) + u[18]*(B12*N4x + B26*N4y) + u[19]*(B22*N4y + B26*N4x) + u[1]*(A12*N1x*vx/2 + A22*(N1y*vy/2 + N1y) + A26*(N1x*vy/2 + N1x + N1y*vx/2)) + u[2]*(A12*N1x*wx/2 + A22*N1y*wy/2 + A26*(N1x*wy/2 + N1y*wx/2)) + u[3]*(B12*N1x + B26*N1y) + u[4]*(B22*N1y + B26*N1x) + u[5]*(A12*(N2x*ux/2 + N2x) + A22*N2y*uy/2 + A26*(N2x*uy/2 + N2y*ux/2 + N2y)) + u[6]*(A12*N2x*vx/2 + A22*(N2y*vy/2 + N2y) + A26*(N2x*vy/2 + N2x + N2y*vx/2)) + u[7]*(A12*N2x*wx/2 + A22*N2y*wy/2 + A26*(N2x*wy/2 + N2y*wx/2)) + u[8]*(B12*N2x + B26*N2y) + u[9]*(B22*N2y + B26*N2x)
+                Nxy = u[0]*(A16*(N1x*ux/2 + N1x) + A26*N1y*uy/2 + A66*(N1x*uy/2 + N1y*ux/2 + N1y)) + u[10]*(A16*(N3x*ux/2 + N3x) + A26*N3y*uy/2 + A66*(N3x*uy/2 + N3y*ux/2 + N3y)) + u[11]*(A16*N3x*vx/2 + A26*(N3y*vy/2 + N3y) + A66*(N3x*vy/2 + N3x + N3y*vx/2)) + u[12]*(A16*N3x*wx/2 + A26*N3y*wy/2 + A66*(N3x*wy/2 + N3y*wx/2)) + u[13]*(B16*N3x + B66*N3y) + u[14]*(B26*N3y + B66*N3x) + u[15]*(A16*(N4x*ux/2 + N4x) + A26*N4y*uy/2 + A66*(N4x*uy/2 + N4y*ux/2 + N4y)) + u[16]*(A16*N4x*vx/2 + A26*(N4y*vy/2 + N4y) + A66*(N4x*vy/2 + N4x + N4y*vx/2)) + u[17]*(A16*N4x*wx/2 + A26*N4y*wy/2 + A66*(N4x*wy/2 + N4y*wx/2)) + u[18]*(B16*N4x + B66*N4y) + u[19]*(B26*N4y + B66*N4x) + u[1]*(A16*N1x*vx/2 + A26*(N1y*vy/2 + N1y) + A66*(N1x*vy/2 + N1x + N1y*vx/2)) + u[2]*(A16*N1x*wx/2 + A26*N1y*wy/2 + A66*(N1x*wy/2 + N1y*wx/2)) + u[3]*(B16*N1x + B66*N1y) + u[4]*(B26*N1y + B66*N1x) + u[5]*(A16*(N2x*ux/2 + N2x) + A26*N2y*uy/2 + A66*(N2x*uy/2 + N2y*ux/2 + N2y)) + u[6]*(A16*N2x*vx/2 + A26*(N2y*vy/2 + N2y) + A66*(N2x*vy/2 + N2x + N2y*vx/2)) + u[7]*(A16*N2x*wx/2 + A26*N2y*wy/2 + A66*(N2x*wy/2 + N2y*wx/2)) + u[8]*(B16*N2x + B66*N2y) + u[9]*(B26*N2y + B66*N2x)
+                Mxx = u[0]*(B11*(N1x*ux/2 + N1x) + B12*N1y*uy/2 + B16*(N1x*uy/2 + N1y*ux/2 + N1y)) + u[10]*(B11*(N3x*ux/2 + N3x) + B12*N3y*uy/2 + B16*(N3x*uy/2 + N3y*ux/2 + N3y)) + u[11]*(B11*N3x*vx/2 + B12*(N3y*vy/2 + N3y) + B16*(N3x*vy/2 + N3x + N3y*vx/2)) + u[12]*(B11*N3x*wx/2 + B12*N3y*wy/2 + B16*(N3x*wy/2 + N3y*wx/2)) + u[13]*(D11*N3x + D16*N3y) + u[14]*(D12*N3y + D16*N3x) + u[15]*(B11*(N4x*ux/2 + N4x) + B12*N4y*uy/2 + B16*(N4x*uy/2 + N4y*ux/2 + N4y)) + u[16]*(B11*N4x*vx/2 + B12*(N4y*vy/2 + N4y) + B16*(N4x*vy/2 + N4x + N4y*vx/2)) + u[17]*(B11*N4x*wx/2 + B12*N4y*wy/2 + B16*(N4x*wy/2 + N4y*wx/2)) + u[18]*(D11*N4x + D16*N4y) + u[19]*(D12*N4y + D16*N4x) + u[1]*(B11*N1x*vx/2 + B12*(N1y*vy/2 + N1y) + B16*(N1x*vy/2 + N1x + N1y*vx/2)) + u[2]*(B11*N1x*wx/2 + B12*N1y*wy/2 + B16*(N1x*wy/2 + N1y*wx/2)) + u[3]*(D11*N1x + D16*N1y) + u[4]*(D12*N1y + D16*N1x) + u[5]*(B11*(N2x*ux/2 + N2x) + B12*N2y*uy/2 + B16*(N2x*uy/2 + N2y*ux/2 + N2y)) + u[6]*(B11*N2x*vx/2 + B12*(N2y*vy/2 + N2y) + B16*(N2x*vy/2 + N2x + N2y*vx/2)) + u[7]*(B11*N2x*wx/2 + B12*N2y*wy/2 + B16*(N2x*wy/2 + N2y*wx/2)) + u[8]*(D11*N2x + D16*N2y) + u[9]*(D12*N2y + D16*N2x)
+                Myy = u[0]*(B12*(N1x*ux/2 + N1x) + B22*N1y*uy/2 + B26*(N1x*uy/2 + N1y*ux/2 + N1y)) + u[10]*(B12*(N3x*ux/2 + N3x) + B22*N3y*uy/2 + B26*(N3x*uy/2 + N3y*ux/2 + N3y)) + u[11]*(B12*N3x*vx/2 + B22*(N3y*vy/2 + N3y) + B26*(N3x*vy/2 + N3x + N3y*vx/2)) + u[12]*(B12*N3x*wx/2 + B22*N3y*wy/2 + B26*(N3x*wy/2 + N3y*wx/2)) + u[13]*(D12*N3x + D26*N3y) + u[14]*(D22*N3y + D26*N3x) + u[15]*(B12*(N4x*ux/2 + N4x) + B22*N4y*uy/2 + B26*(N4x*uy/2 + N4y*ux/2 + N4y)) + u[16]*(B12*N4x*vx/2 + B22*(N4y*vy/2 + N4y) + B26*(N4x*vy/2 + N4x + N4y*vx/2)) + u[17]*(B12*N4x*wx/2 + B22*N4y*wy/2 + B26*(N4x*wy/2 + N4y*wx/2)) + u[18]*(D12*N4x + D26*N4y) + u[19]*(D22*N4y + D26*N4x) + u[1]*(B12*N1x*vx/2 + B22*(N1y*vy/2 + N1y) + B26*(N1x*vy/2 + N1x + N1y*vx/2)) + u[2]*(B12*N1x*wx/2 + B22*N1y*wy/2 + B26*(N1x*wy/2 + N1y*wx/2)) + u[3]*(D12*N1x + D26*N1y) + u[4]*(D22*N1y + D26*N1x) + u[5]*(B12*(N2x*ux/2 + N2x) + B22*N2y*uy/2 + B26*(N2x*uy/2 + N2y*ux/2 + N2y)) + u[6]*(B12*N2x*vx/2 + B22*(N2y*vy/2 + N2y) + B26*(N2x*vy/2 + N2x + N2y*vx/2)) + u[7]*(B12*N2x*wx/2 + B22*N2y*wy/2 + B26*(N2x*wy/2 + N2y*wx/2)) + u[8]*(D12*N2x + D26*N2y) + u[9]*(D22*N2y + D26*N2x)
+                Mxy = u[0]*(B16*(N1x*ux/2 + N1x) + B26*N1y*uy/2 + B66*(N1x*uy/2 + N1y*ux/2 + N1y)) + u[10]*(B16*(N3x*ux/2 + N3x) + B26*N3y*uy/2 + B66*(N3x*uy/2 + N3y*ux/2 + N3y)) + u[11]*(B16*N3x*vx/2 + B26*(N3y*vy/2 + N3y) + B66*(N3x*vy/2 + N3x + N3y*vx/2)) + u[12]*(B16*N3x*wx/2 + B26*N3y*wy/2 + B66*(N3x*wy/2 + N3y*wx/2)) + u[13]*(D16*N3x + D66*N3y) + u[14]*(D26*N3y + D66*N3x) + u[15]*(B16*(N4x*ux/2 + N4x) + B26*N4y*uy/2 + B66*(N4x*uy/2 + N4y*ux/2 + N4y)) + u[16]*(B16*N4x*vx/2 + B26*(N4y*vy/2 + N4y) + B66*(N4x*vy/2 + N4x + N4y*vx/2)) + u[17]*(B16*N4x*wx/2 + B26*N4y*wy/2 + B66*(N4x*wy/2 + N4y*wx/2)) + u[18]*(D16*N4x + D66*N4y) + u[19]*(D26*N4y + D66*N4x) + u[1]*(B16*N1x*vx/2 + B26*(N1y*vy/2 + N1y) + B66*(N1x*vy/2 + N1x + N1y*vx/2)) + u[2]*(B16*N1x*wx/2 + B26*N1y*wy/2 + B66*(N1x*wy/2 + N1y*wx/2)) + u[3]*(D16*N1x + D66*N1y) + u[4]*(D26*N1y + D66*N1x) + u[5]*(B16*(N2x*ux/2 + N2x) + B26*N2y*uy/2 + B66*(N2x*uy/2 + N2y*ux/2 + N2y)) + u[6]*(B16*N2x*vx/2 + B26*(N2y*vy/2 + N2y) + B66*(N2x*vy/2 + N2x + N2y*vx/2)) + u[7]*(B16*N2x*wx/2 + B26*N2y*wy/2 + B66*(N2x*wy/2 + N2y*wx/2)) + u[8]*(D16*N2x + D66*N2y) + u[9]*(D26*N2y + D66*N2x)
+                Qx = E44*N1*u[4] + E44*N2*u[9] + E44*N3*u[14] + E44*N4*u[19] + E45*N1*u[3] + E45*N2*u[8] + E45*N3*u[13] + E45*N4*u[18] + u[12]*(E44*N3y + E45*N3x) + u[17]*(E44*N4y + E45*N4x) + u[2]*(E44*N1y + E45*N1x) + u[7]*(E44*N2y + E45*N2x)
+                Qy = E45*N1*u[4] + E45*N2*u[9] + E45*N3*u[14] + E45*N4*u[19] + E55*N1*u[3] + E55*N2*u[8] + E55*N3*u[13] + E55*N4*u[18] + u[12]*(E45*N3y + E55*N3x) + u[17]*(E45*N4y + E55*N4x) + u[2]*(E45*N1y + E55*N1x) + u[7]*(E45*N2y + E55*N2x)
+
+                fint[0 + c1] += N1y*Nyy*detJ*uy*wij + Nxx*detJ*wij*(N1x*ux + N1x) + Nxy*detJ*wij*(N1x*uy + N1y*ux + N1y)
+                fint[1 + c1] += N1x*Nxx*detJ*vx*wij + Nxy*detJ*wij*(N1x*vy + N1x + N1y*vx) + Nyy*detJ*wij*(N1y*vy + N1y)
+                fint[2 + c1] += N1x*Nxx*detJ*wij*wx + N1x*Qy*detJ*wij + N1y*Nyy*detJ*wij*wy + N1y*Qx*detJ*wij + Nxy*detJ*wij*(N1x*wy + N1y*wx)
+                fint[3 + c1] += Mxx*N1x*detJ*wij + Mxy*N1y*detJ*wij + N1*Qy*detJ*wij
+                fint[4 + c1] += Mxy*N1x*detJ*wij + Myy*N1y*detJ*wij + N1*Qx*detJ*wij
+                fint[0 + c2] += N2y*Nyy*detJ*uy*wij + Nxx*detJ*wij*(N2x*ux + N2x) + Nxy*detJ*wij*(N2x*uy + N2y*ux + N2y)
+                fint[1 + c2] += N2x*Nxx*detJ*vx*wij + Nxy*detJ*wij*(N2x*vy + N2x + N2y*vx) + Nyy*detJ*wij*(N2y*vy + N2y)
+                fint[2 + c2] += N2x*Nxx*detJ*wij*wx + N2x*Qy*detJ*wij + N2y*Nyy*detJ*wij*wy + N2y*Qx*detJ*wij + Nxy*detJ*wij*(N2x*wy + N2y*wx)
+                fint[3 + c2] += Mxx*N2x*detJ*wij + Mxy*N2y*detJ*wij + N2*Qy*detJ*wij
+                fint[4 + c2] += Mxy*N2x*detJ*wij + Myy*N2y*detJ*wij + N2*Qx*detJ*wij
+                fint[0 + c3] += N3y*Nyy*detJ*uy*wij + Nxx*detJ*wij*(N3x*ux + N3x) + Nxy*detJ*wij*(N3x*uy + N3y*ux + N3y)
+                fint[1 + c3] += N3x*Nxx*detJ*vx*wij + Nxy*detJ*wij*(N3x*vy + N3x + N3y*vx) + Nyy*detJ*wij*(N3y*vy + N3y)
+                fint[2 + c3] += N3x*Nxx*detJ*wij*wx + N3x*Qy*detJ*wij + N3y*Nyy*detJ*wij*wy + N3y*Qx*detJ*wij + Nxy*detJ*wij*(N3x*wy + N3y*wx)
+                fint[3 + c3] += Mxx*N3x*detJ*wij + Mxy*N3y*detJ*wij + N3*Qy*detJ*wij
+                fint[4 + c3] += Mxy*N3x*detJ*wij + Myy*N3y*detJ*wij + N3*Qx*detJ*wij
+                fint[0 + c4] += N4y*Nyy*detJ*uy*wij + Nxx*detJ*wij*(N4x*ux + N4x) + Nxy*detJ*wij*(N4x*uy + N4y*ux + N4y)
+                fint[1 + c4] += N4x*Nxx*detJ*vx*wij + Nxy*detJ*wij*(N4x*vy + N4x + N4y*vx) + Nyy*detJ*wij*(N4y*vy + N4y)
+                fint[2 + c4] += N4x*Nxx*detJ*wij*wx + N4x*Qy*detJ*wij + N4y*Nyy*detJ*wij*wy + N4y*Qx*detJ*wij + Nxy*detJ*wij*(N4x*wy + N4y*wx)
+                fint[3 + c4] += Mxx*N4x*detJ*wij + Mxy*N4y*detJ*wij + N4*Qy*detJ*wij
+                fint[4 + c4] += Mxy*N4x*detJ*wij + Myy*N4y*detJ*wij + N4*Qx*detJ*wij
+    return fint
+
 def update_M(quad, nid_pos, ncoords, M, lumped=False):
     """Update global M with Me from a quad element
 

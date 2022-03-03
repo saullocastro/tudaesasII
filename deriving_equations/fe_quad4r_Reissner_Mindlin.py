@@ -23,7 +23,7 @@ sympy.var('A11, A12, A16, A22, A26, A66')
 sympy.var('B11, B12, B16, B22, B26, B66')
 sympy.var('D11, D12, D16, D22, D26, D66')
 sympy.var('E44, E45, E55')
-sympy.var('Nxx, Nyy, Nxy')
+sympy.var('Nxx, Nyy, Nxy, Mxx, Myy, Mxy, Qx, Qy')
 sympy.var('ux, uy, vx, vy, wx, wy')
 #NOTE shear correction factor should be applied to E44, E45 and E55
 #     in the finite element code
@@ -305,6 +305,12 @@ u = Matrix([symbols(r'u[%d]' % i) for i in range(0, BL.shape[1])])
 print('Nxx =', (ABDE*(BL + BNL/2)*u)[0, 0])
 print('Nyy =', (ABDE*(BL + BNL/2)*u)[1, 0])
 print('Nxy =', (ABDE*(BL + BNL/2)*u)[2, 0])
+print('Mxx =', (ABDE*(BL + BNL/2)*u)[3, 0])
+print('Myy =', (ABDE*(BL + BNL/2)*u)[4, 0])
+print('Mxy =', (ABDE*(BL + BNL/2)*u)[5, 0])
+print('Qx =', (ABDE*(BL + BNL/2)*u)[6, 0])
+print('Qy =', (ABDE*(BL + BNL/2)*u)[7, 0])
+stress = Matrix([[Nxx, Nyy, Nxy, Mxx, Myy, Mxy, Qx, Qy]]).T
 print('ux =', (Nux*u)[0, 0])
 print('uy =', (Nuy*u)[0, 0])
 print('vx =', (Nvx*u)[0, 0])
@@ -315,6 +321,8 @@ print('wy =', (Nwy*u)[0, 0])
 sympy.var('wij, offset')
 
 Ke[:, :] = wij*detJ*(BL.T*ABDE*BL + Bgamma.T*Egamma*Bgamma)
+
+fint = wij*detJ*(BL.T + BNL.T)*stress
 
 KNLe[:, :] = wij*detJ*(BL.T*ABDE*BNL + BNL.T*ABDE*BL + BNL.T*ABDE*BNL)
 
@@ -406,6 +414,13 @@ for ind, val in np.ndenumerate(KG):
     si = name_ind(i)
     sj = name_ind(j)
     print('    KG[%d+%s, %d+%s]' % (i%DOF, si, j%DOF, sj), '+=', KG[ind])
+
+print()
+for i, fi in enumerate(fint):
+    if fi == 0:
+        continue
+    si = name_ind(i)
+    print('fint[%d + %s] +=' % (i%DOF, si), fi)
 
 print()
 for ind, val in np.ndenumerate(M):

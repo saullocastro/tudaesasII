@@ -7,7 +7,7 @@ from scipy.linalg import eigh
 from composites import isotropic_plate
 
 from tudaesasII.quad4r import (Quad4R, update_K, update_KG, update_KNL,
-        update_M, DOF)
+        calc_fint, update_M, DOF)
 
 
 def test_nat_freq_plate_pre_stress_NL(plot=False, mode=0):
@@ -211,7 +211,7 @@ def test_nat_freq_plate_pre_stress_NL(plot=False, mode=0):
         return K + KNL + KG
 
     u = np.zeros(K.shape[0])
-    loads = np.abs(lambda_CR)*np.linspace(0.1, 0.9999, 3)
+    loads = np.abs(lambda_CR)*np.linspace(0.1, 0.9948, 3)
     for load in loads:
         fext = calc_fext(-load)
         print('load', -load)
@@ -220,20 +220,21 @@ def test_nat_freq_plate_pre_stress_NL(plot=False, mode=0):
             uu = np.linalg.solve(Kuu, fext[bu])
             u[bu] = uu
         for i in range(100):
-            R = (KT @ u) - fext
+            fint = calc_fint(quads, u, nid_pos, ncoords)
+            R = fint - fext
             check = np.abs(R[bu]).max()
             if check < 0.1:
+                KT = calc_KT(u) #NOTE modified Newton-Raphson since KT is calculated only after each load step
                 break
             duu = np.linalg.solve(KT[bu, :][:, bu], -R[bu])
             u[bu] += duu
-            KT = calc_KT(u) #NOTE full Newton-Raphson since KT is calculated in every iteration
         assert i < 99
 
     KTuu = calc_KT(u)[bu, :][:, bu]
     eigvals, U = eigh(a=KTuu, b=Muu, subset_by_index=(0, num_modes-1))
     omegan = np.sqrt(eigvals)
     print('NL pre-stressed natural frequencies [rad/s]', omegan)
-    assert isclose(omegan[0], 2.47, atol=1.)
+    assert isclose(omegan[0], 2.65, atol=1.)
 
 
 if __name__ == '__main__':
