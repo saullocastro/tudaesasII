@@ -120,7 +120,7 @@ def test_panel_flutter_plate(plot=False):
         eigvals, eigvecsu = eigs(A=Kuu + beta*KAuu, M=Muu,
                 k=num_eigenvalues, which='LM', sigma=-1.)
         eigvecs = np.zeros((K.shape[0], num_eigenvalues), dtype=float)
-        eigvecs[bu, :] = eigvecsu
+        eigvecs[bu, :] = eigvecsu.real
         omegan_vec.append(eigvals**0.5)
 
         if i == 0:
