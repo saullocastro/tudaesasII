@@ -515,6 +515,10 @@ def update_KG(quad, u0, nid_pos, ncoords, KG):
     weights_points =[[1., -0.577350269189625764509148780501957455647601751270126876],
                      [1., +0.577350269189625764509148780501957455647601751270126876]]
 
+    #NOTE reduced integration with 1 point at center
+    #NOTE this seems to work the same as using the full integration
+    weights_points =[[2., 0]]
+
     for wi, xi in weights_points:
         for wj, eta in weights_points:
             wij = wi*wj
@@ -641,6 +645,10 @@ def update_KNL(quad, u0, nid_pos, ncoords, KNL):
     #NOTE full 2-point Gauss-Legendre quadrature integration for KNL
     weights_points =[[1., -0.577350269189625764509148780501957455647601751270126876],
                      [1., +0.577350269189625764509148780501957455647601751270126876]]
+
+    #NOTE reduced integration with 1 point at center
+    #NOTE this seems to work the same as using the full integration
+    weights_points =[[2., 0]]
 
     for wi, xi in weights_points:
         for wj, eta in weights_points:
