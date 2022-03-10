@@ -10,7 +10,12 @@ class Quad4R(object):
     Reduced integration is achieved by having only 1 integration point at the
     center, while integrating the stiffness matrix. This removes shear locking.
 
-    An artificial hour-glass stiffness is used, according to Brockman 1987
+    An artificial hour-glass stiffness is used, according to Brockman 1987:
+
+    - the hourglass control in the in-plane direction was increased by 10 times
+      with respect to what would be the equivalent from Brockman 1987
+    - the hourglass control in the w direction by 10 times with respect to what
+      would be the equivalent from Brockman 1987
 
     https://onlinelibrary.wiley.com/doi/pdf/10.1002/nme.1620241208
 
@@ -120,11 +125,15 @@ def update_K(quad, nid_pos, ncoords, K):
     gamma2 = N2xy
     gamma3 = N3xy
     gamma4 = N4xy
-    Eu = 0.1*A11/(1 + 1/A)
-    Ev = 0.1*A11/(1 + 1/A)
+
+    #NOTE hourglass stiffnesses
+    #NOTE increasing in-plane by 10 times with respect to what would be the equivalent from Brockman 1987
+    #NOTE increasing in w direction by 10 times with respect to what would be the equivalent from Brockman 1987
+    Eu = 10*0.1*A11/(1 + 1/A)
+    Ev = 10*0.1*A22/(1 + 1/A)
     Ephix = 12*0.1*D11/(1 + 1/A)
     Ephiy = 12*0.1*D22/(1 + 1/A)
-    Ew = (Ephix + Ephiy)/2
+    Ew = 10*(Ephix + Ephiy)/2
 
     K[0+c1, 0+c1] += detJ*wij*(Eu*gamma1**2 + N1x*(A11*N1x + A16*N1y) + N1y*(A16*N1x + A66*N1y))
     K[0+c1, 1+c1] += detJ*wij*(N1x*(A16*N1x + A66*N1y) + N1y*(A12*N1x + A26*N1y))
