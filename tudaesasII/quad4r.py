@@ -14,7 +14,7 @@ class Quad4R(object):
 
     - the hourglass control in the in-plane direction was increased by 10 times
       with respect to what would be the equivalent from Brockman 1987
-    - the hourglass control in the w direction by 10 times with respect to what
+    - the hourglass control in the w direction by 5 times with respect to what
       would be the equivalent from Brockman 1987
 
     https://onlinelibrary.wiley.com/doi/pdf/10.1002/nme.1620241208
@@ -128,12 +128,12 @@ def update_K(quad, nid_pos, ncoords, K):
 
     #NOTE hourglass stiffnesses
     #NOTE increasing in-plane by 10 times with respect to what would be the equivalent from Brockman 1987
-    #NOTE increasing in w direction by 10 times with respect to what would be the equivalent from Brockman 1987
+    #NOTE increasing in w direction by 5 times with respect to what would be the equivalent from Brockman 1987
     Eu = 10*0.1*A11/(1 + 1/A)
     Ev = 10*0.1*A22/(1 + 1/A)
     Ephix = 12*0.1*D11/(1 + 1/A)
     Ephiy = 12*0.1*D22/(1 + 1/A)
-    Ew = 10*(Ephix + Ephiy)/2
+    Ew = 5*(Ephix + Ephiy)/2
 
     K[0+c1, 0+c1] += detJ*wij*(Eu*gamma1**2 + N1x*(A11*N1x + A16*N1y) + N1y*(A16*N1x + A66*N1y))
     K[0+c1, 1+c1] += detJ*wij*(N1x*(A16*N1x + A66*N1y) + N1y*(A12*N1x + A26*N1y))
@@ -1047,6 +1047,9 @@ def calc_fint(quads, u0, nid_pos, ncoords):
         x3, y3 = ncoords[pos3]
         x4, y4 = ncoords[pos4]
 
+        A = (np.cross([x2 - x1, y2 - y1], [x4 - x1, y4 - y1])/2 +
+             np.cross([x4 - x3, y4 - y3], [x2 - x3, y2 - y3])/2)
+
         A11 = quad.ABDE[0, 0]
         A12 = quad.ABDE[0, 1]
         A16 = quad.ABDE[0, 2]
@@ -1068,6 +1071,21 @@ def calc_fint(quads, u0, nid_pos, ncoords):
         E44 = quad.ABDE[6, 6]
         E45 = quad.ABDE[6, 7]
         E55 = quad.ABDE[7, 7]
+
+        # applying shear correction factors
+        E44 = E44*quad.scf23
+        E45 = E45*min(quad.scf23, quad.scf13)
+        E55 = E55*quad.scf13
+
+        #NOTE hourglass stiffnesses
+        #NOTE increasing in-plane by 10 times with respect to what would be the equivalent from Brockman 1987
+        #NOTE increasing in w direction by 5 times with respect to what would be the equivalent from Brockman 1987
+        Eu = 10*0.1*A11/(1 + 1/A)
+        Ev = 10*0.1*A22/(1 + 1/A)
+        Ephix = 12*0.1*D11/(1 + 1/A)
+        Ephiy = 12*0.1*D22/(1 + 1/A)
+        Ew = 5*(Ephix + Ephiy)/2
+
 
         # positions c1, c2 in the stiffness and mass matrices
         c1 = DOF*pos1
@@ -1105,6 +1123,14 @@ def calc_fint(quads, u0, nid_pos, ncoords):
                 N2y = -eta*j21/4 + j21/4 - j22*xi/4 - j22/4
                 N3y = j21*(eta + 1)/4 + j22*(xi + 1)/4
                 N4y = -eta*j21/4 - j21/4 - j22*xi/4 + j22/4
+                N1xy = j11*j22/4 + j12*j21/4
+                N2xy = -j11*j22/4 - j12*j21/4
+                N3xy = j11*j22/4 + j12*j21/4
+                N4xy = -j11*j22/4 - j12*j21/4
+                gamma1 = N1xy
+                gamma2 = N2xy
+                gamma3 = N3xy
+                gamma4 = N4xy
                 ux = N1x*u[0] + N2x*u[5] + N3x*u[10] + N4x*u[15]
                 uy = N1y*u[0] + N2y*u[5] + N3y*u[10] + N4y*u[15]
                 vx = N1x*u[1] + N2x*u[6] + N3x*u[11] + N4x*u[16]
@@ -1119,27 +1145,32 @@ def calc_fint(quads, u0, nid_pos, ncoords):
                 Mxy = u[0]*(B16*(N1x*ux/2 + N1x) + B26*N1y*uy/2 + B66*(N1x*uy/2 + N1y*ux/2 + N1y)) + u[10]*(B16*(N3x*ux/2 + N3x) + B26*N3y*uy/2 + B66*(N3x*uy/2 + N3y*ux/2 + N3y)) + u[11]*(B16*N3x*vx/2 + B26*(N3y*vy/2 + N3y) + B66*(N3x*vy/2 + N3x + N3y*vx/2)) + u[12]*(B16*N3x*wx/2 + B26*N3y*wy/2 + B66*(N3x*wy/2 + N3y*wx/2)) + u[13]*(D16*N3x + D66*N3y) + u[14]*(D26*N3y + D66*N3x) + u[15]*(B16*(N4x*ux/2 + N4x) + B26*N4y*uy/2 + B66*(N4x*uy/2 + N4y*ux/2 + N4y)) + u[16]*(B16*N4x*vx/2 + B26*(N4y*vy/2 + N4y) + B66*(N4x*vy/2 + N4x + N4y*vx/2)) + u[17]*(B16*N4x*wx/2 + B26*N4y*wy/2 + B66*(N4x*wy/2 + N4y*wx/2)) + u[18]*(D16*N4x + D66*N4y) + u[19]*(D26*N4y + D66*N4x) + u[1]*(B16*N1x*vx/2 + B26*(N1y*vy/2 + N1y) + B66*(N1x*vy/2 + N1x + N1y*vx/2)) + u[2]*(B16*N1x*wx/2 + B26*N1y*wy/2 + B66*(N1x*wy/2 + N1y*wx/2)) + u[3]*(D16*N1x + D66*N1y) + u[4]*(D26*N1y + D66*N1x) + u[5]*(B16*(N2x*ux/2 + N2x) + B26*N2y*uy/2 + B66*(N2x*uy/2 + N2y*ux/2 + N2y)) + u[6]*(B16*N2x*vx/2 + B26*(N2y*vy/2 + N2y) + B66*(N2x*vy/2 + N2x + N2y*vx/2)) + u[7]*(B16*N2x*wx/2 + B26*N2y*wy/2 + B66*(N2x*wy/2 + N2y*wx/2)) + u[8]*(D16*N2x + D66*N2y) + u[9]*(D26*N2y + D66*N2x)
                 Qx = E44*N1*u[4] + E44*N2*u[9] + E44*N3*u[14] + E44*N4*u[19] + E45*N1*u[3] + E45*N2*u[8] + E45*N3*u[13] + E45*N4*u[18] + u[12]*(E44*N3y + E45*N3x) + u[17]*(E44*N4y + E45*N4x) + u[2]*(E44*N1y + E45*N1x) + u[7]*(E44*N2y + E45*N2x)
                 Qy = E45*N1*u[4] + E45*N2*u[9] + E45*N3*u[14] + E45*N4*u[19] + E55*N1*u[3] + E55*N2*u[8] + E55*N3*u[13] + E55*N4*u[18] + u[12]*(E45*N3y + E55*N3x) + u[17]*(E45*N4y + E55*N4x) + u[2]*(E45*N1y + E55*N1x) + u[7]*(E45*N2y + E55*N2x)
+                stress_hg_0 = Eu*gamma1*u[0] + Eu*gamma2*u[5] + Eu*gamma3*u[10] + Eu*gamma4*u[15]
+                stress_hg_1 = Ev*gamma1*u[1] + Ev*gamma2*u[6] + Ev*gamma3*u[11] + Ev*gamma4*u[16]
+                stress_hg_2 = Ew*gamma1*u[2] + Ew*gamma2*u[7] + Ew*gamma3*u[12] + Ew*gamma4*u[17]
+                stress_hg_3 = Ephix*gamma1*u[3] + Ephix*gamma2*u[8] + Ephix*gamma3*u[13] + Ephix*gamma4*u[18]
+                stress_hg_4 = Ephiy*gamma1*u[4] + Ephiy*gamma2*u[9] + Ephiy*gamma3*u[14] + Ephiy*gamma4*u[19]
 
-                fint[0 + c1] += N1y*Nyy*detJ*uy*wij + Nxx*detJ*wij*(N1x*ux + N1x) + Nxy*detJ*wij*(N1x*uy + N1y*ux + N1y)
-                fint[1 + c1] += N1x*Nxx*detJ*vx*wij + Nxy*detJ*wij*(N1x*vy + N1x + N1y*vx) + Nyy*detJ*wij*(N1y*vy + N1y)
-                fint[2 + c1] += N1x*Nxx*detJ*wij*wx + N1x*Qy*detJ*wij + N1y*Nyy*detJ*wij*wy + N1y*Qx*detJ*wij + Nxy*detJ*wij*(N1x*wy + N1y*wx)
-                fint[3 + c1] += Mxx*N1x*detJ*wij + Mxy*N1y*detJ*wij + N1*Qy*detJ*wij
-                fint[4 + c1] += Mxy*N1x*detJ*wij + Myy*N1y*detJ*wij + N1*Qx*detJ*wij
-                fint[0 + c2] += N2y*Nyy*detJ*uy*wij + Nxx*detJ*wij*(N2x*ux + N2x) + Nxy*detJ*wij*(N2x*uy + N2y*ux + N2y)
-                fint[1 + c2] += N2x*Nxx*detJ*vx*wij + Nxy*detJ*wij*(N2x*vy + N2x + N2y*vx) + Nyy*detJ*wij*(N2y*vy + N2y)
-                fint[2 + c2] += N2x*Nxx*detJ*wij*wx + N2x*Qy*detJ*wij + N2y*Nyy*detJ*wij*wy + N2y*Qx*detJ*wij + Nxy*detJ*wij*(N2x*wy + N2y*wx)
-                fint[3 + c2] += Mxx*N2x*detJ*wij + Mxy*N2y*detJ*wij + N2*Qy*detJ*wij
-                fint[4 + c2] += Mxy*N2x*detJ*wij + Myy*N2y*detJ*wij + N2*Qx*detJ*wij
-                fint[0 + c3] += N3y*Nyy*detJ*uy*wij + Nxx*detJ*wij*(N3x*ux + N3x) + Nxy*detJ*wij*(N3x*uy + N3y*ux + N3y)
-                fint[1 + c3] += N3x*Nxx*detJ*vx*wij + Nxy*detJ*wij*(N3x*vy + N3x + N3y*vx) + Nyy*detJ*wij*(N3y*vy + N3y)
-                fint[2 + c3] += N3x*Nxx*detJ*wij*wx + N3x*Qy*detJ*wij + N3y*Nyy*detJ*wij*wy + N3y*Qx*detJ*wij + Nxy*detJ*wij*(N3x*wy + N3y*wx)
-                fint[3 + c3] += Mxx*N3x*detJ*wij + Mxy*N3y*detJ*wij + N3*Qy*detJ*wij
-                fint[4 + c3] += Mxy*N3x*detJ*wij + Myy*N3y*detJ*wij + N3*Qx*detJ*wij
-                fint[0 + c4] += N4y*Nyy*detJ*uy*wij + Nxx*detJ*wij*(N4x*ux + N4x) + Nxy*detJ*wij*(N4x*uy + N4y*ux + N4y)
-                fint[1 + c4] += N4x*Nxx*detJ*vx*wij + Nxy*detJ*wij*(N4x*vy + N4x + N4y*vx) + Nyy*detJ*wij*(N4y*vy + N4y)
-                fint[2 + c4] += N4x*Nxx*detJ*wij*wx + N4x*Qy*detJ*wij + N4y*Nyy*detJ*wij*wy + N4y*Qx*detJ*wij + Nxy*detJ*wij*(N4x*wy + N4y*wx)
-                fint[3 + c4] += Mxx*N4x*detJ*wij + Mxy*N4y*detJ*wij + N4*Qy*detJ*wij
-                fint[4 + c4] += Mxy*N4x*detJ*wij + Myy*N4y*detJ*wij + N4*Qx*detJ*wij
+                fint[0 + c1] += detJ*wij*(N1y*Nyy*uy + Nxx*(N1x*ux + N1x) + Nxy*(N1x*uy + N1y*ux + N1y) + gamma1*stress_hg_0)
+                fint[1 + c1] += detJ*wij*(N1x*Nxx*vx + Nxy*(N1x*vy + N1x + N1y*vx) + Nyy*(N1y*vy + N1y) + gamma1*stress_hg_1)
+                fint[2 + c1] += detJ*wij*(N1x*Nxx*wx + N1x*Qy + N1y*Nyy*wy + N1y*Qx + Nxy*(N1x*wy + N1y*wx) + gamma1*stress_hg_2)
+                fint[3 + c1] += detJ*wij*(Mxx*N1x + Mxy*N1y + N1*Qy + gamma1*stress_hg_3)
+                fint[4 + c1] += detJ*wij*(Mxy*N1x + Myy*N1y + N1*Qx + gamma1*stress_hg_4)
+                fint[0 + c2] += detJ*wij*(N2y*Nyy*uy + Nxx*(N2x*ux + N2x) + Nxy*(N2x*uy + N2y*ux + N2y) + gamma2*stress_hg_0)
+                fint[1 + c2] += detJ*wij*(N2x*Nxx*vx + Nxy*(N2x*vy + N2x + N2y*vx) + Nyy*(N2y*vy + N2y) + gamma2*stress_hg_1)
+                fint[2 + c2] += detJ*wij*(N2x*Nxx*wx + N2x*Qy + N2y*Nyy*wy + N2y*Qx + Nxy*(N2x*wy + N2y*wx) + gamma2*stress_hg_2)
+                fint[3 + c2] += detJ*wij*(Mxx*N2x + Mxy*N2y + N2*Qy + gamma2*stress_hg_3)
+                fint[4 + c2] += detJ*wij*(Mxy*N2x + Myy*N2y + N2*Qx + gamma2*stress_hg_4)
+                fint[0 + c3] += detJ*wij*(N3y*Nyy*uy + Nxx*(N3x*ux + N3x) + Nxy*(N3x*uy + N3y*ux + N3y) + gamma3*stress_hg_0)
+                fint[1 + c3] += detJ*wij*(N3x*Nxx*vx + Nxy*(N3x*vy + N3x + N3y*vx) + Nyy*(N3y*vy + N3y) + gamma3*stress_hg_1)
+                fint[2 + c3] += detJ*wij*(N3x*Nxx*wx + N3x*Qy + N3y*Nyy*wy + N3y*Qx + Nxy*(N3x*wy + N3y*wx) + gamma3*stress_hg_2)
+                fint[3 + c3] += detJ*wij*(Mxx*N3x + Mxy*N3y + N3*Qy + gamma3*stress_hg_3)
+                fint[4 + c3] += detJ*wij*(Mxy*N3x + Myy*N3y + N3*Qx + gamma3*stress_hg_4)
+                fint[0 + c4] += detJ*wij*(N4y*Nyy*uy + Nxx*(N4x*ux + N4x) + Nxy*(N4x*uy + N4y*ux + N4y) + gamma4*stress_hg_0)
+                fint[1 + c4] += detJ*wij*(N4x*Nxx*vx + Nxy*(N4x*vy + N4x + N4y*vx) + Nyy*(N4y*vy + N4y) + gamma4*stress_hg_1)
+                fint[2 + c4] += detJ*wij*(N4x*Nxx*wx + N4x*Qy + N4y*Nyy*wy + N4y*Qx + Nxy*(N4x*wy + N4y*wx) + gamma4*stress_hg_2)
+                fint[3 + c4] += detJ*wij*(Mxx*N4x + Mxy*N4y + N4*Qy + gamma4*stress_hg_3)
+                fint[4 + c4] += detJ*wij*(Mxy*N4x + Myy*N4y + N4*Qx + gamma4*stress_hg_4)
     return fint
 
 
@@ -1321,11 +1352,6 @@ def update_KA(quad, nid_pos, ncoords, KA):
     pos2 = nid_pos[quad.n2]
     pos3 = nid_pos[quad.n3]
     pos4 = nid_pos[quad.n4]
-    x1, y1 = ncoords[pos1]
-    x2, y2 = ncoords[pos2]
-    x3, y3 = ncoords[pos3]
-    x4, y4 = ncoords[pos4]
-
     x1, y1 = ncoords[pos1]
     x2, y2 = ncoords[pos2]
     x3, y3 = ncoords[pos3]

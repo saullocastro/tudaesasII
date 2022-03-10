@@ -24,6 +24,7 @@ sympy.var('B11, B12, B16, B22, B26, B66')
 sympy.var('D11, D12, D16, D22, D26, D66')
 sympy.var('E44, E45, E55')
 sympy.var('Nxx, Nyy, Nxy, Mxx, Myy, Mxy, Qx, Qy')
+sympy.var('stress_hg_0, stress_hg_1, stress_hg_2, stress_hg_3, stress_hg_4')
 sympy.var('ux, uy, vx, vy, wx, wy')
 #NOTE shear correction factor should be applied to E44, E45 and E55
 #     in the finite element code
@@ -302,15 +303,23 @@ ABDE = Matrix(
 #NOTE this 2D library does not allow rotation from global to local coordinates
 #     thus, we assume that u = ue
 u = Matrix([symbols(r'u[%d]' % i) for i in range(0, BL.shape[1])])
-print('Nxx =', (ABDE*(BL + BNL/2)*u)[0, 0])
-print('Nyy =', (ABDE*(BL + BNL/2)*u)[1, 0])
-print('Nxy =', (ABDE*(BL + BNL/2)*u)[2, 0])
-print('Mxx =', (ABDE*(BL + BNL/2)*u)[3, 0])
-print('Myy =', (ABDE*(BL + BNL/2)*u)[4, 0])
-print('Mxy =', (ABDE*(BL + BNL/2)*u)[5, 0])
-print('Qx =', (ABDE*(BL + BNL/2)*u)[6, 0])
-print('Qy =', (ABDE*(BL + BNL/2)*u)[7, 0])
+stress_vec = ABDE*(BL + BNL/2)*u
+print('Nxx =', stress_vec[0, 0])
+print('Nyy =', stress_vec[1, 0])
+print('Nxy =', stress_vec[2, 0])
+print('Mxx =', stress_vec[3, 0])
+print('Myy =', stress_vec[4, 0])
+print('Mxy =', stress_vec[5, 0])
+print('Qx =', stress_vec[6, 0])
+print('Qy =', stress_vec[7, 0])
 stress = Matrix([[Nxx, Nyy, Nxy, Mxx, Myy, Mxy, Qx, Qy]]).T
+stress_hg_vec = Egamma*Bgamma*u
+print('stress_hg_0 =', stress_hg_vec[0, 0])
+print('stress_hg_1 =', stress_hg_vec[1, 0])
+print('stress_hg_2 =', stress_hg_vec[2, 0])
+print('stress_hg_3 =', stress_hg_vec[3, 0])
+print('stress_hg_4 =', stress_hg_vec[4, 0])
+stress_hg = Matrix([[stress_hg_0, stress_hg_1, stress_hg_2, stress_hg_3, stress_hg_4]]).T
 print('ux =', (Nux*u)[0, 0])
 print('uy =', (Nuy*u)[0, 0])
 print('vx =', (Nvx*u)[0, 0])
@@ -322,7 +331,7 @@ sympy.var('wij, offset')
 
 Ke[:, :] = wij*detJ*(BL.T*ABDE*BL + Bgamma.T*Egamma*Bgamma)
 
-fint = wij*detJ*(BL.T + BNL.T)*stress
+fint = wij*detJ*((BL.T + BNL.T)*stress + Bgamma.T*stress_hg)
 
 KNLe[:, :] = wij*detJ*(BL.T*ABDE*BNL + BNL.T*ABDE*BL + BNL.T*ABDE*BNL)
 
