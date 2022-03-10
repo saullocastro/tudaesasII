@@ -14,6 +14,7 @@ temp*.*
 .cache
 # Output files
 *.png
+*.mp4
 
 # Python compiled files
 *.pyc
