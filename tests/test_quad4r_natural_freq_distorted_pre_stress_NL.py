@@ -191,7 +191,7 @@ def test_nat_freq_plate_pre_stress_NL(plot=False, mode=0):
     omegan = np.sqrt(eigvals)
     print('Natural frequencies [rad/s]', omegan)
 
-    assert isclose(omegan[0], 323.7, atol=1.)
+    assert isclose(omegan[0], 324.76639, atol=1.)
 
     eigvals, U = eigh(a=Kuu+lambda_CR*KGuu, b=Muu, subset_by_index=(0, num_modes-1))
     omegan = np.sqrt(eigvals)
@@ -211,7 +211,7 @@ def test_nat_freq_plate_pre_stress_NL(plot=False, mode=0):
         return K + KNL + KG
 
     u = np.zeros(K.shape[0])
-    loads = np.abs(lambda_CR)*np.linspace(0.1, 0.9948, 3)
+    loads = np.abs(lambda_CR)*np.linspace(0.1, 0.99995, 3)
     for load in loads:
         fext = calc_fext(-load)
         print('load', -load)
@@ -234,7 +234,7 @@ def test_nat_freq_plate_pre_stress_NL(plot=False, mode=0):
     eigvals, U = eigh(a=KTuu, b=Muu, subset_by_index=(0, num_modes-1))
     omegan = np.sqrt(eigvals)
     print('NL pre-stressed natural frequencies [rad/s]', omegan)
-    assert isclose(omegan[0], 2.65, atol=1.)
+    assert isclose(omegan[0], 1.685, atol=1.)
 
 
 if __name__ == '__main__':
