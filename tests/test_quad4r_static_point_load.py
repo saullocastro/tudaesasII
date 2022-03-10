@@ -104,7 +104,7 @@ def test_static_plate_quad_point_load(plot=False):
     # obtained with bfsplate2d element, nx=ny=29
     wmax_ref = 6.594931610258557e-05
     # obtained with Quad4R nx=7, ny=11
-    wmax_ref = 5.752660593372991e-05
+    wmax_ref = 4.990477561281839e-05
     assert np.isclose(wmax_ref, w.max(), rtol=0.02)
     if plot:
         import matplotlib
