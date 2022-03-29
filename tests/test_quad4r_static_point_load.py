@@ -5,7 +5,7 @@ import numpy as np
 from scipy.linalg import solve
 from composites import isotropic_plate
 
-from tudaesasII.quad4r import Quad4R, update_K, DOF
+from tudaesasII.quad4r import Quad4R, update_K, DOF, calc_stress
 
 
 def test_static_plate_quad_point_load(plot=False):
@@ -98,6 +98,10 @@ def test_static_plate_quad_point_load(plot=False):
     # vector u containing displacements for all DOFs
     u = np.zeros(K.shape[0])
     u[bu] = uu
+
+    # calculating stresses for a quad
+    Nxx_quad, Nyy_quad, Nxy_quad, Mxx_quad, Myy_quad, Mxy_quad, Qx_quad, Qy_quad = calc_stress(
+            quad, u, nid_pos, ncoords, xi=0.0, eta=0.0)
 
     w = u[2::DOF].reshape(nx, ny).T
 
