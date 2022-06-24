@@ -64,7 +64,7 @@ install_requires = [
         "numpy",
         "scipy >= 1.5.0",
         "structsolve",
-        "composites >= 0.5.2",
+        "composites >= 0.5.4",
         ]
 
 #Trove classifiers
