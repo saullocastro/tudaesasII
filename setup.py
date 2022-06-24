@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 
 
 is_released = True
-version = '2022.11'
+version = '2022.12'
 
 
 def git_version():
@@ -74,15 +74,19 @@ Development Status :: 6 - Mature
 Intended Audience :: Education
 Intended Audience :: Science/Research
 Intended Audience :: Developers
+Topic :: Scientific/Engineering
 Topic :: Scientific/Engineering :: Mathematics
 Topic :: Education
-License :: OSI Approved :: BSD License
+Topic :: Software Development
+Topic :: Software Development :: Libraries :: Python Modules
+Operating System :: Microsoft :: Windows
+Operating System :: Unix
+Operating System :: POSIX :: BSD
 Programming Language :: Python :: 3.7
 Programming Language :: Python :: 3.8
 Programming Language :: Python :: 3.9
 Programming Language :: Python :: 3.10
-Operating System :: Microsoft :: Windows
-Operating System :: Unix
+License :: OSI Approved :: BSD License
 
 """
 
