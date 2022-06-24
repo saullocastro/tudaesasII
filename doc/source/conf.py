@@ -10,18 +10,17 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
+import os
 import sys
-# sys.path.insert(0, os.path.abspath('.'))
-
 
 # -- Project information -----------------------------------------------------
 
 project = 'tudaesasII'
 author = 'Saullo G. P. Castro'
-copyright = '2019-2021, ' + author
+copyright = '2019-2022, ' + author
 
 # The full version, including alpha/beta/rc tags
+sys.path.append(os.path.abspath('../..'))
 from tudaesasII.version import __version__
 release = __version__
 
