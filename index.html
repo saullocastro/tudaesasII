@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>TU Delft, Aerospace Engineering, Stability and Analysis of Structures II tudaesasII &#8212; tudaesasII 2022.12 documentation</title>
+    <title>TU Delft, Aerospace Engineering, Stability and Analysis of Structures II tudaesasII &#8212; tudaesasII 2022.13 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/classic.css" />
     
@@ -28,7 +28,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="#">tudaesasII 2022.12 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="#">tudaesasII 2022.13 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">TU Delft, Aerospace Engineering, Stability and Analysis of Structures II <span class="math">tudaesasII</span></a></li> 
       </ul>
     </div>  
@@ -74,17 +74,22 @@ polynomials available:</p>
 <dl class="field-list simple">
 <dt class="field-odd">Attributes<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>A1</strong></dt><dd></dd>
-<dt><strong>A2</strong></dt><dd></dd>
-<dt><strong>E</strong></dt><dd></dd>
-<dt><strong>Izz1</strong></dt><dd></dd>
-<dt><strong>Izz2</strong></dt><dd></dd>
-<dt><strong>interpolation</strong></dt><dd></dd>
-<dt><strong>le</strong></dt><dd></dd>
-<dt><strong>n1</strong></dt><dd></dd>
-<dt><strong>n2</strong></dt><dd></dd>
-<dt><strong>rho</strong></dt><dd></dd>
-<dt><strong>thetarad</strong></dt><dd></dd>
+<dt><strong>le</strong><span class="classifier">double</span></dt><dd><p>Element length.</p>
+</dd>
+<dt><strong>E</strong><span class="classifier">double</span></dt><dd><p>Elastic modulus.</p>
+</dd>
+<dt><strong>rho</strong><span class="classifier">double</span></dt><dd><p>Material density.</p>
+</dd>
+<dt><strong>A1, A2</strong><span class="classifier">double</span></dt><dd><p>Cross section area at nodes 1 and 2.</p>
+</dd>
+<dt><strong>Izz1, Izz2</strong><span class="classifier">double</span></dt><dd><p>Second moment of area (moment of inertia) at nodes 1 and 2.</p>
+</dd>
+<dt><strong>n1, n2</strong><span class="classifier">int</span></dt><dd><p>Node identification number of the two beam nodes.</p>
+</dd>
+<dt><strong>thetarad</strong><span class="classifier">double</span></dt><dd><p>Beam orientation with respect to the horizontal direction.</p>
+</dd>
+<dt><strong>interpolation</strong><span class="classifier">str</span></dt><dd><p>Either <code class="docutils literal notranslate"><span class="pre">'hermitian_cubic'</span></code> or <code class="docutils literal notranslate"><span class="pre">'legendre'</span></code>.</p>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -198,15 +203,18 @@ would be the equivalent from Brockman 1987</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Attributes<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>ABDE</strong></dt><dd></dd>
-<dt><strong>h</strong></dt><dd></dd>
-<dt><strong>n1</strong></dt><dd></dd>
-<dt><strong>n2</strong></dt><dd></dd>
-<dt><strong>n3</strong></dt><dd></dd>
-<dt><strong>n4</strong></dt><dd></dd>
-<dt><strong>rho</strong></dt><dd></dd>
-<dt><strong>scf13</strong></dt><dd></dd>
-<dt><strong>scf23</strong></dt><dd></dd>
+<dt><strong>h</strong><span class="classifier">double</span></dt><dd><p>Plate thickness.</p>
+</dd>
+<dt><strong>rho</strong><span class="classifier">double</span></dt><dd><p>Material density.</p>
+</dd>
+<dt><strong>ABDE</strong><span class="classifier">double</span></dt><dd><p>The plate stiffness matrix with shape <code class="docutils literal notranslate"><span class="pre">(8,</span> <span class="pre">8)</span></code>. Easily obtained form
+the <code class="xref py py-class docutils literal notranslate"><span class="pre">Laminate</span></code> object of the <code class="docutils literal notranslate"><span class="pre">composites</span></code> module.</p>
+</dd>
+<dt><strong>n1, n2, n3, n4</strong><span class="classifier">int</span></dt><dd><p>Node identification number.</p>
+</dd>
+<dt><strong>scf13, scf23</strong><span class="classifier">double</span></dt><dd><p>Shear correction factors in the transverse planes <span class="math">XZ</span> and <span class="math">YZ</span>,
+respectively.</p>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -350,7 +358,7 @@ would be the equivalent from Brockman 1987</p></li>
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="#">tudaesasII 2022.12 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="#">tudaesasII 2022.13 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">TU Delft, Aerospace Engineering, Stability and Analysis of Structures II <span class="math">tudaesasII</span></a></li> 
       </ul>
     </div>
