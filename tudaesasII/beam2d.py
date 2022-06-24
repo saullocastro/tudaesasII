@@ -2,13 +2,34 @@ import numpy as np
 
 DOF = 3
 
+
 class Beam2D(object):
     """Euler-Bernoulli beam element
 
     Formulated using Euler-Bernoulli beam element with two interpolation
     polynomials available:
+
         - Hermitian cubic
         - Legendre
+
+    Attributes
+    ----------
+    le : double
+        Element length.
+    E : double
+        Elastic modulus.
+    rho : double
+        Material density.
+    A1, A2 : double
+        Cross section area at nodes 1 and 2.
+    Izz1, Izz2 : double
+        Second moment of area (moment of inertia) at nodes 1 and 2.
+    n1, n2 : int
+        Node identification number of the two beam nodes.
+    thetarad : double
+        Beam orientation with respect to the horizontal direction.
+    interpolation : str
+        Either ``'hermitian_cubic'`` or ``'legendre'``.
 
     """
     __slots__ = ['n1', 'n2', 'E', 'rho', 'Izz1', 'Izz2', 'A1', 'A2',
@@ -22,6 +43,7 @@ class Beam2D(object):
         self.interpolation = 'hermitian_cubic'
         self.le = None
         self.thetarad = None
+
 
 def update_K(beam, nid_pos, ncoords, K):
     """Update global K with beam element

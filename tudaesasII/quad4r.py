@@ -19,6 +19,22 @@ class Quad4R(object):
 
     https://onlinelibrary.wiley.com/doi/pdf/10.1002/nme.1620241208
 
+    Attributes
+    ----------
+    h : double
+        Plate thickness.
+    rho : double
+        Material density.
+    ABDE : double
+        The plate stiffness matrix with shape ``(8, 8)``. Easily obtained form
+        the :class:`.Laminate` object of the ``composites`` module.
+    n1, n2, n3, n4 : int
+        Node identification number.
+    scf13, scf23 : double
+        Shear correction factors in the transverse planes `XZ` and `YZ`,
+        respectively.
+
+
     """
     __slots__ = ['n1', 'n2', 'n3', 'n4', 'ABDE', 'h', 'rho',
             'scf13', 'scf23']

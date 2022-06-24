@@ -2,6 +2,8 @@
 TU Delft, Aerospace Engineering, Stability and Analysis of Structures II
 ========================================================================
 
+.. currentmodule::tudaesasII
+
 TU Delft (TUD)
 Aerospace Engineering (AE)
 Aerospace Structures and Computational Mechanics (ASCM)
