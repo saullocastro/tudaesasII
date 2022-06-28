@@ -9,7 +9,7 @@ omegan = Symbol('\omega_n', positive=True)
 omegad = Symbol('\omega_d', positive=True)
 epsilon = Symbol(r'\varepsilon', positive=True)
 tn = Symbol('t_n', positive=True)
-P0 = Symbol('P0')
+P0 = Symbol('P_0')
 m = Symbol('m', positive=True)
 u0 = 0
 v0 = 0
