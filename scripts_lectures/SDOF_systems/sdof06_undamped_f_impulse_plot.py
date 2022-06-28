@@ -6,7 +6,7 @@ t = Symbol('t', positive=True)
 k = Symbol('k', positive=True)
 m = Symbol('m', positive=True)
 tn = Symbol('t_n', positive=True)
-P0 = Symbol('P0', positive=True)
+P0 = Symbol('P_0', positive=True)
 u0 = Symbol('u_0')
 v0 = Symbol('v_0')
 

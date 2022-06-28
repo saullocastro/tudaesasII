@@ -6,7 +6,7 @@ from sympy import Function, dsolve, Symbol
 t = Symbol('t', positive=True)
 m = Symbol('m', positive=True)
 k = Symbol('k', positive=True)
-F0 = Symbol('F0', positive=True)
+F0 = Symbol('F_0', positive=True)
 omegaf = Symbol('\omega_f', positive=True)
 
 # unknown function
