@@ -105,7 +105,7 @@ V[bu, :] = Vu
 P = V
 
 # modal damping ratio
-zeta = 0.04
+zeta = 0.02
 # calculating damping matrix C from modal damping
 Dm = np.zeros((num_modes, num_modes))
 Dm[np.diag_indices_from(Dm)] = 2*zeta*omegan
@@ -225,4 +225,4 @@ def animate(i=0):
     return lines
 
 anim = FuncAnimation(fig, animate, range(len(tplot)))
-anim.save('mdof0309_movie.mp4', fps=25)
+anim.save('mdof12_omegan1_zeta002_movie.mp4', fps=25)
