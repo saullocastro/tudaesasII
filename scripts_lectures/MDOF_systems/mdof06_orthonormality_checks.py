@@ -73,6 +73,6 @@ print('wn**2', wn[:num_modes]**2)
 print()
 for I, J in [[0, 0], [0, 1], [0, 2], [1, 1], [1, 2], [2, 2]]:
     print('I =', I, 'J =', J,
-          '\tUI . UJ %1.2f' % (U[:, I] @ U[:, J]),
-          '\tUI M UJ %1.2f' % (U[:, I] @ Muu @ U[:, J]),
-          '\tUI K UJ %1.2f' % (U[:, I] @ Kuu @ U[:, J]))
+          '\tUI . UJ %1.3f' % (U[:, I] @ U[:, J]),
+          '\tUI M UJ %1.3f' % (U[:, I] @ Muu @ U[:, J]),
+          '\tUI K UJ %1.3f' % (U[:, I] @ Kuu @ U[:, J]))
