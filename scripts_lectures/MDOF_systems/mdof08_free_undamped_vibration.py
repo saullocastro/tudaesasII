@@ -9,7 +9,7 @@ from scipy.linalg import eigh, cholesky, solve
 
 from tudaesasII.beam2d import Beam2D, update_K, update_M, DOF
 
-case = 2
+case = 1
 p = num_modes = 5
 
 # number of nodes along x
