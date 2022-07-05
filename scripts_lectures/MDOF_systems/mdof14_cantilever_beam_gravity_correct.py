@@ -8,7 +8,6 @@ from matplotlib import cm
 import numpy as np
 from numpy import isclose
 from scipy.linalg import cholesky, eigh, solve
-from composites.laminate import read_isotropic
 
 from tudaesasII.beam2d import Beam2D, update_K, update_M, DOF
 
