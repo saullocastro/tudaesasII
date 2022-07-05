@@ -69,12 +69,9 @@ I = np.ones_like(M)
 
 # applying boundary conditions
 # uroot = 0
-# vroot = unknown
+# vroot = 0
 # betaroot = 0
-# utip = unknown
-# vtip = prescribed displacement
-# betatip = unknown
-known_ind = [0, 2, (K.shape[0]-1)-1]
+known_ind = [0, 1, 2]
 bu = np.logical_not(np.in1d(np.arange(M.shape[0]), known_ind))
 bk = np.in1d(np.arange(M.shape[0]), known_ind)
 
