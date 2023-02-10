@@ -34,7 +34,7 @@ jobs:
     - name: Test with pytest and coverage report
       run: |
         #coverage run -m py.test tests
-        coverage run --source tudaesasII -m py.test
+        coverage run --source tudaesasII -m pytest
         coverage lcov
         coverage report
     - name: "Upload coverage to Codecov"
