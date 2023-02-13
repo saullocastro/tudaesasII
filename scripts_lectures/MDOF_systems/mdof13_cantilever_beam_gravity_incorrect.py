@@ -86,13 +86,13 @@ d2udt2 = np.zeros(DOF*nx)
 d2udt2[1::DOF] = g
 
 # force due to gravity
-fg = M @ d2udt2
+Fg = M @ d2udt2
 
 # force due to gravity at unknown DOFs
-fgu = fg[bu]
+Fgu = Fg[bu]
 
 # initial deflection due to gravity
-uu0 = solve(Kuu, fgu)
+uu0 = solve(Kuu, Fgu)
 u0 = np.zeros(K.shape[0])
 u0[bu] = uu0
 
@@ -159,16 +159,16 @@ def r_t(t, t1, t2, on, zeta, od, fmodaln):
 # homogeneous solution
 rh = A0[:, None]*np.exp(-zeta*on*t)*np.sin(od*t + phi[:, None])
 
-fu = np.zeros_like(fgu)
+Fu = np.zeros_like(Fgu)
 for t1, t2 in zip(t[:-1], t[1:]):
     tn = (t1 + t2)/2
-    fu[:] = fgu #NOTE keeping gravitational forces
+    Fu[:] = Fgu #NOTE keeping gravitational forces
 
     if tn >= 0.3 and tn <= 0.305:
-        fu[DOF*(nx//2)+1] += -1000
+        Fu[DOF*(nx//2)+1] += -1000
 
     # calculating modal forces
-    fmodaln = (P.T @ Linv @ fu)[:, None]
+    fmodaln = (P.T @ Linv @ Fu)[:, None]
 
     # convolution
     rpc += r_t(t, t1, t2, on, zeta, od, fmodaln)

@@ -91,11 +91,11 @@ elif case == 2:
 
 uk = u0[bk] # initial displacement used to create the initial state
 
-fk = np.zeros(Kuu.shape[0]) # no external forces used to create the initial state
-uu = solve(Kuu, fk - Kuk@uk)
-fu = Kku@uu + Kkk@uk
+Fk = np.zeros(Kuu.shape[0]) # no external forces used to create the initial state
+uu = solve(Kuu, Fk - Kuk@uk)
+Fu = Kku@uu + Kkk@uk
 print('Force values to produce the prescribed displacements:')
-print(fu)
+print(Fu)
 
 u0[bu] = uu
 

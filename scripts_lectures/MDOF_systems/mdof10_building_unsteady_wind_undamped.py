@@ -126,8 +126,8 @@ uddotk = uddot[bk]
 uddotug = uddot[bu]
 
 # force due to gravity
-fg = np.zeros(DOF*n)
-fg[bu] = Muu @ uddotug + Muk @ uddotk
+Fg = np.zeros(DOF*n)
+Fg[bu] = Muu @ uddotug + Muk @ uddotk
 
 # force due to wind
 # - using dynamic pressure q = rhoair*wind_speed**2/2
@@ -171,7 +171,7 @@ rdot0 = P.T @ L.T @ udot0[bu]
 # dynamic analysis
 # NOTE this can be further vectorized using NumPy bradcasting, but I kept this
 # loop in order to make the code more understandable
-f = np.zeros_like(fg)
+F = np.zeros_like(Fg)
 u = np.zeros((DOF*n, len(t)))
 
 #NOTE adding new np.array axis to vectorize calculations
@@ -196,13 +196,13 @@ rh = c1[:, None]*np.sin(on*t) + c2[:, None]*np.cos(on*t)
 rp = 0
 for t1, t2 in zip(t[:-1], t[1:]):
     tn = (t1 + t2)/2
-    f[:] = fg #gravitational forces
+    F[:] = Fg #gravitational forces
     wind_speed_total = wind_speed + wind_speed/10*np.sin(wind_freq*tn)
     f_wind = wind_area*rhoair*wind_speed_total**2/2
-    f[0::DOF] = f_wind
+    F[0::DOF] = f_wind
 
     # calculating modal forces
-    fmodaln = (P.T @ Linv @ f[bu])[:, None]
+    fmodaln = (P.T @ Linv @ F[bu])[:, None]
     # convolution
     rp += r_t(t, t1, t2, on, fmodaln)
 
