@@ -1,5 +1,10 @@
 import sys
-sys.path.append('../..')
+# uncomment to run from the project root directory:
+sys.path.append('.')
+
+# uncomment to run from the scripts_lectures/MDOF_systems/ directory:
+# sys.path.append('../..')
+
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -82,21 +87,24 @@ print('omega2 ref', 4.694**2*np.sqrt(E*Izz/(rho*A*length**4)))
 print('omega3 ref', 7.855**2*np.sqrt(E*Izz/(rho*A*length**4)))
 
 if plot_mesh:
+    plt.figure()
     plt.plot(x, y, 'o-')
     plt.show()
 
 if plot_result:
     u = np.zeros(K.shape[0], dtype=float)
-    for mode in range(num_modes):
+    for mode in reversed(range(num_modes)):
         u[bu] = U[:, mode]
         u1 = u[0::DOF]
         u2 = u[1::DOF]
-        plt.clf()
-        plt.title('mode %02d, $\omega_n$ %1.2f rad/s' % (mode+1, wn[mode]))
+
+        plt.figure(mode+1)
+        plt.title('mode %02d, $\\omega_n$ %1.2f rad/s' % (mode+1, wn[mode]))
         mag = u2
         levels = np.linspace(mag.min(), mag.max(), 100)
         xplot = xmesh + u1
         yplot = ymesh + u2
         plt.plot(xplot, yplot)
         plt.ylim(yplot.min(), yplot.max())
-        plt.show()
+
+plt.show()

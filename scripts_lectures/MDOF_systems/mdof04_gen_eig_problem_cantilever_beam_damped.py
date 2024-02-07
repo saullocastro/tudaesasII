@@ -1,5 +1,9 @@
 import sys
-sys.path.append('../..')
+# uncomment to run from the project root directory:
+sys.path.append('.')
+
+# uncomment to run from the scripts_lectures/MDOF_systems/ directory:
+# sys.path.append('../..')
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -103,13 +107,14 @@ if plot_mesh:
     plt.show()
 
 if plot_result:
-    for mode in range(num_modes):
+    for mode in reversed(range(num_modes)):
+        plt.figure(mode+1)
         u = np.zeros(DOF*nx)
         u[bu] = Uu[:, mode]
         u1 = u[0::DOF]
         u2 = u[1::DOF]
         plt.clf()
-        plt.title('mode %02d, $\omega_n$ %1.2f rad/s' % (mode+1, wn[mode]))
+        plt.title('mode %02d, $\\omega_n$ %1.2f rad/s' % (mode+1, wn[mode]))
         #plt.gca().set_aspect('equal')
         mag = u2
         levels = np.linspace(mag.min(), mag.max(), 100)
@@ -117,4 +122,5 @@ if plot_result:
         yplot = ymesh + u2
         plt.ylim(yplot.min(), yplot.max())
         plt.plot(xplot, yplot)
-        plt.show()
+    
+    plt.show()

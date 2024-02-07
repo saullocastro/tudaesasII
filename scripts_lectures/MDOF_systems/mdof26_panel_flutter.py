@@ -1,5 +1,9 @@
 import sys
-sys.path.append('../..')
+# uncomment to run from the project root directory:
+sys.path.append('.')
+
+# uncomment to run from the scripts_lectures/MDOF_systems/ directory:
+# sys.path.append('../..')
 
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import eigs
@@ -141,8 +145,6 @@ if plot:
     import matplotlib.pyplot as plt
     for i in range(num_eigenvalues):
         plt.plot(Mach, omegan_vec[:, i])
-    plt.ylabel('$\omega_n\ [rad/s]$')
+    plt.ylabel('$\\omega_n\ [rad/s]$')
     plt.xlabel('Mach')
     plt.show()
-
-
