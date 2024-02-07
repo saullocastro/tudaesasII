@@ -33,7 +33,7 @@ p1 = plot3d(sol.rhs.subs(subs), (t, 0, 10), (ratio, 0.1, 2),
         nb_of_points_x=250,
         nb_of_points_y=250,
         xlabel='$t$',
-        ylabel='$\omega_f/\omega_n$',
+        ylabel='$\\omega_f/\\omega_n$',
         zlabel='$u(t)$',
         )
 p1.show()

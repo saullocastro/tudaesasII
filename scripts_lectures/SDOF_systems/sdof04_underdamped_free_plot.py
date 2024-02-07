@@ -3,7 +3,7 @@ from sympy import Function, dsolve, Symbol
 
 # symbols
 t = Symbol('t', positive=True)
-zeta = Symbol('\zeta', constant=True, positive=True)
+zeta = Symbol('\\zeta', constant=True, positive=True)
 
 # unknown function
 u = Function('u')(t)
@@ -25,7 +25,7 @@ p1 = plot3d(sol.rhs, (t, 0, 10), (zeta, 0.05, 0.7),
     nb_of_points_x=500,
     nb_of_points_y=10,
     xlabel='$t$',
-    ylabel='$\zeta$',
+    ylabel='$\\zeta$',
     zlabel='$u(t)$',
     )
 p1.show()

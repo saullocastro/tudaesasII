@@ -7,7 +7,7 @@ t = Symbol('t', positive=True)
 m = Symbol('m', positive=True)
 k = Symbol('k', positive=True)
 F0 = Symbol('F_0', positive=True)
-omegaf = Symbol('\omega_f', positive=True)
+omegaf = Symbol('\\omega_f', positive=True)
 
 # unknown function
 u = Function('u')(t)
@@ -20,7 +20,7 @@ sol = dsolve(m*u.diff(t, t) + k*u - F)
 # sol.rhs ==> solution
 display(sol.rhs)
 
-omegan = sympy.Symbol('\omega_n')
+omegan = sympy.Symbol('\\omega_n')
 expr = sol.rhs.subs(sympy.sqrt(k/m), omegan)
 display(expr)
 

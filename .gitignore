@@ -15,9 +15,12 @@ temp*.*
 # Output files
 *.png
 *.mp4
+*.gif
 
 # Python compiled files
 *.pyc
 *.pyo
 *.pyd
 
+# Virtual environment
+.env

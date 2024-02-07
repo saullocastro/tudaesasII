@@ -4,10 +4,10 @@ from sympy import Function, dsolve, Symbol
 
 # symbols
 t = Symbol('t', positive=True)
-omegan = Symbol('\omega_n', positive=True)
-zeta = Symbol('\zeta')
+omegan = Symbol('\\omega_n', positive=True)
+zeta = Symbol('\\zeta')
 f0 = Symbol('f_0', positive=True)
-wf = Symbol('\omega_f', positive=True)
+wf = Symbol('\\omega_f', positive=True)
 u0 = Symbol('u_0', constant=True)
 v0 = Symbol('v_0', constant=True)
 

@@ -4,8 +4,8 @@ from sympy import Function, dsolve, Symbol
 
 # symbols
 t = Symbol('t', positive=True)
-omegan = Symbol('\omega_n', positive=True)
-zeta = Symbol('\zeta')
+omegan = Symbol('\\omega_n', positive=True)
+zeta = Symbol('\\zeta')
 
 # unknown function
 u = Function('u')(t)

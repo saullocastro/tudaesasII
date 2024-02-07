@@ -22,43 +22,53 @@ def forcefunc(t):
 tload = np.linspace(0, 2., 1000)
 t = np.linspace(0, 10., 10000)
 
-plt.plot(tload, forcefunc(tload), 'c')
-plt.xlabel('$t$')
-plt.ylabel('$f(t)$')
-plt.xlim(0, tload.max())
-plt.ylim(forcefunc(tload).min()*1.1, forcefunc(tload).max()*1.1)
-if True:
-    intervals = 20
-    tapprox = np.linspace(tload.min(), tload.max(), intervals+1)
-    plt.hlines(0, xmin=tload.min(), xmax=tload.max(), colors='k', linestyles='--')
-    for t1, t2 in zip(tapprox[:-1], tapprox[1:]):
-        tn = (t1 + t2)/2
-        fn = forcefunc(tn)
-        plt.plot((t1, t1), (0, fn), 'k--')
-        plt.plot((t1, t2), (fn, fn), 'k--')
-        plt.plot((t2, t2), (0, fn), 'k--')
-plt.show()
+#TODO: ensure that each plots is presented in its own figure. and show them simultaneously.
 
-plt.clf()
-ax = plt.gca()
+# plt.plot(tload, forcefunc(tload), 'c')
+# plt.xlabel('$t$')
+# plt.ylabel('$f(t)$')
+# plt.xlim(0, tload.max())
+# plt.ylim(forcefunc(tload).min()*1.1, forcefunc(tload).max()*1.1)
+# if True:
+#     intervals = 20
+#     tapprox = np.linspace(tload.min(), tload.max(), intervals+1)
+#     plt.hlines(0, xmin=tload.min(), xmax=tload.max(), colors='k', linestyles='--')
+#     for t1, t2 in zip(tapprox[:-1], tapprox[1:]):
+#         tn = (t1 + t2)/2
+#         fn = forcefunc(tn)
+#         plt.plot((t1, t1), (0, fn[0]), 'k--')
+#         plt.plot((t1, t2), (fn[0], fn[0]), 'k--')
+#         plt.plot((t2, t2), (0, fn[0]), 'k--')
+# plt.show()
 
-plt.figure()
+# plt.clf()
+# ax = plt.gca()
+
+
 for intervals in [2, 6, 10, 14]:
+    plt.figure()
+    ax = plt.gca()
     tapprox = np.linspace(tload.min(), tload.max(), intervals+1)
+    
+    # Plot Load Function: 
+    plt.plot(tload, forcefunc(tload), 'c', zorder=0)
+
+    # Plot intervals:
     for t1, t2 in zip(tapprox[:-1], tapprox[1:]):
         tn = (t1 + t2)/2
         fn = forcefunc(tn)
-        plt.plot((t1, t1), (0, fn), 'k--')
-        plt.plot((t1, t2), (fn, fn), 'k--')
-        plt.plot((t2, t2), (0, fn), 'k--')
-        plt.plot(tload, forcefunc(tload), 'c', zorder=0)
+        plt.plot((t1, t1), (0, fn[0]), 'k--')
+        plt.plot((t1, t2), (fn[0], fn[0]), 'k--')
+        plt.plot((t2, t2), (0, fn[0]), 'k--')
+        
         plt.xlabel('$t$')
         plt.ylabel('$f(t)$')
         plt.xlim(0, tload.max())
         plt.ylim(forcefunc(tload).min()*1.1, forcefunc(tload).max()*1.1)
+    
     plt.hlines(0, xmin=tload.min(), xmax=tload.max(), colors='k', linestyles='--')
-    plt.show()
-
+    
+    # Plot Response:
     k = 30
     m = 2
     zeta = 0.1
@@ -70,7 +80,11 @@ for intervals in [2, 6, 10, 14]:
         ans += u_t(forcefunc(tn), zeta, m, k, t1, t2, t)
     ax.plot(t, ans, label='%d intervals' % intervals)
 
-ax.set_xlabel('$t$')
-ax.set_ylabel('$u(t)$')
-ax.legend(loc='upper center')
-ax.get_figure()
+    plt.title('Response for %d intervals' % intervals)
+
+plt.show()
+
+# ax.set_xlabel('$t$')
+# ax.set_ylabel('$u(t)$')
+# ax.legend(loc='upper center')
+# ax.get_figure()
