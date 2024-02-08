@@ -13,3 +13,4 @@ pandas
 pymoo
 ipykernel
 pyarrow
+numba
