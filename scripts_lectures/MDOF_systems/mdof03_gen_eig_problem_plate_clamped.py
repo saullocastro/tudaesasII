@@ -1,5 +1,9 @@
 import sys
-sys.path.append('../..')
+# uncomment to run from the project root directory:
+sys.path.append('.')
+
+# uncomment to run from the scripts_lectures/MDOF_systems/ directory:
+# sys.path.append('../..')
 
 import matplotlib.pyplot as plt
 from matplotlib import cm
@@ -99,7 +103,7 @@ for (i,j), mode in np.ndenumerate(modes):
     u = np.zeros(K.shape[0], dtype=float)
     u[bu] = U[:, mode]
     ax.contourf(xmesh, ymesh, u[2::DOF].reshape(xmesh.shape).T, cmap=cm.jet)
-    ax.set_title('mode = %d\n$\omega=%1.2f rad/s$' % (mode+1, omegan[mode]))
+    ax.set_title('mode = %d\n$\\omega=%1.2f rad/s$' % (mode+1, omegan[mode]))
     ax.set_aspect('equal')
 plt.show()
 

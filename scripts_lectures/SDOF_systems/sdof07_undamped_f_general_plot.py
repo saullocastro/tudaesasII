@@ -33,9 +33,9 @@ if True:
     for t1, t2 in zip(tapprox[:-1], tapprox[1:]):
         tn = (t1 + t2)/2
         fn = forcefunc(tn)
-        plt.plot((t1, t1), (0, fn), 'k--')
-        plt.plot((t1, t2), (fn, fn), 'k--')
-        plt.plot((t2, t2), (0, fn), 'k--')
+        plt.plot((t1, t1), (0, fn[0]), 'k--')
+        plt.plot((t1, t2), (fn[0], fn[0]), 'k--')
+        plt.plot((t2, t2), (0, fn[0]), 'k--')
 plt.show()
 
 plt.clf()
@@ -48,9 +48,9 @@ for intervals in [2, 6, 10, 14]:
     for t1, t2 in zip(tapprox[:-1], tapprox[1:]):
         tn = (t1 + t2)/2
         fn = forcefunc(tn)
-        plt.plot((t1, t1), (0, fn), 'k--')
-        plt.plot((t1, t2), (fn, fn), 'k--')
-        plt.plot((t2, t2), (0, fn), 'k--')
+        plt.plot((t1, t1), (0, fn[0]), 'k--')
+        plt.plot((t1, t2), (fn[0], fn[0]), 'k--')
+        plt.plot((t2, t2), (0, fn[0]), 'k--')
         plt.plot(tload, forcefunc(tload), 'c', zorder=0)
         plt.xlabel('$t$')
         plt.ylabel('$f(t)$')

@@ -1,5 +1,9 @@
 import sys
-sys.path.append('../..')
+# uncomment to run from the project root directory:
+sys.path.append('.')
+
+# uncomment to run from the scripts_lectures/MDOF_systems/ directory:
+# sys.path.append('../..')
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -93,13 +97,14 @@ print('omega3 theoretical', 7.855**2*np.sqrt(E*I/(rho*A*length**4)))
 
 if plot_result:
     u = np.zeros(K.shape[0], dtype=float)
-    for mode in range(num_modes):
+    for mode in reversed(range(num_modes)):
         u[bu] = U[:, mode]
         scale = 30
         u1 = scale*u[0::DOF].reshape(nx, ny).T
         u2 = scale*u[1::DOF].reshape(nx, ny).T
-        plt.clf()
-        plt.title('mode %02d, $\omega_n$ %1.2f rad/s (%1.2f Hz)' % (mode+1, wn[mode], wn[mode]/(2*np.pi)))
+        
+        plt.figure(mode+1)
+        plt.title('mode %02d, $\\omega_n$ %1.2f rad/s (%1.2f Hz)' % (mode+1, wn[mode], wn[mode]/(2*np.pi)))
         plt.gca().set_aspect('equal')
         mag = u2
         levels = np.linspace(mag.min(), mag.max(), 100)
@@ -109,6 +114,7 @@ if plot_result:
         coords_plot = np.vstack((xplot.T.flatten(), yplot.T.flatten())).T
         plt.triplot(coords_plot[:, 0], coords_plot[:, 1], d.simplices, lw=0.3)
         #plt.colorbar()
-        plt.show()
         #plt.savefig('plot_beam_mode_%02d.png' % (mode+1), bbox_inches='tight')
+    
+    plt.show()
 

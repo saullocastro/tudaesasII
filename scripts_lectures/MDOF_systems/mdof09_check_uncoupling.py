@@ -1,5 +1,9 @@
 import sys
-sys.path.append('../..')
+# uncomment to run from the project root directory:
+sys.path.append('.')
+
+# uncomment to run from the scripts_lectures/MDOF_systems/ directory:
+# sys.path.append('../..')
 
 import numpy as np
 from scipy.linalg import eigh, cholesky
@@ -88,4 +92,3 @@ print(np.round(P.T @ Kuutilde @ P, 2))
 print()
 print('P.T @ P')
 print(np.round(P.T @ P, 2))
-

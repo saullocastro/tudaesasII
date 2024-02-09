@@ -17,7 +17,7 @@ sol = dsolve(m*u.diff(t, t) + k*u)
 # sol.rhs ==> solution
 display(sol.rhs)
 
-omegan = sympy.Symbol('\omega_n')
+omegan = sympy.Symbol('\\omega_n')
 expr = sol.rhs.subs(sympy.sqrt(k/m), omegan)
 display(expr)
 

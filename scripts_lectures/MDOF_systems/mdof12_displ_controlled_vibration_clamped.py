@@ -1,5 +1,9 @@
 import sys
-sys.path.append(r'../..')
+# uncomment to run from the project root directory:
+sys.path.append('.')
+
+# uncomment to run from the scripts_lectures/MDOF_systems/ directory:
+# sys.path.append('../..')
 
 import matplotlib
 matplotlib.use('TkAgg')
@@ -216,7 +220,7 @@ lines = ax.get_lines()
 
 m2mm = 1000
 def animate(i=0):
-    plt.title('$\omega_f=$%1.2f [rad/s]\n$t = $%1.2f [s]' % (omegaf, tplot[i]))
+    plt.title('$\\omega_f=$%1.2f [rad/s]\n$t = $%1.2f [s]' % (omegaf, tplot[i]))
     lines[1].set_ydata(uplot[1:2, i]*m2mm)
     u_base = uplot[1, i]*m2mm
     y_beam = u_base + uplot[1::DOF, i]*m2mm

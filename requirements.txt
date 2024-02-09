@@ -6,4 +6,11 @@ pytest
 pytest-cov
 coverage
 coveralls
-
+sympy
+matplotlib
+ipython
+pandas 
+pymoo
+ipykernel
+pyarrow
+numba

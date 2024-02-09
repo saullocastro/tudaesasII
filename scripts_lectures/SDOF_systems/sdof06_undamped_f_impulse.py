@@ -10,7 +10,7 @@ tn = Symbol('t_n', positive=True)
 P0 = Symbol('P_0', positive=True)
 u0 = Symbol('u_0')
 v0 = Symbol('v_0')
-omegan = Symbol('\omega_n')
+omegan = Symbol('\\omega_n')
 
 # unknown function
 u = Function('u')(t)

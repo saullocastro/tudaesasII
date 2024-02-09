@@ -25,5 +25,5 @@ sol = dsolve(m*u.diff(t, t) + k*u - F, ics=ics)
 #matplotlib.use('TkAgg')
 from sympy.plotting import plot3d
 p1 = plot3d(sol.rhs, (t, 0, 10), (wf, 0.8*wn, 0.99*wn),
-        xlabel='$t$', ylabel='$\omega_f$', zlabel='$u(t)$',
+        xlabel='$t$', ylabel='$\\omega_f$', zlabel='$u(t)$',
         nb_of_points_x=250, nb_of_points_y=25)

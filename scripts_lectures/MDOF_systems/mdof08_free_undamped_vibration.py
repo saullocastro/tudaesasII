@@ -1,5 +1,9 @@
 import sys
-sys.path.append('../..')
+# uncomment to run from the project root directory:
+sys.path.append('.')
+
+# uncomment to run from the scripts_lectures/MDOF_systems/ directory:
+# sys.path.append('../..')
 
 import matplotlib
 matplotlib.use('TkAgg')
@@ -224,4 +228,3 @@ plt.xlabel('$rad/s$')
 plt.plot(xf, yf)
 plt.xlim(0, wn[num_modes-1]+50)
 plt.show()
-
