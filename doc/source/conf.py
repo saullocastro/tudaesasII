@@ -16,8 +16,8 @@ import sys
 # -- Project information -----------------------------------------------------
 
 project = 'tudaesasII'
-author = 'Saullo G. P. Castro'
-copyright = '2019-2022, ' + author
+author = 'Saullo G. P. Castro, Jurij Sodja'
+copyright = '2019-2024, ' + author
 
 # The full version, including alpha/beta/rc tags
 sys.path.append(os.path.abspath('../..'))
