@@ -7,7 +7,6 @@ Github Actions status:
 
 Coverage status:
 
-[![Coveralls Status](https://coveralls.io/repos/github/saullocastro/tudaesasII/badge.png?branch=master)](https://coveralls.io/github/saullocastro/tudaesasII?branch=master)
 [![Codecov Status](https://codecov.io/gh/saullocastro/tudaesasII/branch/master/graph/badge.svg?token=KD9D8G8D2P)](https://codecov.io/gh/saullocastro/tudaesasII)
 
 
@@ -35,7 +34,7 @@ Citing this repository
 
 If you use any content of this repository, you can cite it as:
 
-Castro, S.G.P. Supporting code for Stability and Analysis of Structures II, Department of Aerospace Structures and Materials, Delft University of Technology, 2024. [DOI: 10.5281/zenodo.2583004](https://doi.org/10.5281/zenodo.2583004).
+Castro SGP, Sodja J. Supporting code for Stability and Analysis of Structures II, Department of Aerospace Structures and Materials, Delft University of Technology, 2024. [DOI: 10.5281/zenodo.2583004](https://doi.org/10.5281/zenodo.2583004).
 
 
 License
@@ -43,5 +42,8 @@ License
 Distrubuted under the 3-Clause BSD license
 (https://raw.github.com/saullocastro/tudaesasII/master/LICENSE).
 
-Contact: S.G.P.Castro@tudelft.nl
+Contacts:
+
+- Saullo G. P. Castro, S.G.P.Castro@tudelft.nl
+- Jurij Sodja, J.Sodja@tudelft.nl
 
