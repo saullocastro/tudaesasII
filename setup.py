@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 
 is_released = True
-version = '2023.00'
+version = '2024.0'
 
 
 def git_version():
@@ -60,7 +60,7 @@ def read(fname):
 
 install_requires = [
         "numpy",
-        "scipy >= 1.5.0",
+        "scipy",
         "structsolve",
         "composites >= 0.5.4",
         ]
@@ -84,6 +84,7 @@ Programming Language :: Python :: 3.8
 Programming Language :: Python :: 3.9
 Programming Language :: Python :: 3.10
 Programming Language :: Python :: 3.11
+Programming Language :: Python :: 3.12
 License :: OSI Approved :: BSD License
 
 """
@@ -98,8 +99,8 @@ data_files = [('', [
 s = setup(
     name = "tudaesasII",
     version = fullversion,
-    author = "Saullo G. P. Castro",
-    author_email = "S.G.P.Castro@tudelft.nl",
+    author = "Saullo G. P. Castro, Jurij Sodja",
+    author_email = "S.G.P.Castro@tudelft.nl, J.Sodja@tudelft.nl",
     description = ("Python module related to the Master's course SASII at the faculty of Aeropsace Engineering, TU Delft"),
     license = "3-Clause BSD",
     keywords = "structural analysis vibration dynamics finite elements",
