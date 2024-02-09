@@ -24,3 +24,4 @@ temp*.*
 
 # Virtual environment
 .env
+.DS_Store
