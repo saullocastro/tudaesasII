@@ -76,7 +76,7 @@ def test_pre_stress_simply_supported_beam():
     print('Ppreload', Ppreload)
 
     nmodes = 3
-    eigvals, U = eigh(a=Kuu + Ppreload*KGuu, b=Muu, eigvals=(0, nmodes-1))
+    eigvals, U = eigh(a=Kuu + Ppreload*KGuu, b=Muu, subset_by_index=(0, nmodes-1))
     omegan = np.sqrt(eigvals)
     print('Natural frequency [rad/s]', omegan)
 

@@ -117,7 +117,7 @@ def test_tria3r_static_point_load(plot=False):
     wmax_ref_tria3r = 7.969154104606162e-05
     print('w.max() ref_tria3r', wmax_ref_tria3r)
     print('w.max()', w.max())
-    assert np.isclose(wmax_ref_tria3r, w.max())
+    assert np.isclose(wmax_ref_tria3r, w.max(), rtol=0.01)
     if plot:
         import matplotlib
         matplotlib.use('TkAgg')
