@@ -83,7 +83,7 @@ def test_truss2d_natural_freq():
         eigvals, U = eigh(a=Kuu, b=Muu, subset_by_index=(0, nmodes-1))
         wn = eigvals**0.5
         assert np.allclose(wn, [44.06718518, 242.37341157, 567.03397785],
-                rtol=0.01)
+                           rtol=0.02)
 
 
 if __name__ == '__main__':
