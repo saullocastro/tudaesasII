@@ -1,9 +1,8 @@
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
+
 
 def compute_DRI(time, acc_z, zeta=0.224, omegan=52.9):
-    def u_t(a, t1, t2, t):
+    def z_t(a, t1, t2, t):
         tn = (t1 + t2)/2
         dt = t2 - t1
         H = np.heaviside(t - tn, 1.)
@@ -12,18 +11,20 @@ def compute_DRI(time, acc_z, zeta=0.224, omegan=52.9):
         return dt*a*h
 
     t = np.linspace(0, time.max(), 10000)
-    y = np.zeros_like(t)
+    z = np.zeros_like(t)
 
     for i, (t1, t2) in enumerate(zip(time[:-1], time[1:])):
         a = (acc_z[i] + acc_z[i+1])/2
-        y += u_t(a, t1, t2, t)
-    y_max = np.max(np.abs(y))
-    DRI = omegan ** 2 * y_max / 9.81
+        z += z_t(a, t1, t2, t)
 
-    return DRI, t, y
+    z_max = np.max(np.abs(z))
+
+    DRI = omegan ** 2 * z_max / 9.81
+
+    return DRI, t, z
 
 
-time, acc_z = np.loadtxt('compute_DRI_data.csv', delimiter=',',
+time, acc_z = np.loadtxt('sdof11_compute_DRI_data.csv', delimiter=',',
                          skiprows=1, usecols=(1, 4), unpack=True)
-DRI, t, y = compute_DRI(time, acc_z)
+DRI, t, z = compute_DRI(time, acc_z)
 print(DRI)
