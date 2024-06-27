@@ -68,7 +68,7 @@ def test_nat_freq_cantilever_beam(plot=False, mode=0):
         Muu = M[bu, :][:, bu]
 
         nmodes = 3
-        eigvals, U = eigh(a=Kuu, b=Muu, eigvals=(0, nmodes-1))
+        eigvals, U = eigh(a=Kuu, b=Muu, subset_by_index=(0, nmodes-1))
         omegan = eigvals**0.5
 
         # vector u containing displacements for all DOFs

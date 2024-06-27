@@ -74,7 +74,7 @@ def test_tria3planestress_natural_freq():
 
         # solving
         nmodes = 3
-        eigvals, U = eigh(a=Kuu, b=Muu, eigvals=(0, nmodes-1))
+        eigvals, U = eigh(a=Kuu, b=Muu, subset_by_index=(0, nmodes-1))
         wn = eigvals**0.5
 
         print(wn)

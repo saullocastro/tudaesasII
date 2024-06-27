@@ -63,7 +63,7 @@ def test_nat_freq_curved_beam():
     Muu = M[bu, :][:, bu]
 
     nmodes = 3
-    eigvals, U = eigh(a=Kuu, b=Muu, eigvals=(0, nmodes-1))
+    eigvals, U = eigh(a=Kuu, b=Muu, subset_by_index=(0, nmodes-1))
     omegan = eigvals**0.5
     omega123 = [396.98, 931.22, 1797.31]
     print('Reference omega123', omega123)

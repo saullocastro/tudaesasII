@@ -80,7 +80,7 @@ def test_truss2d_natural_freq():
         # solving
         # NOTE: extracting ALL eigenvectors
         nmodes = 3
-        eigvals, U = eigh(a=Kuu, b=Muu, eigvals=(0, nmodes-1))
+        eigvals, U = eigh(a=Kuu, b=Muu, subset_by_index=(0, nmodes-1))
         wn = eigvals**0.5
         assert np.allclose(wn, [44.06718518, 242.37341157, 567.03397785],
                 rtol=0.01)
