@@ -92,7 +92,7 @@ Kuu = K[bu, :][:, bu]
 Muu = M[bu, :][:, bu]
 
 num_modes = 5
-eigvals, U = eigh(a=Kuu, b=Muu, subset_by_index=(0, num_modes))
+eigvals, Uu = eigh(a=Kuu, b=Muu, subset_by_index=(0, num_modes))
 omegan = np.sqrt(eigvals)
 
 modes = np.asarray([[0, 1, 2], [3, 4, 5]])
@@ -101,7 +101,7 @@ fig, axes = plt.subplots(nrows=modes.shape[0], ncols=modes.shape[1],
 for (i,j), mode in np.ndenumerate(modes):
     ax = axes[i, j]
     u = np.zeros(K.shape[0], dtype=float)
-    u[bu] = U[:, mode]
+    u[bu] = Uu[:, mode]
     ax.contourf(xmesh, ymesh, u[2::DOF].reshape(xmesh.shape).T, cmap=cm.jet)
     ax.set_title('mode = %d\n$\\omega=%1.2f rad/s$' % (mode+1, omegan[mode]))
     ax.set_aspect('equal')

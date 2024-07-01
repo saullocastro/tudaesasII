@@ -77,7 +77,7 @@ Muu = M[bu, :][:, bu]
 
 # solving
 num_modes = 5
-eigvals, U = eigh(a=Kuu, b=Muu, subset_by_index=(0, num_modes))
+eigvals, Uu = eigh(a=Kuu, b=Muu, subset_by_index=(0, num_modes))
 wn = np.sqrt(eigvals)
 print('wn', wn[:num_modes])
 
@@ -88,7 +88,7 @@ print('omega3 ref', 7.855**2*np.sqrt(E*Izz/(rho*A*length**4)))
 if plot_result:
     u = np.zeros(K.shape[0], dtype=float)
     for mode in range(num_modes):
-        u[bu] = U[:, mode]
+        u[bu] = Uu[:, mode]
         u1 = u[0::DOF]
         u2 = u[1::DOF]
 
