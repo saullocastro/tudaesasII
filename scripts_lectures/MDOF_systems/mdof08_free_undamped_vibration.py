@@ -104,6 +104,8 @@ print(Fu)
 
 u0[bu] = uu
 
+# zero initial velocity
+udot0 = np.zeros(N)
 
 # boundary conditions for the dynamic problem
 bk = np.zeros(K.shape[0], dtype=bool) # defining known DOFs
@@ -123,10 +125,10 @@ L = cholesky(M, lower=True)
 Luu = L[bu, :][:, bu]
 Linv = np.linalg.inv(L)
 Linvuu = Linv[bu, :][:, bu]
-Ktilde = Linvuu @ Kuu @ Linvuu.T
+Ktildeuu = Linvuu @ Kuu @ Linvuu.T
 
 V = np.zeros((N, num_modes))
-eigvals, Vu = eigh(Kuutilde, subset_by_index=(0, num_modes-1))
+eigvals, Vu = eigh(Ktildeuu, subset_by_index=(0, num_modes-1))
 V[bu] = Vu
 wn = np.sqrt(eigvals)
 print('wn [rad/s] =', wn)
@@ -144,7 +146,7 @@ c1 = []
 c2 = []
 for I in range(num_modes):
     c1.append( V[:, I] @ L.T @ u0 )
-    c2.append( V[:, I] @ L.T @ v0 / wn[I] )
+    c2.append( V[:, I] @ L.T @ udot0 / wn[I] )
 
 def ufunc(t):
     tmp = 0
@@ -157,9 +159,7 @@ def ufunc(t):
 num = 1000
 cycles = 20
 t = np.linspace(0, cycles/(wn[0]/(2*np.pi)), num)
-uu = ufunc(t)
-u_xt = np.zeros((t.shape[0], K.shape[0]))
-u_xt[:, bu] = uu
+u_xt = ufunc(t)
 
 plt.ion()
 
@@ -205,9 +205,7 @@ for i, ti in enumerate(t):
 # frequency analysis
 num = 100000
 t = np.linspace(0, 3, num)
-uu = ufunc(t)
-u = np.zeros((t.shape[0], K.shape[0]))
-u[:, bu] = uu
+u = ufunc(t)
 
 # get position of node corrsponding to the top right
 pos = np.where((ncoords[:, 0] == xmesh[-1]) & (ncoords[:, 1] == ymesh[-1]))[0][0]
