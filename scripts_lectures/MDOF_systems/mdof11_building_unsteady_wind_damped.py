@@ -46,8 +46,10 @@ nid_pos = dict(zip(nids, np.arange(len(nids))))
 n1s = nids[0:-1]
 n2s = nids[1:]
 
-K = np.zeros((DOF*n, DOF*n))
-M = np.zeros((DOF*n, DOF*n))
+N = DOF*n
+K = np.zeros((N, N))
+M = np.zeros((N, N))
+
 elements = []
 for n1, n2 in zip(n1s, n2s):
     pos1 = nid_pos[n1]
@@ -94,14 +96,16 @@ L = cholesky(M, lower=True)
 Luu = L[bu, :][:, bu]
 Linv = np.linalg.inv(L)
 Linvuu = Linv[bu, :][:, bu]
-Ktilde = Linvuu @ Kuu @ Linvuu.T
+Ktilde = Linv @ K @ Linv.T
 p = 20
-gamma, Vu = eigh(Ktilde, subset_by_index=(0, p-1)) # already gives V[:, i] normalized to 1
+V = np.zeros((N, p))
+gamma, Vu = eigh(Ktilde[bu, :][:, bu], subset_by_index=(0, p-1)) # already gives V[:, i] normalized to 1
+V[bu] = Vu
 omegan = gamma**0.5
 print('First 5 natural frequencies', omegan[:5])
 
 # calculating vibration modes from orthonormal base (remember U = L^(-T) V)
-modes = np.zeros((DOF*n, len(gamma)))
+modes = np.zeros((N, len(gamma)))
 for i in range(modes.shape[1]):
     modes[bu, i] = Linvuu.T @ Vu[:, i]
 
@@ -117,14 +121,15 @@ tmax = 8
 time_steps = 2000
 plot_freq = 2
 
-Pu = Vu
+P = V
+Pu = P[bu]
 
 t = np.linspace(0, tmax, time_steps)
 
 # gravity acceleration
 g = -9.81 #m/s^2
 # acceleration vector
-uddot = np.zeros(DOF*n)
+uddot = np.zeros(N)
 uddot[1::DOF] = g
 # acceleration vector at known DOFs
 uddotk = uddot[bk]
@@ -132,7 +137,7 @@ uddotk = uddot[bk]
 uddotug = uddot[bu]
 
 # force due to gravity
-Fg = np.zeros(DOF*n)
+Fg = np.zeros(N)
 Fg[bu] = Muu @ uddotug + Muk @ uddotk
 
 # force due to wind
@@ -174,8 +179,8 @@ on = omegan
 od = on*np.sqrt(1 - zeta**2)
 
 # initial conditions in physical space
-u0 = np.zeros(DOF*n)
-udot0 = np.zeros(DOF*n)
+u0 = np.zeros(N)
+udot0 = np.zeros(N)
 # initial conditions in modal space
 r0 = Pu.T @ Luu.T @ u0[bu]
 rdot0 = Pu.T @ Luu.T @ udot0[bu]
@@ -188,7 +193,6 @@ od = od[:, None]
 # NOTE this can be further vectorized using NumPy bradcasting, but I kept this
 # loop in order to make the code more understandable
 F = np.zeros_like(Fg)
-u = np.zeros((DOF*n, len(t)))
 
 def r_t(t, t1, t2, on, zeta, od, fmodaln):
     """SDOF solution for a damped single impulse
@@ -222,7 +226,7 @@ for t1, t2 in zip(t[:-1], t[1:]):
 r = rh + rp
 
 # transforming from r-space to displacement
-u[bu] = Linvuu.T @ Pu @ r
+u = Linv.T @ P @ r
 
 plt.clf()
 fig = plt.gcf()

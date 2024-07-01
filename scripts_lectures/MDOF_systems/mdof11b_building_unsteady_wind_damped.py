@@ -49,6 +49,7 @@ n2s = nids[1:]
 N = DOF*n
 K = np.zeros((N, N))
 M = np.zeros((N, N))
+
 elements = []
 for n1, n2 in zip(n1s, n2s):
     pos1 = nid_pos[n1]
@@ -95,10 +96,10 @@ L = cholesky(M, lower=True)
 Luu = L[bu, :][:, bu]
 Linv = np.linalg.inv(L)
 Linvuu = Linv[bu, :][:, bu]
-Ktilde = Linvuu @ Kuu @ Linvuu.T
+Ktilde = Linv @ K @ Linv.T
 p = 20
 V = np.zeros((N, p))
-gamma, Vu = eigh(Ktilde, subset_by_index=(0, p-1)) # already gives V[:, i] normalized to 1
+gamma, Vu = eigh(Ktilde[bu, :][:, bu], subset_by_index=(0, p-1)) # already gives V[:, i] normalized to 1
 V[bu] = Vu
 omegan = gamma**0.5
 print('First 5 natural frequencies', omegan[:5])
@@ -121,7 +122,7 @@ time_steps = 2000
 plot_freq = 2
 
 P = V
-Pu = Vu
+Pu = P[bu]
 
 t = np.linspace(0, tmax, time_steps)
 
@@ -183,6 +184,7 @@ Dm[np.diag_indices_from(Dm)] = 2*zeta*omegan
 C = L @ P @ Dm @ P.T @ L.T
 Cuu = C[bu, :][:, bu]
 Cuk = C[bu, :][:, bk]
+# TODO this is not finished business...
 
 # initial conditions in physical space
 u0 = np.zeros(N)
@@ -194,6 +196,7 @@ Fext[0::DOF] += Fwind
 u0[bu] = solve(Kuu, Fext[bu])
 
 
+# TODO still assuming zero velocity
 udot0 = np.zeros(N)
 
 # initial conditions in modal space
@@ -208,7 +211,6 @@ od = od[:, None]
 # NOTE this can be further vectorized using NumPy bradcasting, but I kept this
 # loop in order to make the code more understandable
 F = np.zeros_like(Fg)
-u = np.zeros((N, len(t)))
 
 def r_t(t, t1, t2, on, zeta, od, fmodaln):
     """SDOF solution for a damped single impulse
@@ -242,7 +244,7 @@ for t1, t2 in zip(t[:-1], t[1:]):
 r = rh + rp
 
 # transforming from r-space to displacement
-u[bu] = Linvuu.T @ Pu @ r
+u = Linv.T @ P @ r
 
 plt.clf()
 fig = plt.gcf()
