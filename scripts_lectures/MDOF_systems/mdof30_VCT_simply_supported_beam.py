@@ -9,7 +9,7 @@ import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.linalg import eigh, cholesky, solve
+from scipy.linalg import eigh, solve
 from scipy.optimize import curve_fit
 
 from tudaesasII.beam2d import (Beam2D, update_K, update_KG, update_KNL,

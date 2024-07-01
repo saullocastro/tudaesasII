@@ -43,8 +43,10 @@ n4s = nids_mesh[:-1, 1:].flatten()
 
 plate = isotropic_plate(thickness=h, E=E, nu=nu, calc_scf=True)
 
-K = np.zeros((DOF*nx*ny, DOF*nx*ny))
-M = np.zeros((DOF*nx*ny, DOF*nx*ny))
+N = DOF*nx*ny
+
+K = np.zeros((N, N))
+M = np.zeros((N, N))
 quads = []
 
 for n1, n2, n3, n4 in zip(n1s, n2s, n3s, n4s):
@@ -75,7 +77,7 @@ print('elements created')
 
 # applying boundary conditions
 # clamped
-bk = np.zeros(K.shape[0], dtype=bool) #array to store known DOFs
+bk = np.zeros(N, dtype=bool) #array to store known DOFs
 check = np.isclose(x, 0.) | np.isclose(x, a) | np.isclose(y, 0) | np.isclose(y, b)
 bk[2::DOF] = check
 bk[3::DOF] = check
@@ -100,7 +102,7 @@ fig, axes = plt.subplots(nrows=modes.shape[0], ncols=modes.shape[1],
         figsize=(15, 10))
 for (i,j), mode in np.ndenumerate(modes):
     ax = axes[i, j]
-    u = np.zeros(K.shape[0], dtype=float)
+    u = np.zeros(N, dtype=float)
     u[bu] = Uu[:, mode]
     ax.contourf(xmesh, ymesh, u[2::DOF].reshape(xmesh.shape).T, cmap=cm.jet)
     ax.set_title('mode = %d\n$\\omega=%1.2f rad/s$' % (mode+1, omegan[mode]))

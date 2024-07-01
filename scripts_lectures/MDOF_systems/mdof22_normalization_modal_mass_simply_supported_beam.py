@@ -36,10 +36,12 @@ x = ncoords[:, 0]
 y = ncoords[:, 1]
 nid_pos = dict(zip(np.arange(len(ncoords)), np.arange(len(ncoords))))
 
+N = DOF*nx
+
 #NOTE using dense matrices
-K = np.zeros((DOF*nx, DOF*nx))
-M = np.zeros((DOF*nx, DOF*nx))
-V = np.zeros((DOF*nx, DOF*nx))
+K = np.zeros((N, N))
+M = np.zeros((N, N))
+V = np.zeros((N, N))
 
 elems = []
 # creating beam elements
@@ -62,13 +64,13 @@ for n1, n2 in zip(nids[:-1], nids[1:]):
 
 # calculating total mass of the system using the mass matrix
 # unitary translation vector
-unit_u = np.zeros(M.shape[0])
+unit_u = np.zeros(N)
 unit_u[0::DOF] = 1
 mass = unit_u.T @ M @ unit_u
 volume = unit_u.T @ V @ unit_u
 
 # boundary conditions for the dynamic problem
-bk = np.zeros(K.shape[0], dtype=bool) # defining known DOFs
+bk = np.zeros(N, dtype=bool) # defining known DOFs
 at_base = np.isclose(x, 0.)
 bk[0::DOF] = at_base
 bk[1::DOF] = at_base
@@ -90,7 +92,7 @@ num_modes = 70
 eigvals, Uu = eigh(a=Kuu, b=Muu, subset_by_index=[0, num_modes-1])
 wn = np.sqrt(eigvals)
 print('Natural frequencies [rad/s] =', wn)
-U = np.zeros((K.shape[0], num_modes))
+U = np.zeros((N, num_modes))
 U[bu] = Uu
 
 normalization = 1

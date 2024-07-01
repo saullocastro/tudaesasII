@@ -48,6 +48,7 @@ n4s = nids_mesh[:-1, 1:].flatten()
 plate = isotropic_plate(thickness=h, E=E, nu=nu, calc_scf=True)
 
 N = DOF*nx*ny
+
 K = np.zeros((N, N))
 KG = np.zeros((N, N))
 M = np.zeros((N, N))
@@ -161,7 +162,7 @@ first_omegan_NL = []
 preload_list_NL = np.linspace(-0.995*lambda_CR, +lambda_CR, 15)
 for lambda_i in preload_list_NL:
     print('lambda_i', lambda_i)
-    u = np.zeros(K.shape[0])
+    u = np.zeros(N)
     load_steps = lambda_i*np.linspace(0.1, 1., 3)
     for load in load_steps:
         fext = calc_fext(load)

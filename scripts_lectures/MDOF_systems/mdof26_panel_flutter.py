@@ -53,9 +53,11 @@ plate = isotropic_plate(thickness=h, E=E, nu=nu, calc_scf=True)
 num_elements = len(n1s)
 print('num_elements', num_elements)
 
-K = np.zeros((DOF*nx*ny, DOF*nx*ny))
-M = np.zeros((DOF*nx*ny, DOF*nx*ny))
-KA = np.zeros((DOF*nx*ny, DOF*nx*ny))
+N = DOF*nx*ny
+
+K = np.zeros((N, N))
+M = np.zeros((N, N))
+KA = np.zeros((N, N))
 
 quads = []
 for n1, n2, n3, n4 in zip(n1s, n2s, n3s, n4s):
@@ -82,7 +84,7 @@ print('elements created')
 
 # applying boundary conditions
 # simply supported
-bk = np.zeros(K.shape[0], dtype=bool)
+bk = np.zeros(N, dtype=bool)
 # constraining w at all edges
 check = (np.isclose(x, 0.) | np.isclose(x, a) | np.isclose(y, 0.) | np.isclose(y, b))
 bk[2::DOF] = check
@@ -117,7 +119,7 @@ for i, beta in enumerate(betas):
     # solving generalized eigenvalue problem
     eigvals, eigvecsu = eigs(A=Kuu + beta*KAuu, M=Muu,
             k=num_eigenvalues, which='LM', sigma=-1., tol=1e-10)
-    eigvecs = np.zeros((K.shape[0], num_eigenvalues), dtype=float)
+    eigvecs = np.zeros((N, num_eigenvalues), dtype=float)
     eigvecs[bu, :] = eigvecsu
 
     if i == 0:
