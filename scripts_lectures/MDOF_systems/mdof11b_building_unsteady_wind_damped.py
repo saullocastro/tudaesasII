@@ -46,8 +46,9 @@ nid_pos = dict(zip(nids, np.arange(len(nids))))
 n1s = nids[0:-1]
 n2s = nids[1:]
 
-K = np.zeros((DOF*n, DOF*n))
-M = np.zeros((DOF*n, DOF*n))
+N = DOF*n
+K = np.zeros((N, N))
+M = np.zeros((N, N))
 elements = []
 for n1, n2 in zip(n1s, n2s):
     pos1 = nid_pos[n1]
@@ -90,25 +91,29 @@ Kuk = K[bu, :][:, bk]
 Kkk = K[bk, :][:, bk]
 
 # finding natural frequencies and orthonormal base
-L = cholesky(Muu, lower=True)
+L = cholesky(M, lower=True)
+Luu = L[bu, :][:, bu]
 Linv = np.linalg.inv(L)
-Ktilde = Linv @ Kuu @ Linv.T
+Linvuu = Linv[bu, :][:, bu]
+Ktilde = Linvuu @ Kuu @ Linvuu.T
 p = 20
-gamma, V = eigh(Ktilde, subset_by_index=(0, p-1)) # already gives V[:, i] normalized to 1
+V = np.zeros((N, p))
+gamma, Vu = eigh(Ktilde, subset_by_index=(0, p-1)) # already gives V[:, i] normalized to 1
+V[bu] = Vu
 omegan = gamma**0.5
 print('First 5 natural frequencies', omegan[:5])
 
 # calculating vibration modes from orthonormal base (remember U = L^(-T) V)
-modes = np.zeros((DOF*n, len(gamma)))
+modes = np.zeros((N, len(gamma)))
 for i in range(modes.shape[1]):
-    modes[bu, i] = Linv.T @ V[:, i]
+    modes[bu, i] = Linvuu.T @ Vu[:, i]
 
 # ploting vibration modes
 for i in range(5):
     plt.clf()
     plt.title(r'$\omega_n = %1.2f\ Hz$' % omegan[i])
     plt.plot(x+modes[0::DOF, i], y+modes[1::DOF, i])
-    plt.savefig('mdof0308_plot_eigenmode_%02d.png' % i, bbox_inches='tight')
+    plt.savefig('mdof11b_plot_eigenmode_%02d.png' % i, bbox_inches='tight')
 
 # performing dynamic analysis in time domain
 tmax = 8
@@ -116,13 +121,14 @@ time_steps = 2000
 plot_freq = 2
 
 P = V
+Pu = Vu
 
 t = np.linspace(0, tmax, time_steps)
 
 # gravity acceleration
 g = -9.81 #m/s^2
 # acceleration vector
-uddot = np.zeros(DOF*n)
+uddot = np.zeros(N)
 uddot[1::DOF] = g
 # acceleration vector at known DOFs
 uddotk = uddot[bk]
@@ -130,7 +136,7 @@ uddotk = uddot[bk]
 uddotug = uddot[bu]
 
 # force due to gravity
-Fg = np.zeros(DOF*n)
+Fg = np.zeros(N)
 Fg[bu] = Muu @ uddotug + Muk @ uddotk
 
 # force due to wind
@@ -155,8 +161,8 @@ wind_speed = fwindspeed(y)
 plt.clf()
 plt.title('Log Wind Profile')
 plt.plot(wind_speed, y)
-plt.xlabel('Lateral wind, $m/s$')
-plt.ylabel('Height, $m$')
+plt.xlabel('Lateral wind $[m/s]$')
+plt.ylabel('Height $[m]$')
 for yi, vx in zip(y[::n//10], wind_speed[::n//10]):
     plt.arrow(0, yi, vx, 0, width=0.3, length_includes_head=True)
 plt.show()
@@ -171,18 +177,28 @@ zeta = 0.02
 on = omegan
 od = on*np.sqrt(1 - zeta**2)
 
+# damping matrix used to calculate the influence of the new velocity
+Dm = np.zeros((p, p))
+Dm[np.diag_indices_from(Dm)] = 2*zeta*omegan
+C = L @ P @ Dm @ P.T @ L.T
+Cuu = C[bu, :][:, bu]
+Cuk = C[bu, :][:, bk]
+
 # initial conditions in physical space
-u0 = np.zeros(DOF*n)
-Fext = np.zeros(DOF*n)
+u0 = np.zeros(N)
+udot0 = np.zeros(N)
+Fext = np.zeros(N)
 Fext[:] = Fg #gravitational forces
 Fwind = wind_area*rhoair*wind_speed**2/2
 Fext[0::DOF] += Fwind
 u0[bu] = solve(Kuu, Fext[bu])
 
-udot0 = np.zeros(DOF*n)
+
+udot0 = np.zeros(N)
+
 # initial conditions in modal space
-r0 = P.T @ L.T @ u0[bu]
-rdot0 = P.T @ L.T @ udot0[bu]
+r0 = Pu.T @ Luu.T @ u0[bu]
+rdot0 = Pu.T @ Luu.T @ udot0[bu]
 
 #NOTE adding new np.array axis to vectorize calculations
 on = on[:, None]
@@ -192,7 +208,7 @@ od = od[:, None]
 # NOTE this can be further vectorized using NumPy bradcasting, but I kept this
 # loop in order to make the code more understandable
 F = np.zeros_like(Fg)
-u = np.zeros((DOF*n, len(t)))
+u = np.zeros((N, len(t)))
 
 def r_t(t, t1, t2, on, zeta, od, fmodaln):
     """SDOF solution for a damped single impulse
@@ -203,7 +219,7 @@ def r_t(t, t1, t2, on, zeta, od, fmodaln):
     h = 1/od*np.exp(-zeta*on*(t - tn))*np.sin(od*(t - tn))*H
     return fmodaln*dt*h
 
-# homogeneous solution a damped SDOF system
+# homogeneous solution for a damped SDOF system
 rh = np.exp(-zeta*on*t)*(r0[:, None]*np.cos(od*t) +
     (rdot0[:, None] + zeta*on*r0[:, None])*np.sin(od*t)/od)
 
@@ -218,7 +234,7 @@ for t1, t2 in zip(t[:-1], t[1:]):
     F[0::DOF] = Fwind
 
     # calculating modal forces
-    fmodaln = (P.T @ Linv @ F[bu])[:, None]
+    fmodaln = (Pu.T @ Linvuu @ F[bu])[:, None]
     # convolution
     rp += r_t(t, t1, t2, on, zeta, od, fmodaln)
 
@@ -226,7 +242,7 @@ for t1, t2 in zip(t[:-1], t[1:]):
 r = rh + rp
 
 # transforming from r-space to displacement
-u[bu] = Linv.T @ P @ r
+u[bu] = Linvuu.T @ Pu @ r
 
 plt.clf()
 fig = plt.gcf()
@@ -237,8 +253,8 @@ for i in range(len(t)):
         plt.xlim(-60, 60)
         plt.ylim(0, y.max()*1.1)
         plt.plot(u[0::DOF, i]*m2mm, y)
-        plt.xlabel('Lateral displacement, $mm$')
-        plt.ylabel('Height, $m$')
+        plt.xlabel('Lateral displacement $[mm]$')
+        plt.ylabel('Height $[m]$')
         utip = u[0::DOF, i][-1]
         plt.text(0, y.max()*1.05, '%1.2f mm' % (utip*m2mm))
         plt.pause(1e-9)
@@ -247,6 +263,6 @@ for i in range(len(t)):
 
 plt.clf()
 plt.plot(t, u[0::DOF, :][-1]*m2mm)
-plt.ylabel('Lateral displacement, $mm$')
-plt.xlabel('Time, $s$')
+plt.ylabel('Lateral displacement $[mm]$')
+plt.xlabel('Time $[s]$')
 plt.show()

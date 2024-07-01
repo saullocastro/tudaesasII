@@ -90,18 +90,20 @@ Kuk = K[bu, :][:, bk]
 Kkk = K[bk, :][:, bk]
 
 # finding natural frequencies and orthonormal base
-L = cholesky(Muu, lower=True)
+L = cholesky(M, lower=True)
+Luu = L[bu, :][:, bu]
 Linv = np.linalg.inv(L)
-Ktilde = Linv @ Kuu @ Linv.T
+Linvuu = Linv[bu, :][:, bu]
+Ktilde = Linvuu @ Kuu @ Linvuu.T
 p = 20
-gamma, V = eigh(Ktilde, subset_by_index=(0, p-1)) # already gives V[:, i] normalized to 1
+gamma, Vu = eigh(Ktilde, subset_by_index=(0, p-1)) # already gives V[:, i] normalized to 1
 omegan = gamma**0.5
 print('First 5 natural frequencies', omegan[:5])
 
 # calculating vibration modes from orthonormal base (remember U = L^(-T) V)
 modes = np.zeros((DOF*n, len(gamma)))
 for i in range(modes.shape[1]):
-    modes[bu, i] = Linv.T @ V[:, i]
+    modes[bu, i] = Linvuu.T @ Vu[:, i]
 
 # ploting vibration modes
 for i in range(5):
@@ -115,7 +117,7 @@ tmax = 8
 time_steps = 2000
 plot_freq = 2
 
-P = V
+Pu = Vu
 
 t = np.linspace(0, tmax, time_steps)
 
@@ -175,8 +177,8 @@ od = on*np.sqrt(1 - zeta**2)
 u0 = np.zeros(DOF*n)
 udot0 = np.zeros(DOF*n)
 # initial conditions in modal space
-r0 = P.T @ L.T @ u0[bu]
-rdot0 = P.T @ L.T @ udot0[bu]
+r0 = Pu.T @ Luu.T @ u0[bu]
+rdot0 = Pu.T @ Luu.T @ udot0[bu]
 
 #NOTE adding new np.array axis to vectorize calculations
 on = on[:, None]
@@ -212,7 +214,7 @@ for t1, t2 in zip(t[:-1], t[1:]):
     F[0::DOF] = Fwind
 
     # calculating modal forces
-    fmodaln = (P.T @ Linv @ F[bu])[:, None]
+    fmodaln = (Pu.T @ Linvuu @ F[bu])[:, None]
     # convolution
     rp += r_t(t, t1, t2, on, zeta, od, fmodaln)
 
@@ -220,7 +222,7 @@ for t1, t2 in zip(t[:-1], t[1:]):
 r = rh + rp
 
 # transforming from r-space to displacement
-u[bu] = Linv.T @ P @ r
+u[bu] = Linvuu.T @ Pu @ r
 
 plt.clf()
 fig = plt.gcf()
