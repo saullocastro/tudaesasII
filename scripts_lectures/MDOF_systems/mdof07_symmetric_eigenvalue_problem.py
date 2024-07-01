@@ -36,8 +36,9 @@ y = ncoords[:, 1]
 nid_pos = dict(zip(np.arange(len(ncoords)), np.arange(len(ncoords))))
 
 #NOTE using dense matrices
-K = np.zeros((DOF*nx, DOF*nx))
-M = np.zeros((DOF*nx, DOF*nx))
+N = DOF*nx
+K = np.zeros((N, N))
+M = np.zeros((N, N))
 
 elems = []
 # creating and assemblying beam elements
@@ -73,12 +74,12 @@ eigvals_g, U = eigh(a=Kuu, b=Muu, subset_by_index=[0, num_modes-1])
 wn_g = np.sqrt(eigvals_g)
 
 # solving symmetric eigenvalue problem
-L = cholesky(Muu, lower=True)
+L = cholesky(M, lower=True)
 Linv = np.linalg.inv(L)
-Kuutilde = (Linv @ Kuu) @ Linv.T
+Ktilde = (Linv @ K) @ Linv.T
 
 if lumped:
-    L_lumped = np.sqrt(Muu)
+    L_lumped = np.sqrt(M)
     Linv_lumped = np.zeros_like(L_lumped)
     Linv_lumped[np.diag_indices_from(Linv_lumped)] = 1/L_lumped.diagonal()
 
@@ -86,9 +87,11 @@ if lumped:
     assert np.allclose(Linv_lumped, Linv)
 
 #NOTE asserting that Kuutilde is symmetric
-assert np.allclose(Kuutilde, Kuutilde.T)
+assert np.allclose(Ktilde, Ktilde.T)
 
-eigvals_s, V = eigh(Kuutilde, subset_by_index=[0, num_modes-1])
+V = np.zeros((N, num_modes))
+eigvals_s, Vu = eigh(Ktilde[bu, :][:, bu], subset_by_index=[0, num_modes-1])
+V[bu] = Vu
 wn_s = eigvals_s**0.5
 
 print('eigenvalues (wn_generalized**2)', wn_g[:num_modes]**2)
@@ -105,4 +108,4 @@ print('checks for V')
 for I, J in [[0, 0], [0, 1], [0, 2], [1, 1], [1, 2], [2, 2]]:
     print('I =', I, 'J =', J,
           '\tVI . VJ %1.4f' % (V[:, I] @ V[:, J]),
-          '\t\tVI K_tilde VJ %1.4f' % (V[:, I] @ Kuutilde @ V[:, J]))
+          '\t\tVI K_tilde VJ %1.4f' % (V[:, I] @ Ktilde @ V[:, J]))
