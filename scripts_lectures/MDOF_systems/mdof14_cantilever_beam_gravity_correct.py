@@ -39,8 +39,9 @@ y = ncoords[:, 1]
 nid_pos = dict(zip(np.arange(len(ncoords)), np.arange(len(ncoords))))
 
 #NOTE using dense matrices
-K = np.zeros((DOF*nx, DOF*nx))
-M = np.zeros((DOF*nx, DOF*nx))
+N = DOF*nx
+K = np.zeros((N, N))
+M = np.zeros((N, N))
 
 elems = []
 # creating beam elements
@@ -86,39 +87,41 @@ Kkk = K[bk, :][:, bk]
 g = -9.81 #m/s^2
 
 # acceleration vector
-d2udt2 = np.zeros(DOF*nx)
+d2udt2 = np.zeros(N)
 d2udt2[1::DOF] = g
 
 # force due to gravity
-fg = M @ d2udt2
+Fg = M @ d2udt2
 
 # force due to gravity at unknown DOFs
-fgu = fg[bu]
+Fgu = Fg[bu]
 
 # initial deflection due to gravity
-uu0 = solve(Kuu, fgu)
+uu0 = solve(Kuu, Fgu)
 u0 = np.zeros(K.shape[0])
 u0[bu] = uu0
 
 # finding natural frequencies and orthonormal base
-L = cholesky(Muu, lower=True)
+L = cholesky(M, lower=True)
 Linv = np.linalg.inv(L)
-Ktilde = Linv @ Kuu @ Linv.T
+Ktilde = Linv @ K @ Linv.T
 p = 10
-gamma, V = eigh(Ktilde, subset_by_index=(0, p-1)) # already gives V[:, i] normalized to 1
+V = np.zeros((N, p))
+gamma, Vu = eigh(Ktilde[bu, :][:, bu], subset_by_index=(0, p-1)) # already gives V[:, i] normalized to 1
+V[bu] = Vu
 omegan = gamma**0.5
 
 print('modes calculated')
 
 # calculating vibration modes from orthonormal base (remember U = L^(-T) V)
-modes = np.zeros((DOF*nx, len(gamma)))
+modes = np.zeros((N, len(gamma)))
 for i in range(modes.shape[1]):
-    modes[bu, i] =  Linv.T @ V[:, i]
+    modes[bu, i] =  (Linv.T @ V[:, i])[bu]
 
 # performing time-domain analysis
 tmax = 1
 time_steps = 1000
-plot_freq = 4
+plot_freq = 1
 
 P = V
 
@@ -131,18 +134,16 @@ on = omegan
 od = on*np.sqrt(1 - zeta**2)
 
 # homogeneous solution for free damped 1DOF system using initial conditions
-v0 = np.zeros(DOF*nx)
+udot0 = np.zeros(N)
 
-r0 = P.T @ L.T @ u0[bu]
-rdot0 = P.T @ L.T @ v0[bu]
+r0 = P.T @ L.T @ u0
+rdot0 = P.T @ L.T @ udot0
 phi = np.zeros_like(od)
 check = r0 != 0
 phi[check] = np.arctan(od[check]*r0[check]/(zeta*on[check]*r0[check] + rdot0[check]))
 A0 = np.sqrt(r0**2 + (zeta*on/od*r0 + rdot0/od)**2)
 
 # dynamic analysis
-u = np.zeros((DOF*nx, len(t)))
-
 rpc = np.zeros((p, len(t)))
 
 on = on[:, None]
@@ -163,16 +164,16 @@ def r_t(t, t1, t2, on, zeta, od, fmodaln):
 # homogeneous solution
 rh = A0[:, None]*np.exp(-zeta*on*t)*np.sin(od*t + phi[:, None])
 
-fu = np.zeros_like(fgu)
+F = np.zeros_like(Fg)
 for t1, t2 in zip(t[:-1], t[1:]):
     tn = (t1 + t2)/2
-    fu[:] = fgu #NOTE keeping gravitational forces
+    F[:] = Fg #NOTE keeping gravitational forces
 
     if tn >= 0.3 and tn <= 0.305:
-        fu[DOF*(nx//2)+1] += -1000
+        F[DOF*(nx//2)+1] += -1000
 
     # calculating modal forces
-    fmodaln = (P.T @ Linv @ fu)[:, None]
+    fmodaln = (P.T @ Linv @ F)[:, None]
 
     # convolution
     rpc += r_t(t, t1, t2, on, zeta, od, fmodaln)
@@ -181,7 +182,7 @@ for t1, t2 in zip(t[:-1], t[1:]):
 r = rh + rpc
 
 # transforming from r-space to displacement
-u[bu] = Linv.T @ P @ r
+u = Linv.T @ P @ r
 
 if True:
     plt.clf()
