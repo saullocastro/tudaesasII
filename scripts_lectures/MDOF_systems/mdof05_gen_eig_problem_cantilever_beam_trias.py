@@ -57,8 +57,9 @@ if plot_mesh:
     plt.show()
 
 #NOTE using dense matrices
-K = np.zeros((DOF*nx*ny, DOF*nx*ny))
-M = np.zeros((DOF*nx*ny, DOF*nx*ny))
+N = DOF*nx*ny
+K = np.zeros((N, N))
+M = np.zeros((N, N))
 
 elems = []
 # creating tria elements
@@ -87,7 +88,9 @@ Muu = M[bu, :][:, bu]
 
 # solving
 num_modes = 40
-eigvals, U = eigh(a=Kuu, b=Muu, subset_by_index=(0, num_modes))
+U = np.zeros((N, num_modes+1))
+eigvals, Uu = eigh(a=Kuu, b=Muu, subset_by_index=(0, num_modes))
+U[bu] = Uu
 wn = np.sqrt(eigvals)
 print('wn', wn[:num_modes])
 
@@ -98,7 +101,7 @@ print('omega3 theoretical', 7.855**2*np.sqrt(E*I/(rho*A*length**4)))
 if plot_result:
     u = np.zeros(K.shape[0], dtype=float)
     for mode in range(num_modes):
-        u[bu] = U[:, mode]
+        u[bu] = U[bu, mode]
         scale = 30
         u1 = scale*u[0::DOF].reshape(nx, ny).T
         u2 = scale*u[1::DOF].reshape(nx, ny).T

@@ -34,8 +34,9 @@ y = ncoords[:, 1]
 nid_pos = dict(zip(np.arange(len(ncoords)), np.arange(len(ncoords))))
 
 #NOTE using dense matrices
-K = np.zeros((DOF*nx, DOF*nx))
-M = np.zeros((DOF*nx, DOF*nx))
+N = DOF*nx
+K = np.zeros((N, N))
+M = np.zeros((N, N))
 
 elems = []
 # creating and assemblying beam elements
@@ -68,7 +69,9 @@ Muu = M[bu, :][:, bu]
 # solving
 # NOTE: extracting ALL eigenvectors
 num_modes = 3
-eigvals, U = eigh(a=Kuu, b=Muu, subset_by_index=[0, num_modes])
+U = np.zeros((N, num_modes+1))
+eigvals, Uu = eigh(a=Kuu, b=Muu, subset_by_index=[0, num_modes])
+U[bu] = Uu
 wn = np.sqrt(eigvals)
 
 print()
@@ -78,5 +81,5 @@ print()
 for I, J in [[0, 0], [0, 1], [0, 2], [1, 1], [1, 2], [2, 2]]:
     print('I =', I, 'J =', J,
           '\tUI . UJ %1.4f' % (U[:, I] @ U[:, J]),
-          '\tUI M UJ %1.4f' % (U[:, I] @ Muu @ U[:, J]),
-          '\tUI K UJ %1.4f' % (U[:, I] @ Kuu @ U[:, J]))
+          '\tUI M UJ %1.4f' % (U[:, I] @ M @ U[:, J]),
+          '\tUI K UJ %1.4f' % (U[:, I] @ K @ U[:, J]))
