@@ -13,7 +13,7 @@ from scipy.linalg import eigh, cholesky, solve
 
 from tudaesasII.beam2d import Beam2D, update_K, update_M, DOF
 
-case = 1
+case = 2
 p = num_modes = 5
 
 # number of nodes along x
@@ -131,7 +131,9 @@ v0u = np.zeros_like(u0u)
 
 plt.ioff()
 plt.clf()
-plt.title('perturbation')
+plt.title('Initial perturbation')
+plt.xlabel('x [m]')
+plt.ylabel('Beam deflection [m]')
 plt.plot(ncoords[:, 0], u0[1::DOF])
 plt.show()
 
@@ -165,7 +167,7 @@ for s in axes[0].spines.values():
 axes[1].spines['right'].set_visible(False)
 axes[1].spines['top'].set_visible(False)
 axes[1].set_ylim(u_xt[:, 1::DOF].min(), u_xt[:, 1::DOF].max())
-axes[1].set_xlabel('t')
+axes[1].set_xlabel('Time [s]')
 axes[1].set_ylabel('Tip displacement [m]')
 
 data = []
@@ -190,7 +192,7 @@ for i, ti in enumerate(t):
     axes[1].set_xlim(max(0, ti-0.5), ti+0.01)
     data.append([ti, u2[-1]])
     line.set_data(np.asarray(data).T)
-    line2.set_data(ti, u2[-1])
+    line2.set_data([ti], [u2[-1]])
 
     plt.pause(1e-15)
 
@@ -200,7 +202,7 @@ for i, ti in enumerate(t):
 
 # frequency analysis
 num = 100000
-t = np.linspace(0, 1, num)
+t = np.linspace(0, 3, num)
 uu = ufunc(t)
 u = np.zeros((t.shape[0], K.shape[0]))
 u[:, bu] = uu
@@ -224,7 +226,8 @@ dt = t[1]-t[0]
 xf = np.linspace(0.0, 2*np.pi*1.0/(2.0*dt), num//2)
 yf = 2/num*np.abs(uf[0:num//2])
 
-plt.xlabel('$rad/s$')
+plt.xlabel('Frequency $[rad/s]$')
+plt.ylabel('Tip displacement $[m]$')
 plt.plot(xf, yf)
 plt.xlim(0, wn[num_modes-1]+50)
 plt.show()
