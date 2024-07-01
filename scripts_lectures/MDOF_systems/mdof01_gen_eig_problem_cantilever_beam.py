@@ -13,13 +13,12 @@ from scipy.linalg import eigh
 
 from tudaesasII.beam2d import Beam2D, update_K, update_M, DOF
 
-plot_mesh = True
 plot_result = True
 
 lumped = False
 
 # number of nodes along x
-nx = 20
+nx = 30
 
 # geometry
 length = 10
@@ -86,14 +85,9 @@ print('omega1 ref', 1.875**2*np.sqrt(E*Izz/(rho*A*length**4)))
 print('omega2 ref', 4.694**2*np.sqrt(E*Izz/(rho*A*length**4)))
 print('omega3 ref', 7.855**2*np.sqrt(E*Izz/(rho*A*length**4)))
 
-if plot_mesh:
-    plt.figure()
-    plt.plot(x, y, 'o-')
-    plt.show()
-
 if plot_result:
     u = np.zeros(K.shape[0], dtype=float)
-    for mode in reversed(range(num_modes)):
+    for mode in range(num_modes):
         u[bu] = U[:, mode]
         u1 = u[0::DOF]
         u2 = u[1::DOF]
@@ -104,7 +98,7 @@ if plot_result:
         levels = np.linspace(mag.min(), mag.max(), 100)
         xplot = xmesh + u1
         yplot = ymesh + u2
-        plt.plot(xplot, yplot)
+        plt.plot(xplot, yplot, 's--')
         plt.ylim(yplot.min(), yplot.max())
 
 plt.show()

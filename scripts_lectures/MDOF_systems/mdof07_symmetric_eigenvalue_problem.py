@@ -97,12 +97,12 @@ print()
 print('checks for U')
 for I, J in [[0, 0], [0, 1], [0, 2], [1, 1], [1, 2], [2, 2]]:
     print('I =', I, 'J =', J,
-          '\tUI . UJ %1.2f' % (U[:, I] @ U[:, J]),
-          '\tUI M UJ %1.2f' % (U[:, I] @ Muu @ U[:, J]),
-          '\tUI K UJ %1.2f' % (U[:, I] @ Kuu @ U[:, J]))
+          '\tUI . UJ %1.4f' % (U[:, I] @ U[:, J]),
+          '\tUI M UJ %1.4f' % (U[:, I] @ Muu @ U[:, J]),
+          '\tUI K UJ %1.4f' % (U[:, I] @ Kuu @ U[:, J]))
 print()
 print('checks for V')
 for I, J in [[0, 0], [0, 1], [0, 2], [1, 1], [1, 2], [2, 2]]:
     print('I =', I, 'J =', J,
-          '\tVI . VJ %1.2f' % (V[:, I] @ V[:, J]),
-          '\tVI K_tilde VJ %1.2f' % (V[:, I] @ Kuutilde @ V[:, J]))
+          '\tVI . VJ %1.4f' % (V[:, I] @ V[:, J]),
+          '\t\tVI K_tilde VJ %1.4f' % (V[:, I] @ Kuutilde @ V[:, J]))

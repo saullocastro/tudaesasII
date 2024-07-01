@@ -12,7 +12,6 @@ from scipy.linalg import eig
 
 from tudaesasII.beam2d import Beam2D, update_K, update_M, DOF
 
-plot_mesh = True
 plot_result = True
 
 # number of nodes along x
@@ -74,11 +73,11 @@ bubu = np.concatenate((bu, bu))
 I = np.identity(M.shape[0])
 ZERO = np.zeros_like(M)
 
-A = np.row_stack((np.column_stack((ZERO,   -I)),
-                  np.column_stack((   K, 1j*C))))
+A = np.vstack((np.column_stack((ZERO,   -I)),
+               np.column_stack((   K, 1j*C))))
 
-B = np.row_stack((np.column_stack((   I, ZERO)),
-                  np.column_stack((ZERO,   -M))))*(1 + 0j)
+B = np.vstack((np.column_stack((   I, ZERO)),
+               np.column_stack((ZERO,   -M))))*(1 + 0j)
 
 # sub-matrices corresponding to unknown DOFs
 Auu = A[bubu, :][:, bubu]
@@ -102,25 +101,21 @@ Uu = Uu[:, asort]
 print('wn', wn[:num_modes])
 
 
-if plot_mesh:
-    plt.plot(x, y, 'o-')
-    plt.show()
-
 if plot_result:
-    for mode in reversed(range(num_modes)):
+    for mode in range(num_modes):
         plt.figure(mode+1)
         u = np.zeros(DOF*nx)
-        u[bu] = Uu[:, mode]
+        u[bu] = Uu[:, mode].real
         u1 = u[0::DOF]
         u2 = u[1::DOF]
         plt.clf()
-        plt.title('mode %02d, $\\omega_n$ %1.2f rad/s' % (mode+1, wn[mode]))
+        plt.title('mode %02d, $\\omega_n$ %1.2f rad/s' % (mode+1, wn[mode].real))
         #plt.gca().set_aspect('equal')
         mag = u2
         levels = np.linspace(mag.min(), mag.max(), 100)
         xplot = xmesh + u1
         yplot = ymesh + u2
+        plt.plot(xplot, yplot, 's--')
         plt.ylim(yplot.min(), yplot.max())
-        plt.plot(xplot, yplot)
-    
+
     plt.show()

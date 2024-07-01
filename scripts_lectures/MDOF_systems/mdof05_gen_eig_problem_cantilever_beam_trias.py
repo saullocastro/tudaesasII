@@ -97,12 +97,12 @@ print('omega3 theoretical', 7.855**2*np.sqrt(E*I/(rho*A*length**4)))
 
 if plot_result:
     u = np.zeros(K.shape[0], dtype=float)
-    for mode in reversed(range(num_modes)):
+    for mode in range(num_modes):
         u[bu] = U[:, mode]
         scale = 30
         u1 = scale*u[0::DOF].reshape(nx, ny).T
         u2 = scale*u[1::DOF].reshape(nx, ny).T
-        
+
         plt.figure(mode+1)
         plt.title('mode %02d, $\\omega_n$ %1.2f rad/s (%1.2f Hz)' % (mode+1, wn[mode], wn[mode]/(2*np.pi)))
         plt.gca().set_aspect('equal')
@@ -115,6 +115,6 @@ if plot_result:
         plt.triplot(coords_plot[:, 0], coords_plot[:, 1], d.simplices, lw=0.3)
         #plt.colorbar()
         #plt.savefig('plot_beam_mode_%02d.png' % (mode+1), bbox_inches='tight')
-    
+
     plt.show()
 
