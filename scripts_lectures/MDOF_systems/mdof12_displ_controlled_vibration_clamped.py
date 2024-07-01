@@ -92,13 +92,10 @@ Kkk = K[bk, :][:, bk]
 L = cholesky(M, lower=True)
 Linv = np.linalg.inv(L)
 
-Luu = L[bu, :][:, bu]
-Linvuu = Linv[bu, :][:, bu]
-
-Ktildeuu = Linvuu @ Kuu @ Linvuu.T
+Ktilde = Linv @ K @ Linv.T
 
 num_modes = 4
-eigenvalues, Vu = eigh(Ktildeuu, subset_by_index=(0, num_modes-1)) # already gives V[:, i] normalized to 1
+eigenvalues, Vu = eigh(Ktilde[bu, :][:, bu], subset_by_index=(0, num_modes-1)) # already gives V[:, i] normalized to 1
 
 omegan = np.sqrt(eigenvalues)
 print('Natural frequencies [rad/s]', omegan)
