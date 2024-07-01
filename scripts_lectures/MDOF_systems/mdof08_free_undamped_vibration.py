@@ -40,8 +40,9 @@ y = ncoords[:, 1]
 nid_pos = dict(zip(np.arange(len(ncoords)), np.arange(len(ncoords))))
 
 #NOTE using dense matrices
-K = np.zeros((DOF*nx, DOF*nx))
-M = np.zeros((DOF*nx, DOF*nx))
+N = DOF*nx
+K = np.zeros((N, N))
+M = np.zeros((N, N))
 
 elems = []
 # creating beam elements
@@ -118,16 +119,17 @@ Kuu = K[bu, :][:, bu]
 Muu = M[bu, :][:, bu]
 
 # solving symmetric eigenvalue problem
-L = cholesky(Muu, lower=True)
+L = cholesky(M, lower=True)
+Luu = L[bu, :][:, bu]
 Linv = np.linalg.inv(L)
-Kuutilde = (Linv @ Kuu) @ Linv.T
+Linvuu = Linv[bu, :][:, bu]
+Ktilde = Linvuu @ Kuu @ Linvuu.T
 
-eigvals, V = eigh(Kuutilde, subset_by_index=(0, num_modes-1))
+V = np.zeros((N, num_modes))
+eigvals, Vu = eigh(Kuutilde, subset_by_index=(0, num_modes-1))
+V[bu] = Vu
 wn = np.sqrt(eigvals)
 print('wn [rad/s] =', wn)
-
-u0u = u0[bu]
-v0u = np.zeros_like(u0u)
 
 plt.ioff()
 plt.clf()
@@ -141,8 +143,8 @@ plt.show()
 c1 = []
 c2 = []
 for I in range(num_modes):
-    c1.append( V[:, I] @ L.T @ u0u )
-    c2.append( V[:, I] @ L.T @ v0u / wn[I] )
+    c1.append( V[:, I] @ L.T @ u0 )
+    c2.append( V[:, I] @ L.T @ v0 / wn[I] )
 
 def ufunc(t):
     tmp = 0
