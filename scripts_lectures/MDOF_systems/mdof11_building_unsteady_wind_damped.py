@@ -108,7 +108,7 @@ for i in range(5):
     plt.clf()
     plt.title(r'$\omega_n = %1.2f\ Hz$' % omegan[i])
     plt.plot(x+modes[0::DOF, i], y+modes[1::DOF, i])
-    plt.savefig('mdof0308_plot_eigenmode_%02d.png' % i, bbox_inches='tight')
+    plt.savefig('mdof11_plot_eigenmode_%02d.png' % i, bbox_inches='tight')
 
 # performing dynamic analysis in time domain
 tmax = 8
@@ -155,8 +155,8 @@ wind_speed = fwindspeed(y)
 plt.clf()
 plt.title('Log Wind Profile')
 plt.plot(wind_speed, y)
-plt.xlabel('Lateral wind, $m/s$')
-plt.ylabel('Height, $m$')
+plt.xlabel('Lateral wind $[m/s]$')
+plt.ylabel('Height $[m]$')
 for yi, vx in zip(y[::n//10], wind_speed[::n//10]):
     plt.arrow(0, yi, vx, 0, width=0.3, length_includes_head=True)
 plt.show()
@@ -197,7 +197,7 @@ def r_t(t, t1, t2, on, zeta, od, fmodaln):
     h = 1/od*np.exp(-zeta*on*(t - tn))*np.sin(od*(t - tn))*H
     return fmodaln*dt*h
 
-# homogeneous solution a damped SDOF system
+# homogeneous solution for a damped SDOF system
 rh = np.exp(-zeta*on*t)*(r0[:, None]*np.cos(od*t) +
     (rdot0[:, None] + zeta*on*r0[:, None])*np.sin(od*t)/od)
 
@@ -231,8 +231,8 @@ for i in range(len(t)):
         plt.xlim(-60, 60)
         plt.ylim(0, y.max()*1.1)
         plt.plot(u[0::DOF, i]*m2mm, y)
-        plt.xlabel('Lateral displacement, $mm$')
-        plt.ylabel('Height, $m$')
+        plt.xlabel('Lateral displacement $[mm]$')
+        plt.ylabel('Height $[m]$')
         utip = u[0::DOF, i][-1]
         plt.text(0, y.max()*1.05, '%1.2f mm' % (utip*m2mm))
         plt.pause(1e-9)
@@ -241,6 +241,6 @@ for i in range(len(t)):
 
 plt.clf()
 plt.plot(t, u[0::DOF, :][-1]*m2mm)
-plt.ylabel('Lateral displacement, $mm$')
-plt.xlabel('Time, $s$')
+plt.ylabel('Lateral displacement $[mm]$')
+plt.xlabel('Time $[s]$')
 plt.show()

@@ -108,7 +108,7 @@ for i in range(5):
     plt.clf()
     plt.title(r'$\omega_n = %1.2f\ Hz$' % omegan[i])
     plt.plot(x+modes[0::DOF, i], y+modes[1::DOF, i])
-    plt.savefig('mdof0307_plot_eigenmode_%02d.png' % i, bbox_inches='tight')
+    plt.savefig('mdof10_plot_eigenmode_%02d.png' % i, bbox_inches='tight')
 
 # performing dynamic analysis in time domain
 tmax = 8
@@ -155,8 +155,8 @@ wind_speed = fwindspeed(y)
 plt.clf()
 plt.title('Log Wind Profile')
 plt.plot(wind_speed, y)
-plt.xlabel('Lateral wind, $m/s$')
-plt.ylabel('Height, $m$')
+plt.xlabel('Lateral wind $[m/s]$')
+plt.ylabel('Height $[m]$')
 for yi, vx in zip(y[::n//10], wind_speed[::n//10]):
     plt.arrow(0, yi, vx, 0, width=0.3, length_includes_head=True)
 plt.show()
@@ -190,7 +190,7 @@ def r_t(t, t1, t2, on, fmodaln):
     h = 1/on*np.sin(on*(t - tn))*H
     return fmodaln*dt*h
 
-# homogeneous solution an undamped SDOF system
+# homogeneous solution for an undamped SDOF system
 c1 = r0
 c2 = rdot0/omegan
 rh = c1[:, None]*np.sin(on*t) + c2[:, None]*np.cos(on*t)
@@ -202,8 +202,8 @@ for t1, t2 in zip(t[:-1], t[1:]):
     tn = (t1 + t2)/2
     F[:] = Fg #gravitational forces
     wind_speed_total = wind_speed + wind_speed/10*np.sin(wind_freq*tn)
-    f_wind = wind_area*rhoair*wind_speed_total**2/2
-    F[0::DOF] = f_wind
+    Fwind = wind_area*rhoair*wind_speed_total**2/2
+    F[0::DOF] = Fwind
 
     # calculating modal forces
     fmodaln = (P.T @ Linv @ F[bu])[:, None]
@@ -225,8 +225,8 @@ for i in range(len(t)):
         plt.xlim(-60, 60)
         plt.ylim(0, y.max()*1.1)
         plt.plot(u[0::DOF, i]*m2mm, y)
-        plt.xlabel('Lateral displacement, $mm$')
-        plt.ylabel('Height, $m$')
+        plt.xlabel('Lateral displacement $[mm]$')
+        plt.ylabel('Height $[m]$')
         utip = u[0::DOF, i][-1]
         plt.text(0.0075, 1.05*y.max(), '%1.2f mm' % (utip*m2mm))
         plt.pause(1e-9)
@@ -235,6 +235,6 @@ for i in range(len(t)):
 
 plt.clf()
 plt.plot(t, u[0::DOF, :][-1]*m2mm)
-plt.ylabel('Lateral displacement, $mm$')
-plt.xlabel('Time, $s$')
+plt.ylabel('Lateral displacement $[mm]$')
+plt.xlabel('Time $[s]$')
 plt.show()
