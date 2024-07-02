@@ -78,8 +78,8 @@ I = np.ones_like(M)
 # vroot = 0
 # betaroot = 0
 known_ind = [0, 1, 2]
-bu = np.logical_not(np.in1d(np.arange(M.shape[0]), known_ind))
-bk = np.in1d(np.arange(M.shape[0]), known_ind)
+bu = np.logical_not(np.isin(np.arange(M.shape[0]), known_ind))
+bk = np.isin(np.arange(M.shape[0]), known_ind)
 
 Muu = M[bu, :][:, bu]
 Mku = M[bk, :][:, bu]
@@ -122,7 +122,6 @@ time_steps = 2000
 plot_freq = 2
 
 P = V
-Pu = P[bu]
 
 t = np.linspace(0, tmax, time_steps)
 
@@ -200,8 +199,8 @@ u0[bu] = solve(Kuu, Fext[bu])
 udot0 = np.zeros(N)
 
 # initial conditions in modal space
-r0 = Pu.T @ Luu.T @ u0[bu]
-rdot0 = Pu.T @ Luu.T @ udot0[bu]
+r0 = P.T @ L.T @ u0
+rdot0 = P.T @ L.T @ udot0
 
 #NOTE adding new np.array axis to vectorize calculations
 on = on[:, None]
@@ -236,7 +235,7 @@ for t1, t2 in zip(t[:-1], t[1:]):
     F[0::DOF] = Fwind
 
     # calculating modal forces
-    fmodaln = (Pu.T @ Linvuu @ F[bu])[:, None]
+    fmodaln = (P.T @ Linv @ F)[:, None]
     # convolution
     rp += r_t(t, t1, t2, on, zeta, od, fmodaln)
 
