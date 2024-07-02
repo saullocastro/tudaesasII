@@ -79,8 +79,8 @@ I = np.ones_like(M)
 # vroot = 0
 # betaroot = 0
 known_ind = [0, 1, 2]
-bu = np.logical_not(np.isin(np.arange(M.shape[0]), known_ind))
-bk = np.isin(np.arange(M.shape[0]), known_ind)
+bu = np.logical_not(np.isin(np.arange(N), known_ind))
+bk = np.isin(np.arange(N), known_ind)
 
 Muu = M[bu, :][:, bu]
 Mku = M[bk, :][:, bu]
