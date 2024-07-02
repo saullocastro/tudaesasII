@@ -47,6 +47,7 @@ n1s = nids[0:-1]
 n2s = nids[1:]
 
 N = DOF*n
+
 K = np.zeros((N, N))
 M = np.zeros((N, N))
 
@@ -78,8 +79,8 @@ I = np.ones_like(M)
 # vroot = 0
 # betaroot = 0
 known_ind = [0, 1, 2]
-bu = np.logical_not(np.in1d(np.arange(M.shape[0]), known_ind))
-bk = np.in1d(np.arange(M.shape[0]), known_ind)
+bu = np.logical_not(np.isin(np.arange(M.shape[0]), known_ind))
+bk = np.isin(np.arange(M.shape[0]), known_ind)
 
 Muu = M[bu, :][:, bu]
 Mku = M[bk, :][:, bu]
@@ -122,7 +123,6 @@ time_steps = 2000
 plot_freq = 2
 
 P = V
-Pu = P[bu]
 
 t = np.linspace(0, tmax, time_steps)
 
@@ -176,8 +176,8 @@ wind_freq = np.pi # rad/s
 u0 = np.zeros(N)
 udot0 = np.zeros(N)
 # initial conditions in modal space
-r0 = Pu.T @ Luu.T @ u0[bu]
-rdot0 = Pu.T @ Luu.T @ udot0[bu]
+r0 = P.T @ L.T @ u0
+rdot0 = P.T @ L.T @ udot0
 
 # dynamic analysis
 # NOTE this can be further vectorized using NumPy bradcasting, but I kept this
@@ -212,7 +212,7 @@ for t1, t2 in zip(t[:-1], t[1:]):
     F[0::DOF] = Fwind
 
     # calculating modal forces
-    fmodaln = (Pu.T @ Linvuu @ F[bu])[:, None]
+    fmodaln = (P.T @ Linv @ F)[:, None]
     # convolution
     rp += r_t(t, t1, t2, on, fmodaln)
 
