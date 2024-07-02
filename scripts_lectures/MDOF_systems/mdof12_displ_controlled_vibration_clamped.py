@@ -41,8 +41,9 @@ x = ncoords[:, 0]
 y = ncoords[:, 1]
 nid_pos = dict(zip(np.arange(len(ncoords)), np.arange(len(ncoords))))
 
-#NOTE using dense matrices
 N = DOF*nx
+
+#NOTE using dense matrices
 K = np.zeros((N, N))
 M = np.zeros((N, N))
 
@@ -57,7 +58,7 @@ for n1, n2 in zip(nids[:-1], nids[1:]):
     elem.A1 = elem.A2 = A
     elem.Izz1 = elem.Izz2 = Izz
     elem.rho = rho
-    elem.interpolation = 'hermitian_cubic'
+    elem.interpolation = 'legendre'
     update_K(elem, nid_pos, ncoords, K)
     update_M(elem, nid_pos, M, lumped=False)
     elems.append(elem)
@@ -66,7 +67,7 @@ print('elements created')
 
 # applying boundary conditions for static problem
 # cantilever
-bk = np.zeros(K.shape[0], dtype=bool) #array to store known DOFs
+bk = np.zeros(N, dtype=bool) #array to store known DOFs
 check = isclose(x, 0.)
 bk[0::DOF] = check
 bk[1::DOF] = check
@@ -75,7 +76,7 @@ bk[2::DOF] = check
 # removing all degrees-of-freedom from axial displacement
 bk[0::DOF] = True
 
-u = np.zeros(K.shape[0])
+u = np.zeros(N)
 
 bu = ~bk
 
@@ -92,16 +93,18 @@ Kkk = K[bk, :][:, bk]
 L = cholesky(M, lower=True)
 Linv = np.linalg.inv(L)
 
-Ktilde = Linv @ K @ Linv.T
+Luu = L[bu, :][:, bu]
+Linvuu = Linv[bu, :][:, bu]
 
-num_modes = 4
-eigenvalues, Vu = eigh(Ktilde[bu, :][:, bu], subset_by_index=(0, num_modes-1)) # already gives V[:, i] normalized to 1
+Ktildeuu = Linvuu @ Kuu @ Linvuu.T
+
+num_modes = 5
+V = np.zeros((N, num_modes))
+eigenvalues, Vu = eigh(Ktildeuu, subset_by_index=(0, num_modes-1)) # already gives V[:, i] normalized to 1
+V[bu, :] = Vu
 
 omegan = np.sqrt(eigenvalues)
 print('Natural frequencies [rad/s]', omegan)
-
-V = np.zeros((N, num_modes))
-V[bu, :] = Vu
 
 P = V
 
@@ -127,17 +130,18 @@ tmax = 3.
 dt = 1e-3
 amplitude = 0.001
 omegaf = omegan[0] #[rad/s]
+print('omegaf [rad/s]', omegaf)
 t = np.arange(0, tmax+dt, dt)
 u = np.zeros((N, t.shape[0]))
 udot = np.zeros((N, t.shape[0]))
 uddot = np.zeros((N, t.shape[0]))
 
-# prescribed displacement
+# prescribed displacement at vertical DOF at clamp
 u[1,:] = amplitude*np.sin(omegaf*t)
-# prescribed velocity
-udot[1,:] = amplitude*np.cos(omegaf*t)*omegaf
-# prescribed acceleration
-uddot[1,:] = -amplitude*np.sin(omegaf*t)*(omegaf)**2
+# prescribed displacement at vertical DOF at clamp
+udot[1,:] = amplitude*omegaf*np.cos(omegaf*t)
+# prescribed acceleration at vertical DOF at clamp
+uddot[1,:] = -amplitude*(omegaf)**2*np.sin(omegaf*t)
 
 # initial conditions in physical space
 u0 = u[:, 0]
@@ -146,16 +150,11 @@ udot0 = udot[:, 0]
 r0 = P.T @ L.T @ u0
 rdot0 = P.T @ L.T @ udot0
 
-# prescribed modal displacements
-r = P.T @ L.T @ u
-rdot = P.T @ L.T @ udot
-rddot = P.T @ L.T @ uddot
-
 # prescribed forces
 F = np.zeros((N, t.shape[0]))
 #NOTE no external forces applied
 
-# forces from prescribed displacements, velocities and accelerations
+# reaction forces from prescribed displacements, velocities and accelerations
 uk = u[bk]
 udotk = udot[bk]
 uddotk = uddot[bk]
@@ -201,11 +200,11 @@ u[bu] = (Linv.T @ P @ r)[bu]
 
 print('plotting...')
 # plotting animation
-tplot = t[::10]
-uplot = u[:, ::10]
+tplot = t[::5]
+uplot = u[:, ::5]
 
 fig = plt.figure(figsize=(12, 6))
-plt.xlabel('Beam length, [m]')
+plt.xlabel('Beam length [m]')
 plt.ylabel('Deflection [mm]')
 plt.plot(x, np.zeros_like(x), 'k--')
 line_excitation, = plt.plot(x[:1], uplot[1:2, 0], 'ro', ms=20)
