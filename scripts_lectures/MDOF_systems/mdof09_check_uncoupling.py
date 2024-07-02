@@ -10,6 +10,7 @@ from scipy.linalg import eigh, cholesky
 
 from tudaesasII.beam2d import Beam2D, update_K, update_M, DOF
 
+
 # number of nodes along x
 nx = 100
 
@@ -33,9 +34,11 @@ x = ncoords[:, 0]
 y = ncoords[:, 1]
 nid_pos = dict(zip(np.arange(len(ncoords)), np.arange(len(ncoords))))
 
+N = DOF*nx
+
 #NOTE using dense matrices
-K = np.zeros((DOF*nx, DOF*nx))
-M = np.zeros((DOF*nx, DOF*nx))
+K = np.zeros((N, N))
+M = np.zeros((N, N))
 
 elems = []
 # creating beam elements
@@ -69,26 +72,28 @@ p = 4
 
 # solving generalized eigenvalue problem
 # NOTE: extracting only p eigenvectors
-eigvals_g, U = eigh(a=Kuu, b=Muu, subset_by_index=(0, p-1))
+eigvals_g, Uu = eigh(a=Kuu, b=Muu, subset_by_index=(0, p-1))
 wn_g = np.sqrt(eigvals_g)
 
 # solving symmetric eigenvalue problem
-L = cholesky(Muu, lower=True)
+L = cholesky(M, lower=True)
 Linv = np.linalg.inv(L)
-Kuutilde = (Linv @ Kuu) @ Linv.T
+Ktilde = (Linv @ K) @ Linv.T
 
-#NOTE asserting that Kuutilde is symmetric
-assert np.allclose(Kuutilde, Kuutilde.T)
+#NOTE asserting that Ktilde is symmetric
+assert np.allclose(Ktilde, Ktilde.T)
 
-eigvals, V = eigh(Kuutilde, subset_by_index=(0, p-1))
-wn = eigvals**0.5
+V = np.zeros((N, p))
+eigvals, Vu = eigh(Ktilde[bu, :][:, bu], subset_by_index=(0, p-1))
+V[bu] = Vu
+omegan = eigvals**0.5
 
-print('omegan**2', wn**2)
+print('omegan**2', omegan**2)
 
 P = V
 
-print('P.T @ Kuutilde @ P')
-print(np.round(P.T @ Kuutilde @ P, 2))
+print('P.T @ Ktilde @ P')
+print(np.round(P.T @ Ktilde @ P, 2))
 print()
 print('P.T @ P')
 print(np.round(P.T @ P, 2))
