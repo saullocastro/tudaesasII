@@ -93,13 +93,13 @@ bu = ~bk # same as np.logical_not, defining unknown DOFs
 Kuu = K[bu, :][:, bu]
 Muu = M[bu, :][:, bu]
 
-num_modes = 5
-eigvals, Uu = eigh(a=Kuu, b=Muu, subset_by_index=(0, num_modes))
+num_modes = 6
+eigvals, Uu = eigh(a=Kuu, b=Muu, subset_by_index=(0, num_modes-1))
 omegan = np.sqrt(eigvals)
 
 modes = np.asarray([[0, 1, 2], [3, 4, 5]])
 fig, axes = plt.subplots(nrows=modes.shape[0], ncols=modes.shape[1],
-        figsize=(15, 10))
+        figsize=(15, 6))
 for (i,j), mode in np.ndenumerate(modes):
     ax = axes[i, j]
     u = np.zeros(N, dtype=float)
@@ -108,4 +108,3 @@ for (i,j), mode in np.ndenumerate(modes):
     ax.set_title('mode = %d\n$\\omega=%1.2f rad/s$' % (mode+1, omegan[mode]))
     ax.set_aspect('equal')
 plt.show()
-

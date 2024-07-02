@@ -13,6 +13,7 @@ from scipy.linalg import eigh
 
 from tudaesasII.tria3planestress import Tria3PlaneStressIso, update_K_M, DOF
 
+
 plot_mesh = False
 plot_result = True
 
@@ -56,8 +57,9 @@ if plot_mesh:
     plt.plot(ncoords[:, 0], ncoords[:, 1], 'o', ms=2)
     plt.show()
 
-#NOTE using dense matrices
 N = DOF*nx*ny
+
+#NOTE using dense matrices
 K = np.zeros((N, N))
 M = np.zeros((N, N))
 
@@ -76,7 +78,7 @@ for s in d.simplices:
     elems.append(elem)
 
 # applying boundary conditions
-bk = np.zeros(K.shape[0], dtype=bool) # defining known DOFs
+bk = np.zeros(N, dtype=bool) # defining known DOFs
 check = np.isclose(x, 0.)
 bk[0::DOF] = check
 bk[1::DOF] = check
@@ -91,23 +93,23 @@ num_modes = 40
 U = np.zeros((N, num_modes+1))
 eigvals, Uu = eigh(a=Kuu, b=Muu, subset_by_index=(0, num_modes))
 U[bu] = Uu
-wn = np.sqrt(eigvals)
-print('wn', wn[:num_modes])
+omegan = np.sqrt(eigvals)
+print('omegan', omegan[:num_modes])
 
 print('omega1 theoretical', 1.875**2*np.sqrt(E*I/(rho*A*length**4)))
 print('omega2 theoretical', 4.694**2*np.sqrt(E*I/(rho*A*length**4)))
 print('omega3 theoretical', 7.855**2*np.sqrt(E*I/(rho*A*length**4)))
 
 if plot_result:
-    u = np.zeros(K.shape[0], dtype=float)
+    u = np.zeros(N, dtype=float)
+    plt.figure()
     for mode in range(num_modes):
         u[bu] = U[bu, mode]
         scale = 30
         u1 = scale*u[0::DOF].reshape(nx, ny).T
         u2 = scale*u[1::DOF].reshape(nx, ny).T
-
-        plt.figure(mode+1)
-        plt.title('mode %02d, $\\omega_n$ %1.2f rad/s (%1.2f Hz)' % (mode+1, wn[mode], wn[mode]/(2*np.pi)))
+        plt.gcf()
+        plt.title('mode %02d, $\\omega_n$ %1.2f rad/s (%1.2f Hz)' % (mode+1, omegan[mode], omegan[mode]/(2*np.pi)))
         plt.gca().set_aspect('equal')
         mag = u2
         levels = np.linspace(mag.min(), mag.max(), 100)
@@ -118,6 +120,5 @@ if plot_result:
         plt.triplot(coords_plot[:, 0], coords_plot[:, 1], d.simplices, lw=0.3)
         #plt.colorbar()
         #plt.savefig('plot_beam_mode_%02d.png' % (mode+1), bbox_inches='tight')
-
-    plt.show()
+        plt.show()
 

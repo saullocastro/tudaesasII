@@ -33,8 +33,9 @@ x = ncoords[:, 0]
 y = ncoords[:, 1]
 nid_pos = dict(zip(np.arange(len(ncoords)), np.arange(len(ncoords))))
 
-#NOTE using dense matrices
 N = DOF*nx
+
+#NOTE using dense matrices
 K = np.zeros((N, N))
 M = np.zeros((N, N))
 
@@ -55,7 +56,7 @@ for n1, n2 in zip(nids[:-1], nids[1:]):
     elems.append(elem)
 
 # applying boundary conditions
-bk = np.zeros(K.shape[0], dtype=bool) # defining known DOFs
+bk = np.zeros(N, dtype=bool) # defining known DOFs
 check = np.isclose(x, 0.)
 bk[0::DOF] = check
 bk[1::DOF] = check
@@ -69,17 +70,17 @@ Muu = M[bu, :][:, bu]
 # solving
 # NOTE: extracting ALL eigenvectors
 num_modes = 3
-U = np.zeros((N, num_modes+1))
-eigvals, Uu = eigh(a=Kuu, b=Muu, subset_by_index=[0, num_modes])
+U = np.zeros((N, num_modes))
+eigvals, Uu = eigh(a=Kuu, b=Muu, subset_by_index=[0, num_modes-1])
 U[bu] = Uu
-wn = np.sqrt(eigvals)
+omegan = np.sqrt(eigvals)
 
 print()
-print('natural frequencies [rad/s] (wn)', wn[:num_modes])
-print('wn**2', wn[:num_modes]**2)
+print('natural frequencies [rad/s] (omegan)', omegan[:num_modes])
+print('omegan**2', omegan[:num_modes]**2)
 print()
 for I, J in [[0, 0], [0, 1], [0, 2], [1, 1], [1, 2], [2, 2]]:
     print('I =', I, 'J =', J,
-          '\tUI . UJ %1.4f' % (U[:, I] @ U[:, J]),
-          '\tUI M UJ %1.4f' % (U[:, I] @ M @ U[:, J]),
-          '\tUI K UJ %1.4f' % (U[:, I] @ K @ U[:, J]))
+          '\tUI . UJ % 1.4f' % (U[:, I] @ U[:, J]),
+          '\tUI M UJ % 1.4f' % (U[:, I] @ M @ U[:, J]),
+          '\tUI K UJ % 1.4f' % (U[:, I] @ K @ U[:, J]))

@@ -40,9 +40,11 @@ x = ncoords[:, 0]
 y = ncoords[:, 1]
 nid_pos = dict(zip(np.arange(len(ncoords)), np.arange(len(ncoords))))
 
+N = DOF*nx
+
 #NOTE using dense matrices
-K = np.zeros((DOF*nx, DOF*nx))
-M = np.zeros((DOF*nx, DOF*nx))
+K = np.zeros((N, N))
+M = np.zeros((N, N))
 
 elems = []
 # creating beam elements
@@ -64,7 +66,7 @@ if lumped:
     assert np.count_nonzero(M-np.diag(np.diagonal(M))) == 0
 
 # applying boundary conditions
-bk = np.zeros(K.shape[0], dtype=bool) # defining known DOFs
+bk = np.zeros(N, dtype=bool) # defining known DOFs
 check = np.isclose(x, 0.)
 bk[0::DOF] = check
 bk[1::DOF] = check
@@ -76,24 +78,24 @@ Kuu = K[bu, :][:, bu]
 Muu = M[bu, :][:, bu]
 
 # solving
-num_modes = 5
-eigvals, Uu = eigh(a=Kuu, b=Muu, subset_by_index=(0, num_modes))
-wn = np.sqrt(eigvals)
-print('wn', wn[:num_modes])
+num_modes = 6
+eigvals, Uu = eigh(a=Kuu, b=Muu, subset_by_index=(0, num_modes-1))
+omegan = np.sqrt(eigvals)
+print('omegan', omegan[:num_modes])
 
 print('omega1 ref', 1.875**2*np.sqrt(E*Izz/(rho*A*length**4)))
 print('omega2 ref', 4.694**2*np.sqrt(E*Izz/(rho*A*length**4)))
 print('omega3 ref', 7.855**2*np.sqrt(E*Izz/(rho*A*length**4)))
 
 if plot_result:
-    u = np.zeros(K.shape[0], dtype=float)
+    u = np.zeros(N, dtype=float)
     for mode in range(num_modes):
         u[bu] = Uu[:, mode]
         u1 = u[0::DOF]
         u2 = u[1::DOF]
 
         plt.figure(mode+1)
-        plt.title('mode %02d, $\\omega_n$ %1.2f rad/s' % (mode+1, wn[mode]))
+        plt.title('mode %02d, $\\omega_n$ %1.2f rad/s' % (mode+1, omegan[mode]))
         mag = u2
         levels = np.linspace(mag.min(), mag.max(), 100)
         xplot = xmesh + u1

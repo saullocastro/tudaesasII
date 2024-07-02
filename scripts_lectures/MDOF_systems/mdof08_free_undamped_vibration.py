@@ -13,7 +13,8 @@ from scipy.linalg import eigh, cholesky, solve
 
 from tudaesasII.beam2d import Beam2D, update_K, update_M, DOF
 
-case = 2
+
+case = 1
 p = num_modes = 5
 
 # number of nodes along x
@@ -39,8 +40,9 @@ x = ncoords[:, 0]
 y = ncoords[:, 1]
 nid_pos = dict(zip(np.arange(len(ncoords)), np.arange(len(ncoords))))
 
-#NOTE using dense matrices
 N = DOF*nx
+
+#NOTE using dense matrices
 K = np.zeros((N, N))
 M = np.zeros((N, N))
 
@@ -61,7 +63,7 @@ for n1, n2 in zip(nids[:-1], nids[1:]):
     elems.append(elem)
 
 # applying boundary conditions for the initial static equilibrium
-bk = np.zeros(K.shape[0], dtype=bool) # defining known DOFs
+bk = np.zeros(N, dtype=bool) # defining known DOFs
 at_clamp = np.isclose(x, 0.)
 bk[0::DOF] = at_clamp
 bk[1::DOF] = at_clamp
@@ -87,7 +89,7 @@ Kkk = K[bk, :][:, bk]
 Muu = M[bu, :][:, bu]
 
 # calculating static equilibrium
-u0 = np.zeros(K.shape[0])
+u0 = np.zeros(N)
 if case == 1:
     u0[1::DOF][at_tip] = 0.05
 elif case == 2:
@@ -108,7 +110,7 @@ u0[bu] = uu
 udot0 = np.zeros(N)
 
 # boundary conditions for the dynamic problem
-bk = np.zeros(K.shape[0], dtype=bool) # defining known DOFs
+bk = np.zeros(N, dtype=bool) # defining known DOFs
 at_clamp = np.isclose(x, 0.)
 bk[0::DOF] = at_clamp
 bk[1::DOF] = at_clamp
@@ -130,8 +132,8 @@ Ktildeuu = Linvuu @ Kuu @ Linvuu.T
 V = np.zeros((N, num_modes))
 eigvals, Vu = eigh(Ktildeuu, subset_by_index=(0, num_modes-1))
 V[bu] = Vu
-wn = np.sqrt(eigvals)
-print('wn [rad/s] =', wn)
+omegan = np.sqrt(eigvals)
+print('omegan [rad/s] =', omegan)
 
 plt.ioff()
 plt.clf()
@@ -146,19 +148,19 @@ c1 = []
 c2 = []
 for I in range(num_modes):
     c1.append( V[:, I] @ L.T @ u0 )
-    c2.append( V[:, I] @ L.T @ udot0 / wn[I] )
+    c2.append( V[:, I] @ L.T @ udot0 / omegan[I] )
 
 def ufunc(t):
     tmp = 0
     for I in range(num_modes):
-        tmp += (c1[I]*np.cos(wn[I]*t[:, None]) +
-                c2[I]*np.sin(wn[I]*t[:, None]))*(Linv.T@V[:, I])
+        tmp += (c1[I]*np.cos(omegan[I]*t[:, None]) +
+                c2[I]*np.sin(omegan[I]*t[:, None]))*(Linv.T@V[:, I])
     return tmp
 
 # to plot
 num = 1000
 cycles = 20
-t = np.linspace(0, cycles/(wn[0]/(2*np.pi)), num)
+t = np.linspace(0, cycles/(omegan[0]/(2*np.pi)), num)
 u_xt = ufunc(t)
 
 plt.ion()
@@ -229,5 +231,5 @@ yf = 2/num*np.abs(uf[0:num//2])
 plt.xlabel('Frequency $[rad/s]$')
 plt.ylabel('Tip displacement $[m]$')
 plt.plot(xf, yf)
-plt.xlim(0, wn[num_modes-1]+50)
+plt.xlim(0, omegan[num_modes-1]+50)
 plt.show()

@@ -37,9 +37,11 @@ x = ncoords[:, 0]
 y = ncoords[:, 1]
 nid_pos = dict(zip(np.arange(len(ncoords)), np.arange(len(ncoords))))
 
+N = DOF*nx
+
 #NOTE using dense matrices
-K = np.zeros((DOF*nx, DOF*nx))
-M = np.zeros((DOF*nx, DOF*nx))
+K = np.zeros((N, N))
+M = np.zeros((N, N))
 
 elems = []
 # creating beam elements
@@ -58,7 +60,7 @@ for n1, n2 in zip(nids[:-1], nids[1:]):
     elems.append(elem)
 
 # applying boundary conditions
-bk = np.zeros(K.shape[0], dtype=bool) # defining known DOFs
+bk = np.zeros(N, dtype=bool) # defining known DOFs
 check = np.isclose(x, 0.)
 bk[0::DOF] = check
 bk[1::DOF] = check
@@ -70,8 +72,10 @@ beta = 6.4e-6
 C = alpha*M + beta*K
 
 bubu = np.concatenate((bu, bu))
-I = np.identity(M.shape[0])
+I = np.identity(N)
 ZERO = np.zeros_like(M)
+
+# matrices for the expanded linear eigenvalue problem
 
 A = np.vstack((np.column_stack((ZERO,   -I)),
                np.column_stack((   K, 1j*C))))
@@ -90,15 +94,15 @@ eigvals, Uphiuu = eig(a=Auu, b=Buu)
 
 size = Uphiuu.shape[0]//2
 Uu = Uphiuu[:size, :]
-wn = -eigvals
+omegan = -eigvals
 
-Uu = Uu[:, wn>0]
-wn = wn[wn > 0]
+Uu = Uu[:, omegan>0]
+omegan = omegan[omegan > 0]
 
-asort = np.argsort(wn)
-wn = wn[asort]
+asort = np.argsort(omegan)
+omegan = omegan[asort]
 Uu = Uu[:, asort]
-print('wn', wn[:num_modes])
+print('omegan', omegan[:num_modes])
 
 
 if plot_result:
@@ -109,7 +113,7 @@ if plot_result:
         u1 = u[0::DOF]
         u2 = u[1::DOF]
         plt.clf()
-        plt.title('mode %02d, $\\omega_n$ %1.2f rad/s' % (mode+1, wn[mode].real))
+        plt.title('mode %02d, $\\omega_n$ %1.2f rad/s' % (mode+1, omegan[mode].real))
         #plt.gca().set_aspect('equal')
         mag = u2
         levels = np.linspace(mag.min(), mag.max(), 100)
