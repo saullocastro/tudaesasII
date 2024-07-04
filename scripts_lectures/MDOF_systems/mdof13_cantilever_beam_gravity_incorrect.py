@@ -104,10 +104,18 @@ u0[bu] = uu0
 # finding natural frequencies and orthonormal base
 L = cholesky(M, lower=True)
 Linv = np.linalg.inv(L)
+
+Luu = L[bu, :][:, bu]
+#Linvuu = Linv[bu, :][:, bu]
+
+#Ktildeuu = Linvuu @ Kuu @ Linvuu.T
+
 Ktilde = Linv @ K @ Linv.T
+
 p = 10
 V = np.zeros((N, p))
 gamma, Vu = eigh(Ktilde[bu, :][:, bu], subset_by_index=(0, p-1)) # already gives V[:, i] normalized to 1
+#gamma, Vu = eigh(Ktildeuu, subset_by_index=(0, p-1)) # already gives V[:, i] normalized to 1
 V[bu] = Vu
 omegan = gamma**0.5
 
