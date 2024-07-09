@@ -8,9 +8,12 @@ from tudaesasII.beam2d import (Beam2D, update_K, update_KG, update_KNL,
         calc_fint, update_M, DOF)
 
 
+DOF = 3
+
+
 def test_NL_pre_stress_simply_supported_beam():
     for interpolation in ('legendre' , 'hermitian_cubic'):
-        n = 10
+        n = 11
         length = 3 # total size of the beam along x
 
         # Material Lastrobe Lescalloy
@@ -34,9 +37,10 @@ def test_NL_pre_stress_simply_supported_beam():
         n1s = nids[0:-1]
         n2s = nids[1:]
 
-        K = np.zeros((3*n, 3*n))
-        KGunit = np.zeros((3*n, 3*n))
-        M = np.zeros((3*n, 3*n))
+        N = DOF*n
+        K = np.zeros((N, N))
+        KGunit = np.zeros((N, N))
+        M = np.zeros((N, N))
         beams = []
         for n1, n2 in zip(n1s, n2s):
             pos1 = nid_pos[n1]
@@ -59,7 +63,7 @@ def test_NL_pre_stress_simply_supported_beam():
             beams.append(beam)
 
         # applying boundary conditions
-        bk = np.zeros(K.shape[0], dtype=bool) #array to store known DOFs
+        bk = np.zeros(N, dtype=bool) #array to store known DOFs
         at_base = np.isclose(x, 0.) # locating node at base
         bk[0::DOF][at_base] = True
         bk[1::DOF][at_base] = True
@@ -70,29 +74,37 @@ def test_NL_pre_stress_simply_supported_beam():
         # sub-matrices corresponding to unknown DOFs
         Kuu = K[bu, :][:, bu]
         Muu = M[bu, :][:, bu]
-
         KGuu = KGunit[bu, :][:, bu]
+
+        # imperfection due to a perturbation load
+        at_middle = np.isclose(x, length/2) # locating node at tip
+        fext0 = np.zeros(N)
+        # adding perturbation load
+        fext0[1::DOF][at_middle] = 100.
+        u0 = np.zeros(N)
+        u0[bu] = np.linalg.solve(Kuu, fext0[bu])
+        print('Imperfection amplitude [m]', u0[1::DOF].max())
 
         # linear buckling analysis
         num_modes = 3
         linbuck_eigvals, _ = eigh(a=Kuu, b=KGuu, subset_by_index=[0, num_modes-1])
         assert np.isclose(linbuck_eigvals[0], 115947.38111518, rtol=0.01)
-        Ppreload = -0.999*linbuck_eigvals[0]
-        print('linear buckling eigenvalues', linbuck_eigvals)
+        Ppreload = -0.9*linbuck_eigvals[0]
+        print('*linear buckling eigenvalues', linbuck_eigvals)
 
         def calc_KT(u):
-            KNL = np.zeros((3*n, 3*n))
-            KG = np.zeros((3*n, 3*n))
+            KNL = np.zeros((N, N))
+            KG = np.zeros((N, N))
             for beam in beams:
-                update_KNL(beam, u, 0*u, nid_pos, ncoords, KNL)
+                update_KNL(beam, u, u0, nid_pos, ncoords, KNL)
                 update_KG(beam, u, nid_pos, ncoords, KG)
             assert np.allclose(KNL + KG, (KNL + KG).T)
             return KNL + KG
 
-        u = np.zeros(K.shape[0])
+        u = np.zeros(N)
         loads = np.abs(Ppreload)*np.linspace(0.1, 1., 10)
         for load in loads:
-            fext = np.zeros(K.shape[0])
+            fext = np.zeros(N) + fext0
             fext[0::DOF][at_tip] = -load
             print('load', -load)
             if np.isclose(load, 0.1*np.abs(Ppreload)):
@@ -100,7 +112,7 @@ def test_NL_pre_stress_simply_supported_beam():
                 uu = np.linalg.solve(Kuu, fext[bu])
                 u[bu] = uu
             for i in range(100):
-                fint = calc_fint(beams, u, 0*u, nid_pos, ncoords)
+                fint = calc_fint(beams, u, u0, nid_pos, ncoords)
                 R = fint - fext
                 check = np.abs(R[bu]).max()
                 epsilon = 1e-6
@@ -116,7 +128,7 @@ def test_NL_pre_stress_simply_supported_beam():
         eigvals, U = eigh(a=KTuu, b=Muu, subset_by_index=(0, nmodes-1))
         omegan = np.sqrt(eigvals)
         print('Natural frequency [rad/s]', omegan)
-        assert np.isclose(omegan[0], 2.26, rtol=0.01)
+        assert np.isclose(omegan[0], 23.8522, rtol=0.01)
 
 if __name__ == '__main__':
     test_NL_pre_stress_simply_supported_beam()

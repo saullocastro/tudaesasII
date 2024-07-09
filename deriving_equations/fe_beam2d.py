@@ -1,7 +1,7 @@
 import numpy as np
 import sympy
 from sympy import zeros, symbols, Matrix, simplify, integrate
-sympy.var('xi, le, E, cosr, sinr, rho, A1, A2, Izz1, Izz2, Ppreload, Pxx, Mxx, ux, vx')
+sympy.var('wi, xi, le, E, cosr, sinr, rho, A1, A2, Izz1, Izz2, Ppreload, Pxx, Mxx, ux, vx, v0x')
 
 DOF = 3
 
@@ -43,27 +43,31 @@ for leg_poly in [True, False]:
     KGe = zeros(2*DOF, 2*DOF)
     Me = sympy.zeros(2*DOF, 2*DOF)
 
+    ZERO = 0*Nuxi
     BL = Matrix([(2/le)*Nuxi, (2/le)*Nbetaxi])
-    BNL = Matrix([vx*(2/le)*Nvxi + ux*(2/le)*Nuxi, 0*Nuxi])
+    BNL = Matrix([vx*(2/le)*Nvxi + ux*(2/le)*Nuxi, ZERO])
+    BNL0 = Matrix([v0x*(2/le)*Nvxi, ZERO])
 
     print('BL (nodal displacements in global coordinates) =', BL*R)
-    u = Matrix([symbols(r'u[%d]' % i) for i in range(0, BL.shape[1])])
-    print('ux =', (2/le)*Nuxi*R*u)
-    print('vx =', (2/le)*Nvxi*R*u)
+    ucon = Matrix([symbols(r'ucon[%d]' % i) for i in range(0, BL.shape[1])])
+    u0con = Matrix([symbols(r'u0con[%d]' % i) for i in range(0, BL.shape[1])])
+    print('ux =', (2/le)*Nuxi*R*ucon)
+    print('vx =', (2/le)*Nvxi*R*ucon)
+    print('v0x =', (2/le)*Nvxi*R*u0con)
 
-    print('Pxx =', (E*A*(BL + BNL/2)*R*u)[0, 0])
-    print('Mxx =', (E*Izz*(BL + BNL/2)*R*u)[1, 0])
+    print('Pxx =', (E*A*(BL + BNL/2 + BNL0)*R*ucon)[0, 0])
+    print('Mxx =', (E*Izz*(BL + BNL/2 + BNL0)*R*ucon)[1, 0])
 
     Ke[:, :] = (2/le)*E*Izz*Nbetaxi.T*Nbetaxi + (2/le)*E*A*Nuxi.T*Nuxi
 
-    wi = 1. #NOTE aiming 2-point numerical integration for fint
-    finte = wi*(le/2)*(BL.T + BNL.T/2)*Matrix([[Pxx, Mxx]]).T
+    #NOTE aiming numerical integration for nonlinear terms
+    finte = (le/2)*(BL.T + BNL.T + BNL0.T)*Matrix([[Pxx, Mxx]]).T
 
-    KNLe[:, :] = ((le/2)*E*A*(2/le)**2*(vx*Nuxi.T*Nvxi + vx*Nvxi.T*Nuxi +
-                                        2*ux*Nuxi.T*Nuxi)
-                + (le/2)*E*A*(2/le)**2*(ux**2*Nuxi.T*Nuxi +
-                    ux*vx*Nuxi.T*Nvxi + vx*ux*Nvxi.T*Nuxi +
-                    vx**2*Nvxi.T*Nvxi))
+    delta_strain = (2/le)*Nuxi + ux*(2/le)*Nuxi + vx*(2/le)*Nvxi + v0x*(2/le)*Nvxi
+    print('delta_strain', delta_strain)
+    KNLe[:, :] = (le/2)*(E*A*((delta_strain.T*delta_strain))
+                  + E*Izz*(2/le)*Nbetaxi.T*(2/le)*Nbetaxi)
+
     KGconste[:, :] = (le/2)*Ppreload*(2/le)**2*(Nuxi.T*Nuxi + Nvxi.T*Nvxi)
     KGe[:, :] = (le/2)*Pxx*(2/le)**2*(Nuxi.T*Nuxi + Nvxi.T*Nvxi)
     Me[:, :] = (le/2)*rho*(A*Nu.T*Nu + A*Nv.T*Nv + Izz*Nbeta.T*Nbeta)
