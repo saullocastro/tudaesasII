@@ -3,7 +3,7 @@ import sys
 sys.path.append('.')
 
 # uncomment to run from the scripts_lectures/MDOF_systems/ directory:
-# sys.path.append('../..')
+sys.path.append('../..')
 
 import matplotlib
 matplotlib.use('TkAgg')
@@ -38,10 +38,12 @@ x = ncoords[:, 0]
 y = ncoords[:, 1]
 nid_pos = dict(zip(np.arange(len(ncoords)), np.arange(len(ncoords))))
 
+N = DOF*nx
+
 #NOTE using dense matrices
-K = np.zeros((DOF*nx, DOF*nx))
-KG = np.zeros((DOF*nx, DOF*nx))
-M = np.zeros((DOF*nx, DOF*nx))
+K = np.zeros((N, N))
+KG = np.zeros((N, N))
+M = np.zeros((N, N))
 
 beams = []
 # creating beam elements
@@ -60,7 +62,7 @@ for n1, n2 in zip(nids[:-1], nids[1:]):
     beams.append(beam)
 
 # boundary conditions for the dynamic problem
-bk = np.zeros(K.shape[0], dtype=bool) # defining known DOFs
+bk = np.zeros(N, dtype=bool) # defining known DOFs
 at_base = np.isclose(x, 0.)
 bk[0::DOF][at_base] = True
 bk[1::DOF][at_base] = True
@@ -84,7 +86,7 @@ num_modes = 3
 linbuck_eigvals, _ = eigh(a=Kuu, b=KGuu, subset_by_index=[0, num_modes-1])
 
 PCR = linbuck_eigvals[0]
-Ppreload_list = np.linspace(-0.9999*PCR, +PCR, 200)
+Ppreload_list = np.linspace(-0.999*PCR, +PCR, 200)
 
 # pre-load effect on natural frequencies
 
@@ -99,27 +101,27 @@ for Ppreload in Ppreload_list:
 
 #CASE 2, finding KT with Newton-Raphson
 def calc_KT(u):
-    KNL = np.zeros((DOF*nx, DOF*nx))
-    KG = np.zeros((DOF*nx, DOF*nx))
+    KNL = np.zeros((N, N))
+    KG = np.zeros((N, N))
     for beam in beams:
-        update_KNL(beam, u, nid_pos, ncoords, KNL)
+        update_KNL(beam, u, 0*u, nid_pos, ncoords, KNL)
         update_KG(beam, u, nid_pos, ncoords, KG)
     assert np.allclose(K + KNL + KG, (K + KNL + KG).T)
-    return K + KNL + KG
+    return KNL + KG
 
 first_omegan_NL = []
 for Ppreload in Ppreload_list:
-    u = np.zeros(K.shape[0])
+    u = np.zeros(N)
     load_steps = Ppreload*np.linspace(0.1, 1., 10)
     for load in load_steps:
-        fext = np.zeros(K.shape[0])
+        fext = np.zeros(N)
         fext[0::DOF][at_tip] = load
         if np.isclose(load, load_steps[0]):
             KT = K
             uu = np.linalg.solve(Kuu, fext[bu])
             u[bu] = uu
         for i in range(100):
-            fint = calc_fint(beams, u, nid_pos, ncoords)
+            fint = calc_fint(beams, u, 0*u, nid_pos, ncoords)
             R = fint - fext
             check = np.abs(R[bu]).max()
             if check < 0.01:
