@@ -1,7 +1,8 @@
 import numpy as np
 import sympy
 from sympy import zeros, symbols, Matrix, simplify, integrate
-sympy.var('wi, xi, le, E, cosr, sinr, rho, A1, A2, Izz1, Izz2, Ppreload, Pxx, Mxx, ux, vx, v0x')
+sympy.var('wi, xi, le, E, cosr, sinr, rho, A1, A2, Izz1, Izz2, Ppreload')
+sympy.var('Pxx, Mxx, ux, vx, v0x')
 
 DOF = 3
 
