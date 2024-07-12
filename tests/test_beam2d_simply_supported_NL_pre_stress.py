@@ -54,7 +54,7 @@ def test_NL_pre_stress_simply_supported_beam():
             beam.Izz1, beam.Izz2 = Izz1, Izz2
             beam.interpolation = interpolation
             update_K(beam, nid_pos, ncoords, K)
-            update_KG(beam, 1., nid_pos, ncoords, KGunit)
+            update_KG(beam, 1., None, nid_pos, ncoords, KGunit)
             update_M(beam, nid_pos, M)
             beams.append(beam)
 
@@ -85,7 +85,7 @@ def test_NL_pre_stress_simply_supported_beam():
             KG = np.zeros((3*n, 3*n))
             for beam in beams:
                 update_KNL(beam, u, 0*u, nid_pos, ncoords, KNL)
-                update_KG(beam, u, nid_pos, ncoords, KG)
+                update_KG(beam, u, 0*u, nid_pos, ncoords, KG)
             assert np.allclose(KNL + KG, (KNL + KG).T)
             return KNL + KG
 
