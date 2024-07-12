@@ -160,7 +160,7 @@ def update_K(beam, nid_pos, ncoords, K):
         raise NotImplementedError('beam interpolation "%s" not implemented' % beam.interpolation)
 
 
-def update_KG(beam, Ppreload_u, nid_pos, ncoords, KG):
+def update_KG(beam, Ppreload_u, u0, nid_pos, ncoords, KG):
     """Update geometric stiffness matrix KG with beam element
 
     Properties
@@ -202,6 +202,7 @@ def update_KG(beam, Ppreload_u, nid_pos, ncoords, KG):
     else:
         u = Ppreload_u
         ucon = np.concatenate((u[c1:c1+DOF], u[c2:c2+DOF]))
+        u0con = np.concatenate((u0[c1:c1+DOF], u0[c2:c2+DOF]))
 
     # NOTE 2-point Gauss-Legendre quadrature
     points = [-0.577350269189625764509148780501957455647601751270126876,
@@ -252,7 +253,8 @@ def update_KG(beam, Ppreload_u, nid_pos, ncoords, KG):
             xi = points[i]
             ux = -cosr*ucon[0]/le + cosr*ucon[3]/le - sinr*ucon[1]/le + sinr*ucon[4]/le
             vx = 2*cosr*ucon[1]*(3*xi**2/4 - 3/4)/le + 2*cosr*ucon[4]*(3/4 - 3*xi**2/4)/le + ucon[2]*(3*xi**2/4 - xi/2 - 1/4) + ucon[5]*(3*xi**2/4 + xi/2 - 1/4) - 2*sinr*ucon[0]*(3*xi**2/4 - 3/4)/le - 2*sinr*ucon[3]*(3/4 - 3*xi**2/4)/le
-            Pxx = E*ucon[2]*vx*(A1 + (-A1 + A2)*(xi + 1)/2)*(le*(1 - xi)**2/8 + le*(xi + 1)*(2*xi - 2)/8)/le + E*ucon[5]*vx*(A1 + (-A1 + A2)*(xi + 1)/2)*(le*(xi - 1)*(2*xi + 2)/8 + le*(xi + 1)**2/8)/le + ucon[0]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(-ux/(2*le) - 1/le) - E*sinr*vx*(A1 + (-A1 + A2)*(xi + 1)/2)*((1 - xi)**2/4 + (xi/2 - 1/2)*(xi + 2))/le) + ucon[1]*(E*cosr*vx*(A1 + (-A1 + A2)*(xi + 1)/2)*((1 - xi)**2/4 + (xi/2 - 1/2)*(xi + 2))/le + E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(-ux/(2*le) - 1/le)) + ucon[3]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(ux/(2*le) + 1/le) - E*sinr*vx*(A1 + (-A1 + A2)*(xi + 1)/2)*((2 - xi)*(xi/2 + 1/2) - (xi + 1)**2/4)/le) + ucon[4]*(E*cosr*vx*(A1 + (-A1 + A2)*(xi + 1)/2)*((2 - xi)*(xi/2 + 1/2) - (xi + 1)**2/4)/le + E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(ux/(2*le) + 1/le))
+            v0x = 2*cosr*u0con[1]*(3*xi**2/4 - 3/4)/le + 2*cosr*u0con[4]*(3/4 - 3*xi**2/4)/le + u0con[2]*(3*xi**2/4 - xi/2 - 1/4) + u0con[5]*(3*xi**2/4 + xi/2 - 1/4) - 2*sinr*u0con[0]*(3*xi**2/4 - 3/4)/le - 2*sinr*u0con[3]*(3/4 - 3*xi**2/4)/le
+            Pxx = E*ucon[2]*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(le*(1 - xi)**2/8 + le*(xi + 1)*(2*xi - 2)/8)/le + vx*(le*(1 - xi)**2/8 + le*(xi + 1)*(2*xi - 2)/8)/le) + E*ucon[5]*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(le*(xi - 1)*(2*xi + 2)/8 + le*(xi + 1)**2/8)/le + vx*(le*(xi - 1)*(2*xi + 2)/8 + le*(xi + 1)**2/8)/le) + ucon[0]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(-ux/(2*le) - 1/le) - E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le + vx*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le)) + ucon[1]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le + vx*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le) + E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(-ux/(2*le) - 1/le)) + ucon[3]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(ux/(2*le) + 1/le) - E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le + vx*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le)) + ucon[4]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le + vx*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le) + E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(ux/(2*le) + 1/le))
 
             KG[0+c1, 0+c1] += Pxx*(4*cosr**2 + 9*sinr**2*(xi - 1)**2*(xi + 1)**2)/(8*le)
             KG[0+c1, 1+c1] += Pxx*cosr*sinr*(-9*xi**4 + 18*xi**2 - 5)/(8*le)
@@ -296,7 +298,8 @@ def update_KG(beam, Ppreload_u, nid_pos, ncoords, KG):
             xi = points[i]
             ux = -cosr*ucon[0]/le + cosr*ucon[3]/le - sinr*ucon[1]/le + sinr*ucon[4]/le
             vx = 2*cosr*ucon[1]*(3*xi**2/4 - 3/4)/le + 2*cosr*ucon[4]*(3/4 - 3*xi**2/4)/le + ucon[2]*(3*xi**2/4 - xi/2 - 1/4) + ucon[5]*(3*xi**2/4 + xi/2 - 1/4) - 2*sinr*ucon[0]*(3*xi**2/4 - 3/4)/le - 2*sinr*ucon[3]*(3/4 - 3*xi**2/4)/le
-            Pxx = E*ucon[2]*vx*(A1 + (-A1 + A2)*(xi + 1)/2)*(3*xi**2/8 - xi/4 - 1/8) + E*ucon[5]*vx*(A1 + (-A1 + A2)*(xi + 1)/2)*(3*xi**2/8 + xi/4 - 1/8) + ucon[0]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(-ux/(2*le) - 1/le) - E*sinr*vx*(A1 + (-A1 + A2)*(xi + 1)/2)*(3*xi**2/4 - 3/4)/le) + ucon[1]*(E*cosr*vx*(A1 + (-A1 + A2)*(xi + 1)/2)*(3*xi**2/4 - 3/4)/le + E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(-ux/(2*le) - 1/le)) + ucon[3]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(ux/(2*le) + 1/le) - E*sinr*vx*(3/4 - 3*xi**2/4)*(A1 + (-A1 + A2)*(xi + 1)/2)/le) + ucon[4]*(E*cosr*vx*(3/4 - 3*xi**2/4)*(A1 + (-A1 + A2)*(xi + 1)/2)/le + E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(ux/(2*le) + 1/le))
+            v0x = 2*cosr*u0con[1]*(3*xi**2/4 - 3/4)/le + 2*cosr*u0con[4]*(3/4 - 3*xi**2/4)/le + u0con[2]*(3*xi**2/4 - xi/2 - 1/4) + u0con[5]*(3*xi**2/4 + xi/2 - 1/4) - 2*sinr*u0con[0]*(3*xi**2/4 - 3/4)/le - 2*sinr*u0con[3]*(3/4 - 3*xi**2/4)/le
+            Pxx = E*ucon[2]*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(3*xi**2/8 - xi/4 - 1/8) + vx*(3*xi**2/8 - xi/4 - 1/8)) + E*ucon[5]*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(3*xi**2/8 + xi/4 - 1/8) + vx*(3*xi**2/8 + xi/4 - 1/8)) + ucon[0]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(-ux/(2*le) - 1/le) - E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(3*xi**2/4 - 3/4)/le + vx*(3*xi**2/4 - 3/4)/le)) + ucon[1]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(3*xi**2/4 - 3/4)/le + vx*(3*xi**2/4 - 3/4)/le) + E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(-ux/(2*le) - 1/le)) + ucon[3]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(ux/(2*le) + 1/le) - E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(3/4 - 3*xi**2/4)/le + vx*(3/4 - 3*xi**2/4)/le)) + ucon[4]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(3/4 - 3*xi**2/4)/le + vx*(3/4 - 3*xi**2/4)/le) + E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(ux/(2*le) + 1/le))
 
             KG[0+c1, 0+c1] += Pxx*(4*cosr**2 + 9*sinr**2*(xi**2 - 1)**2)/(8*le)
             KG[0+c1, 1+c1] += Pxx*cosr*sinr*(4 - 9*(xi**2 - 1)**2)/(8*le)
@@ -529,7 +532,7 @@ def calc_fint(beams, u, u0, nid_pos, ncoords):
                 vx = 2*cosr*ucon[1]*(3*xi**2/4 - 3/4)/le + 2*cosr*ucon[4]*(3/4 - 3*xi**2/4)/le + ucon[2]*(3*xi**2/4 - xi/2 - 1/4) + ucon[5]*(3*xi**2/4 + xi/2 - 1/4) - 2*sinr*ucon[0]*(3*xi**2/4 - 3/4)/le - 2*sinr*ucon[3]*(3/4 - 3*xi**2/4)/le
                 v0x = 2*cosr*u0con[1]*(3*xi**2/4 - 3/4)/le + 2*cosr*u0con[4]*(3/4 - 3*xi**2/4)/le + u0con[2]*(3*xi**2/4 - xi/2 - 1/4) + u0con[5]*(3*xi**2/4 + xi/2 - 1/4) - 2*sinr*u0con[0]*(3*xi**2/4 - 3/4)/le - 2*sinr*u0con[3]*(3/4 - 3*xi**2/4)/le
                 Pxx = E*ucon[2]*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(le*(1 - xi)**2/8 + le*(xi + 1)*(2*xi - 2)/8)/le + vx*(le*(1 - xi)**2/8 + le*(xi + 1)*(2*xi - 2)/8)/le) + E*ucon[5]*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(le*(xi - 1)*(2*xi + 2)/8 + le*(xi + 1)**2/8)/le + vx*(le*(xi - 1)*(2*xi + 2)/8 + le*(xi + 1)**2/8)/le) + ucon[0]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(-ux/(2*le) - 1/le) - E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le + vx*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le)) + ucon[1]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le + vx*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le) + E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(-ux/(2*le) - 1/le)) + ucon[3]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(ux/(2*le) + 1/le) - E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le + vx*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le)) + ucon[4]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le + vx*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le) + E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(ux/(2*le) + 1/le))
-                Mxx = -6*E*cosr*ucon[1]*xi*(Izz1 + (-Izz1 + Izz2)*(xi + 1)/2)/le**2 + 6*E*cosr*ucon[4]*xi*(Izz1 + (-Izz1 + Izz2)*(xi + 1)/2)/le**2 + 2*E*ucon[2]*(1/2 - 3*xi/2)*(Izz1 + (-Izz1 + Izz2)*(xi + 1)/2)/le + 2*E*ucon[5]*(Izz1 + (-Izz1 + Izz2)*(xi + 1)/2)*(-3*xi/2 - 1/2)/le + 6*E*sinr*ucon[0]*xi*(Izz1 + (-Izz1 + Izz2)*(xi + 1)/2)/le**2 - 6*E*sinr*ucon[3]*xi*(Izz1 + (-Izz1 + Izz2)*(xi + 1)/2)/le**2
+                Mxx = -6*E*cosr*ucon[1]*xi*(Izz1 + (-Izz1 + Izz2)*(xi + 1)/2)/le**2 + 6*E*cosr*ucon[4]*xi*(Izz1 + (-Izz1 + Izz2)*(xi + 1)/2)/le**2 + 6*E*sinr*ucon[0]*xi*(Izz1 + (-Izz1 + Izz2)*(xi + 1)/2)/le**2 - 6*E*sinr*ucon[3]*xi*(Izz1 + (-Izz1 + Izz2)*(xi + 1)/2)/le**2 - 4*E*ucon[2]*(Izz1 + (-Izz1 + Izz2)*(xi + 1)/2)*(le*(xi + 1)/4 + le*(2*xi - 2)/4)/le**2 - 4*E*ucon[5]*(Izz1 + (-Izz1 + Izz2)*(xi + 1)/2)*(le*(xi - 1)/4 + le*(2*xi + 2)/4)/le**2
 
                 fint[0 + c1] += Pxx*cosr*le*(-ux/le - 1/le)/2 - sinr*(-3*Mxx*xi/le + Pxx*le*(2*v0x*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le + 2*vx*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le)/2)
                 fint[1 + c1] += Pxx*le*sinr*(-ux/le - 1/le)/2 + cosr*(-3*Mxx*xi/le + Pxx*le*(2*v0x*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le + 2*vx*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le)/2)
