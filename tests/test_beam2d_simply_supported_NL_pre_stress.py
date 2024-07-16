@@ -54,7 +54,7 @@ def test_NL_pre_stress_simply_supported_beam():
             beam.Izz1, beam.Izz2 = Izz1, Izz2
             beam.interpolation = interpolation
             update_K(beam, nid_pos, ncoords, K)
-            update_KG(beam, 1., None, nid_pos, ncoords, KGunit)
+            update_KG(beam, 1., nid_pos, ncoords, KGunit)
             update_M(beam, nid_pos, M)
             beams.append(beam)
 
@@ -84,8 +84,8 @@ def test_NL_pre_stress_simply_supported_beam():
             KNL = np.zeros((3*n, 3*n))
             KG = np.zeros((3*n, 3*n))
             for beam in beams:
-                update_KNL(beam, u, 0*u, nid_pos, ncoords, KNL)
-                update_KG(beam, u, 0*u, nid_pos, ncoords, KG)
+                update_KNL(beam, u, nid_pos, ncoords, KNL)
+                update_KG(beam, u, nid_pos, ncoords, KG)
             assert np.allclose(KNL + KG, (KNL + KG).T)
             return KNL + KG
 
@@ -100,7 +100,7 @@ def test_NL_pre_stress_simply_supported_beam():
                 uu = np.linalg.solve(Kuu, fext[bu])
                 u[bu] = uu
             for i in range(100):
-                fint = calc_fint(beams, u, 0*u, nid_pos, ncoords)
+                fint = calc_fint(beams, u, nid_pos, ncoords)
                 R = fint - fext
                 check = np.abs(R[bu]).max()
                 epsilon = 1e-6
@@ -116,7 +116,7 @@ def test_NL_pre_stress_simply_supported_beam():
         eigvals, U = eigh(a=KTuu, b=Muu, subset_by_index=(0, nmodes-1))
         omegan = np.sqrt(eigvals)
         print('Natural frequency [rad/s]', omegan)
-        assert np.isclose(omegan[0], 2.26, rtol=0.01)
+        assert np.isclose(omegan[0], 1.43, rtol=0.01)
 
 if __name__ == '__main__':
     test_NL_pre_stress_simply_supported_beam()

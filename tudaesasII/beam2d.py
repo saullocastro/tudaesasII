@@ -33,6 +33,7 @@ class Beam2D(object):
 
     """
     __slots__ = ['n1', 'n2', 'E', 'rho', 'Izz1', 'Izz2', 'A1', 'A2',
+            'h1', 'h2',
             'interpolation', 'le', 'thetarad']
     def __init__(self):
         self.n1 = None
@@ -43,6 +44,12 @@ class Beam2D(object):
         self.interpolation = 'hermitian_cubic'
         self.le = None
         self.thetarad = None
+        self.A1 = None
+        self.A2 = None
+        self.h1 = 0
+        self.h2 = 0
+        self.Izz1 = None
+        self.Izz2 = None
 
 
 def update_K(beam, nid_pos, ncoords, K):
@@ -160,7 +167,7 @@ def update_K(beam, nid_pos, ncoords, K):
         raise NotImplementedError('beam interpolation "%s" not implemented' % beam.interpolation)
 
 
-def update_KG(beam, Ppreload_u, u0, nid_pos, ncoords, KG):
+def update_KG(beam, Ppreload_u, nid_pos, ncoords, KG):
     """Update geometric stiffness matrix KG with beam element
 
     Properties
@@ -187,6 +194,10 @@ def update_KG(beam, Ppreload_u, u0, nid_pos, ncoords, KG):
     E = beam.E
     A1 = beam.A1
     A2 = beam.A2
+    h1 = beam.h1
+    h2 = beam.h2
+    Izz1 = beam.Izz1
+    Izz2 = beam.Izz2
     beam.thetarad = np.arctan2(y2 - y1, x2 - x1)
     cosr = np.cos(beam.thetarad)
     sinr = np.sin(beam.thetarad)
@@ -202,12 +213,22 @@ def update_KG(beam, Ppreload_u, u0, nid_pos, ncoords, KG):
     else:
         u = Ppreload_u
         ucon = np.concatenate((u[c1:c1+DOF], u[c2:c2+DOF]))
-        u0con = np.concatenate((u0[c1:c1+DOF], u0[c2:c2+DOF]))
+        #u0con = np.concatenate((u0[c1:c1+DOF], u0[c2:c2+DOF]))
 
     # NOTE 2-point Gauss-Legendre quadrature
     points = [-0.577350269189625764509148780501957455647601751270126876,
                0.577350269189625764509148780501957455647601751270126876]
     weights = [1., 1.]
+
+    # NOTE 4-point Gauss-Legendre quadrature
+    points = [-0.861136311594052575223946488892809505095725379629717638,
+              -0.339981043584856264802665759103244687200575869770914353,
+               0.339981043584856264802665759103244687200575869770914353,
+               0.861136311594052575223946488892809505095725379629717638]
+    weights = [0.34785484513745385737306394922199940723534869583389354,
+               0.65214515486254614262693605077800059276465130416610646,
+               0.65214515486254614262693605077800059276465130416610646,
+               0.34785484513745385737306394922199940723534869583389354]
 
     # NOTE omitting weight because it is equal to 1.
     if isinstance(Ppreload_u, float):
@@ -249,97 +270,110 @@ def update_KG(beam, Ppreload_u, u0, nid_pos, ncoords, KG):
         KG[2+c2, 2+c2] += 2*Ppreload*le/15
 
     elif beam.interpolation == 'hermitian_cubic':
-        for i in range(2):
+        for i in range(4):
             xi = points[i]
-            ux = -cosr*ucon[0]/le + cosr*ucon[3]/le - sinr*ucon[1]/le + sinr*ucon[4]/le
-            vx = 2*cosr*ucon[1]*(3*xi**2/4 - 3/4)/le + 2*cosr*ucon[4]*(3/4 - 3*xi**2/4)/le + ucon[2]*(3*xi**2/4 - xi/2 - 1/4) + ucon[5]*(3*xi**2/4 + xi/2 - 1/4) - 2*sinr*ucon[0]*(3*xi**2/4 - 3/4)/le - 2*sinr*ucon[3]*(3/4 - 3*xi**2/4)/le
-            v0x = 2*cosr*u0con[1]*(3*xi**2/4 - 3/4)/le + 2*cosr*u0con[4]*(3/4 - 3*xi**2/4)/le + u0con[2]*(3*xi**2/4 - xi/2 - 1/4) + u0con[5]*(3*xi**2/4 + xi/2 - 1/4) - 2*sinr*u0con[0]*(3*xi**2/4 - 3/4)/le - 2*sinr*u0con[3]*(3/4 - 3*xi**2/4)/le
-            Pxx = E*ucon[2]*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(le*(1 - xi)**2/8 + le*(xi + 1)*(2*xi - 2)/8)/le + vx*(le*(1 - xi)**2/8 + le*(xi + 1)*(2*xi - 2)/8)/le) + E*ucon[5]*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(le*(xi - 1)*(2*xi + 2)/8 + le*(xi + 1)**2/8)/le + vx*(le*(xi - 1)*(2*xi + 2)/8 + le*(xi + 1)**2/8)/le) + ucon[0]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(-ux/(2*le) - 1/le) - E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le + vx*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le)) + ucon[1]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le + vx*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le) + E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(-ux/(2*le) - 1/le)) + ucon[3]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(ux/(2*le) + 1/le) - E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le + vx*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le)) + ucon[4]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le + vx*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le) + E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(ux/(2*le) + 1/le))
+            wi = weights[i]
 
-            KG[0+c1, 0+c1] += Pxx*(4*cosr**2 + 9*sinr**2*(xi - 1)**2*(xi + 1)**2)/(8*le)
-            KG[0+c1, 1+c1] += Pxx*cosr*sinr*(-9*xi**4 + 18*xi**2 - 5)/(8*le)
-            KG[0+c1, 2+c1] += -3*Pxx*sinr*(xi - 1)**2*(xi + 1)*(3*xi + 1)/16
-            KG[0+c1, 0+c2] += -Pxx*(4*cosr**2 + 9*sinr**2*(xi - 1)**2*(xi + 1)**2)/(8*le)
-            KG[0+c1, 1+c2] += Pxx*cosr*sinr*(9*xi**4 - 18*xi**2 + 5)/(8*le)
-            KG[0+c1, 2+c2] += -3*Pxx*sinr*(xi - 1)*(xi + 1)**2*(3*xi - 1)/16
-            KG[1+c1, 0+c1] += Pxx*cosr*sinr*(-9*xi**4 + 18*xi**2 - 5)/(8*le)
-            KG[1+c1, 1+c1] += Pxx*(9*cosr**2*(xi - 1)**2*(xi + 1)**2 + 4*sinr**2)/(8*le)
-            KG[1+c1, 2+c1] += 3*Pxx*cosr*(xi - 1)**2*(xi + 1)*(3*xi + 1)/16
-            KG[1+c1, 0+c2] += Pxx*cosr*sinr*(9*xi**4 - 18*xi**2 + 5)/(8*le)
-            KG[1+c1, 1+c2] += -Pxx*(9*cosr**2*(xi - 1)**2*(xi + 1)**2 + 4*sinr**2)/(8*le)
-            KG[1+c1, 2+c2] += 3*Pxx*cosr*(xi - 1)*(xi + 1)**2*(3*xi - 1)/16
-            KG[2+c1, 0+c1] += -3*Pxx*sinr*(xi - 1)**2*(xi + 1)*(3*xi + 1)/16
-            KG[2+c1, 1+c1] += 3*Pxx*cosr*(xi - 1)**2*(xi + 1)*(3*xi + 1)/16
-            KG[2+c1, 2+c1] += Pxx*le*(xi - 1)**2*(3*xi + 1)**2/32
-            KG[2+c1, 0+c2] += 3*Pxx*sinr*(xi - 1)**2*(xi + 1)*(3*xi + 1)/16
-            KG[2+c1, 1+c2] += -3*Pxx*cosr*(xi - 1)**2*(xi + 1)*(3*xi + 1)/16
-            KG[2+c1, 2+c2] += Pxx*le*(9*xi**4 - 10*xi**2 + 1)/32
-            KG[0+c2, 0+c1] += -Pxx*(4*cosr**2 + 9*sinr**2*(xi - 1)**2*(xi + 1)**2)/(8*le)
-            KG[0+c2, 1+c1] += Pxx*cosr*sinr*(9*xi**4 - 18*xi**2 + 5)/(8*le)
-            KG[0+c2, 2+c1] += 3*Pxx*sinr*(xi - 1)**2*(xi + 1)*(3*xi + 1)/16
-            KG[0+c2, 0+c2] += Pxx*(4*cosr**2 + 9*sinr**2*(xi - 1)**2*(xi + 1)**2)/(8*le)
-            KG[0+c2, 1+c2] += Pxx*cosr*sinr*(-9*xi**4 + 18*xi**2 - 5)/(8*le)
-            KG[0+c2, 2+c2] += 3*Pxx*sinr*(xi - 1)*(xi + 1)**2*(3*xi - 1)/16
-            KG[1+c2, 0+c1] += Pxx*cosr*sinr*(9*xi**4 - 18*xi**2 + 5)/(8*le)
-            KG[1+c2, 1+c1] += -Pxx*(9*cosr**2*(xi - 1)**2*(xi + 1)**2 + 4*sinr**2)/(8*le)
-            KG[1+c2, 2+c1] += -3*Pxx*cosr*(xi - 1)**2*(xi + 1)*(3*xi + 1)/16
-            KG[1+c2, 0+c2] += Pxx*cosr*sinr*(-9*xi**4 + 18*xi**2 - 5)/(8*le)
-            KG[1+c2, 1+c2] += Pxx*(9*cosr**2*(xi - 1)**2*(xi + 1)**2 + 4*sinr**2)/(8*le)
-            KG[1+c2, 2+c2] += -3*Pxx*cosr*(xi - 1)*(xi + 1)**2*(3*xi - 1)/16
-            KG[2+c2, 0+c1] += -3*Pxx*sinr*(xi - 1)*(xi + 1)**2*(3*xi - 1)/16
-            KG[2+c2, 1+c1] += 3*Pxx*cosr*(xi - 1)*(xi + 1)**2*(3*xi - 1)/16
-            KG[2+c2, 2+c1] += Pxx*le*(9*xi**4 - 10*xi**2 + 1)/32
-            KG[2+c2, 0+c2] += 3*Pxx*sinr*(xi - 1)*(xi + 1)**2*(3*xi - 1)/16
-            KG[2+c2, 1+c2] += -3*Pxx*cosr*(xi - 1)*(xi + 1)**2*(3*xi - 1)/16
-            KG[2+c2, 2+c2] += Pxx*le*(xi + 1)**2*(3*xi - 1)**2/32
+            A = A1 + (A2 - A1)*(xi - (-1))/(1 - (-1))
+            h = h1 + (h2 - h1)*(xi - (-1))/(1 - (-1))
+            Izz = Izz1 + (Izz2 - Izz1)*(xi - (-1))/(1 - (-1))
+
+            ux = -cosr*ucon[0]/le + cosr*ucon[3]/le - sinr*ucon[1]/le + sinr*ucon[4]/le
+            vx = 2*cosr*ucon[1]*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le + 2*cosr*ucon[4]*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le - 2*sinr*ucon[0]*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le - 2*sinr*ucon[3]*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le + 2*ucon[2]*(le*(1 - xi)**2/8 + le*(xi + 1)*(2*xi - 2)/8)/le + 2*ucon[5]*(le*(xi - 1)*(2*xi + 2)/8 + le*(xi + 1)**2/8)/le
+            vxx = 6*cosr*ucon[1]*xi/le**2 - 6*cosr*ucon[4]*xi/le**2 + ucon[2]*(3*xi - 1)/le + ucon[5]*(3*xi + 1)/le - 6*sinr*ucon[0]*xi/le**2 + 6*sinr*ucon[3]*xi/le**2
+            #v0x = 2*cosr*u0con[1]*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le + 2*cosr*u0con[4]*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le - 2*sinr*u0con[0]*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le - 2*sinr*u0con[3]*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le + 2*u0con[2]*(le*(1 - xi)**2/8 + le*(xi + 1)*(2*xi - 2)/8)/le + 2*u0con[5]*(le*(xi - 1)*(2*xi + 2)/8 + le*(xi + 1)**2/8)/le
+
+            KG[0+c1, 0+c1] += wi*(20*E*cosr*le*(12*Izz*sinr*vxx*xi*(ux + 1) + cosr*le*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) + 3*sinr*(80*E*Izz*cosr*le*vxx*xi*(ux + 1) + 3*sinr*(5*E*le**2*(xi - 1)**2*(xi + 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[0+c1, 1+c1] += wi*(20*E*le*sinr*(12*Izz*sinr*vxx*xi*(ux + 1) + cosr*le*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) - 3*cosr*(80*E*Izz*cosr*le*vxx*xi*(ux + 1) + 3*sinr*(5*E*le**2*(xi - 1)**2*(xi + 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[0+c1, 2+c1] += -wi*(80*E*Izz*cosr*le*vxx*(ux + 1)*(3*xi - 1) + 3*sinr*(5*E*le**2*(xi - 1)**2*(xi + 1)*(3*xi + 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi*(3*xi - 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[0+c1, 0+c2] += -wi*(20*E*cosr*le*(12*Izz*sinr*vxx*xi*(ux + 1) + cosr*le*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) + 3*sinr*(80*E*Izz*cosr*le*vxx*xi*(ux + 1) + 3*sinr*(5*E*le**2*(xi - 1)**2*(xi + 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[0+c1, 1+c2] += -wi*(20*E*le*sinr*(12*Izz*sinr*vxx*xi*(ux + 1) + cosr*le*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) - 3*cosr*(80*E*Izz*cosr*le*vxx*xi*(ux + 1) + 3*sinr*(5*E*le**2*(xi - 1)**2*(xi + 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[0+c1, 2+c2] += -wi*(80*E*Izz*cosr*le*vxx*(ux + 1)*(3*xi + 1) + 3*sinr*(5*E*le**2*(xi - 1)*(xi + 1)**2*(3*xi - 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi*(3*xi + 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[1+c1, 0+c1] += -wi*(20*E*cosr*le*(12*Izz*cosr*vxx*xi*(ux + 1) - le*sinr*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) - 3*sinr*(80*E*Izz*le*sinr*vxx*xi*(ux + 1) - 3*cosr*(5*E*le**2*(xi - 1)**2*(xi + 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[1+c1, 1+c1] += -wi*(20*E*le*sinr*(12*Izz*cosr*vxx*xi*(ux + 1) - le*sinr*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) + 3*cosr*(80*E*Izz*le*sinr*vxx*xi*(ux + 1) - 3*cosr*(5*E*le**2*(xi - 1)**2*(xi + 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[1+c1, 2+c1] += -wi*(80*E*Izz*le*sinr*vxx*(ux + 1)*(3*xi - 1) - 3*cosr*(5*E*le**2*(xi - 1)**2*(xi + 1)*(3*xi + 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi*(3*xi - 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[1+c1, 0+c2] += wi*(20*E*cosr*le*(12*Izz*cosr*vxx*xi*(ux + 1) - le*sinr*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) - 3*sinr*(80*E*Izz*le*sinr*vxx*xi*(ux + 1) - 3*cosr*(5*E*le**2*(xi - 1)**2*(xi + 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[1+c1, 1+c2] += wi*(20*E*le*sinr*(12*Izz*cosr*vxx*xi*(ux + 1) - le*sinr*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) + 3*cosr*(80*E*Izz*le*sinr*vxx*xi*(ux + 1) - 3*cosr*(5*E*le**2*(xi - 1)**2*(xi + 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[1+c1, 2+c2] += -wi*(80*E*Izz*le*sinr*vxx*(ux + 1)*(3*xi + 1) - 3*cosr*(5*E*le**2*(xi - 1)*(xi + 1)**2*(3*xi - 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi*(3*xi + 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[2+c1, 0+c1] += -wi*(80*E*Izz*cosr*le*vxx*(ux + 1)*(3*xi - 1) + 3*sinr*(5*E*le**2*(xi - 1)**2*(xi + 1)*(3*xi + 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi*(3*xi - 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[2+c1, 1+c1] += -wi*(80*E*Izz*le*sinr*vxx*(ux + 1)*(3*xi - 1) - 3*cosr*(5*E*le**2*(xi - 1)**2*(xi + 1)*(3*xi + 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi*(3*xi - 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[2+c1, 2+c1] += wi*(5*E*le**2*(xi - 1)**2*(3*xi + 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + (3*xi - 1)**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))/(320*le)
+            KG[2+c1, 0+c2] += wi*(80*E*Izz*cosr*le*vxx*(ux + 1)*(3*xi - 1) + 3*sinr*(5*E*le**2*(xi - 1)**2*(xi + 1)*(3*xi + 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi*(3*xi - 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[2+c1, 1+c2] += wi*(80*E*Izz*le*sinr*vxx*(ux + 1)*(3*xi - 1) - 3*cosr*(5*E*le**2*(xi - 1)**2*(xi + 1)*(3*xi + 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi*(3*xi - 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[2+c1, 2+c2] += wi*(3*xi - 1)*(3*xi + 1)*(A*E**(h**4)*vxx**2 + 5*E*le**2*(xi - 1)*(xi + 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)/(320*le)
+            KG[0+c2, 0+c1] += -wi*(20*E*cosr*le*(12*Izz*sinr*vxx*xi*(ux + 1) + cosr*le*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) + 3*sinr*(80*E*Izz*cosr*le*vxx*xi*(ux + 1) + 3*sinr*(5*E*le**2*(xi - 1)**2*(xi + 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[0+c2, 1+c1] += -wi*(20*E*le*sinr*(12*Izz*sinr*vxx*xi*(ux + 1) + cosr*le*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) - 3*cosr*(80*E*Izz*cosr*le*vxx*xi*(ux + 1) + 3*sinr*(5*E*le**2*(xi - 1)**2*(xi + 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[0+c2, 2+c1] += wi*(80*E*Izz*cosr*le*vxx*(ux + 1)*(3*xi - 1) + 3*sinr*(5*E*le**2*(xi - 1)**2*(xi + 1)*(3*xi + 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi*(3*xi - 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[0+c2, 0+c2] += wi*(20*E*cosr*le*(12*Izz*sinr*vxx*xi*(ux + 1) + cosr*le*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) + 3*sinr*(80*E*Izz*cosr*le*vxx*xi*(ux + 1) + 3*sinr*(5*E*le**2*(xi - 1)**2*(xi + 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[0+c2, 1+c2] += wi*(20*E*le*sinr*(12*Izz*sinr*vxx*xi*(ux + 1) + cosr*le*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) - 3*cosr*(80*E*Izz*cosr*le*vxx*xi*(ux + 1) + 3*sinr*(5*E*le**2*(xi - 1)**2*(xi + 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[0+c2, 2+c2] += wi*(80*E*Izz*cosr*le*vxx*(ux + 1)*(3*xi + 1) + 3*sinr*(5*E*le**2*(xi - 1)*(xi + 1)**2*(3*xi - 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi*(3*xi + 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[1+c2, 0+c1] += wi*(20*E*cosr*le*(12*Izz*cosr*vxx*xi*(ux + 1) - le*sinr*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) - 3*sinr*(80*E*Izz*le*sinr*vxx*xi*(ux + 1) - 3*cosr*(5*E*le**2*(xi - 1)**2*(xi + 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[1+c2, 1+c1] += wi*(20*E*le*sinr*(12*Izz*cosr*vxx*xi*(ux + 1) - le*sinr*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) + 3*cosr*(80*E*Izz*le*sinr*vxx*xi*(ux + 1) - 3*cosr*(5*E*le**2*(xi - 1)**2*(xi + 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[1+c2, 2+c1] += wi*(80*E*Izz*le*sinr*vxx*(ux + 1)*(3*xi - 1) - 3*cosr*(5*E*le**2*(xi - 1)**2*(xi + 1)*(3*xi + 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi*(3*xi - 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[1+c2, 0+c2] += -wi*(20*E*cosr*le*(12*Izz*cosr*vxx*xi*(ux + 1) - le*sinr*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) - 3*sinr*(80*E*Izz*le*sinr*vxx*xi*(ux + 1) - 3*cosr*(5*E*le**2*(xi - 1)**2*(xi + 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[1+c2, 1+c2] += -wi*(20*E*le*sinr*(12*Izz*cosr*vxx*xi*(ux + 1) - le*sinr*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) + 3*cosr*(80*E*Izz*le*sinr*vxx*xi*(ux + 1) - 3*cosr*(5*E*le**2*(xi - 1)**2*(xi + 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[1+c2, 2+c2] += wi*(80*E*Izz*le*sinr*vxx*(ux + 1)*(3*xi + 1) - 3*cosr*(5*E*le**2*(xi - 1)*(xi + 1)**2*(3*xi - 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi*(3*xi + 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[2+c2, 0+c1] += -wi*(80*E*Izz*cosr*le*vxx*(ux + 1)*(3*xi + 1) + 3*sinr*(5*E*le**2*(xi - 1)*(xi + 1)**2*(3*xi - 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi*(3*xi + 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[2+c2, 1+c1] += -wi*(80*E*Izz*le*sinr*vxx*(ux + 1)*(3*xi + 1) - 3*cosr*(5*E*le**2*(xi - 1)*(xi + 1)**2*(3*xi - 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi*(3*xi + 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[2+c2, 2+c1] += wi*(3*xi - 1)*(3*xi + 1)*(A*E**(h**4)*vxx**2 + 5*E*le**2*(xi - 1)*(xi + 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)/(320*le)
+            KG[2+c2, 0+c2] += wi*(80*E*Izz*cosr*le*vxx*(ux + 1)*(3*xi + 1) + 3*sinr*(5*E*le**2*(xi - 1)*(xi + 1)**2*(3*xi - 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi*(3*xi + 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[2+c2, 1+c2] += wi*(80*E*Izz*le*sinr*vxx*(ux + 1)*(3*xi + 1) - 3*cosr*(5*E*le**2*(xi - 1)*(xi + 1)**2*(3*xi - 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi*(3*xi + 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[2+c2, 2+c2] += wi*(5*E*le**2*(xi + 1)**2*(3*xi - 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + (3*xi + 1)**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))/(320*le)
+
 
     elif beam.interpolation == 'legendre':
-        for i in range(2):
+        for i in range(4):
             xi = points[i]
+            wi = weights[i]
+
+            A = A1 + (A2 - A1)*(xi - (-1))/(1 - (-1))
+            h = h1 + (h2 - h1)*(xi - (-1))/(1 - (-1))
+            Izz = Izz1 + (Izz2 - Izz1)*(xi - (-1))/(1 - (-1))
+
             ux = -cosr*ucon[0]/le + cosr*ucon[3]/le - sinr*ucon[1]/le + sinr*ucon[4]/le
             vx = 2*cosr*ucon[1]*(3*xi**2/4 - 3/4)/le + 2*cosr*ucon[4]*(3/4 - 3*xi**2/4)/le + ucon[2]*(3*xi**2/4 - xi/2 - 1/4) + ucon[5]*(3*xi**2/4 + xi/2 - 1/4) - 2*sinr*ucon[0]*(3*xi**2/4 - 3/4)/le - 2*sinr*ucon[3]*(3/4 - 3*xi**2/4)/le
-            v0x = 2*cosr*u0con[1]*(3*xi**2/4 - 3/4)/le + 2*cosr*u0con[4]*(3/4 - 3*xi**2/4)/le + u0con[2]*(3*xi**2/4 - xi/2 - 1/4) + u0con[5]*(3*xi**2/4 + xi/2 - 1/4) - 2*sinr*u0con[0]*(3*xi**2/4 - 3/4)/le - 2*sinr*u0con[3]*(3/4 - 3*xi**2/4)/le
-            Pxx = E*ucon[2]*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(3*xi**2/8 - xi/4 - 1/8) + vx*(3*xi**2/8 - xi/4 - 1/8)) + E*ucon[5]*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(3*xi**2/8 + xi/4 - 1/8) + vx*(3*xi**2/8 + xi/4 - 1/8)) + ucon[0]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(-ux/(2*le) - 1/le) - E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(3*xi**2/4 - 3/4)/le + vx*(3*xi**2/4 - 3/4)/le)) + ucon[1]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(3*xi**2/4 - 3/4)/le + vx*(3*xi**2/4 - 3/4)/le) + E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(-ux/(2*le) - 1/le)) + ucon[3]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(ux/(2*le) + 1/le) - E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(3/4 - 3*xi**2/4)/le + vx*(3/4 - 3*xi**2/4)/le)) + ucon[4]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(3/4 - 3*xi**2/4)/le + vx*(3/4 - 3*xi**2/4)/le) + E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(ux/(2*le) + 1/le))
+            vxx = 6*cosr*ucon[1]*xi/le**2 - 6*cosr*ucon[4]*xi/le**2 + ucon[2]*(3*xi - 1)/le + ucon[5]*(3*xi + 1)/le - 6*sinr*ucon[0]*xi/le**2 + 6*sinr*ucon[3]*xi/le**2
+            #v0x = 2*cosr*u0con[1]*(3*xi**2/4 - 3/4)/le + 2*cosr*u0con[4]*(3/4 - 3*xi**2/4)/le + u0con[2]*(3*xi**2/4 - xi/2 - 1/4) + u0con[5]*(3*xi**2/4 + xi/2 - 1/4) - 2*sinr*u0con[0]*(3*xi**2/4 - 3/4)/le - 2*sinr*u0con[3]*(3/4 - 3*xi**2/4)/le
 
-            KG[0+c1, 0+c1] += Pxx*(4*cosr**2 + 9*sinr**2*(xi**2 - 1)**2)/(8*le)
-            KG[0+c1, 1+c1] += Pxx*cosr*sinr*(4 - 9*(xi**2 - 1)**2)/(8*le)
-            KG[0+c1, 2+c1] += 3*Pxx*sinr*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1)/16
-            KG[0+c1, 0+c2] += -Pxx*(4*cosr**2 + 9*sinr**2*(xi**2 - 1)**2)/(8*le)
-            KG[0+c1, 1+c2] += Pxx*cosr*sinr*(9*(xi**2 - 1)**2 - 4)/(8*le)
-            KG[0+c1, 2+c2] += -3*Pxx*sinr*(xi**2 - 1)*(3*xi**2 + 2*xi - 1)/16
-            KG[1+c1, 0+c1] += Pxx*cosr*sinr*(4 - 9*(xi**2 - 1)**2)/(8*le)
-            KG[1+c1, 1+c1] += Pxx*(9*cosr**2*(xi**2 - 1)**2 + 4*sinr**2)/(8*le)
-            KG[1+c1, 2+c1] += -3*Pxx*cosr*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1)/16
-            KG[1+c1, 0+c2] += Pxx*cosr*sinr*(9*(xi**2 - 1)**2 - 4)/(8*le)
-            KG[1+c1, 1+c2] += -Pxx*(9*cosr**2*(xi**2 - 1)**2 + 4*sinr**2)/(8*le)
-            KG[1+c1, 2+c2] += 3*Pxx*cosr*(xi**2 - 1)*(3*xi**2 + 2*xi - 1)/16
-            KG[2+c1, 0+c1] += 3*Pxx*sinr*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1)/16
-            KG[2+c1, 1+c1] += -3*Pxx*cosr*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1)/16
-            KG[2+c1, 2+c1] += Pxx*le*(-3*xi**2 + 2*xi + 1)**2/32
-            KG[2+c1, 0+c2] += -3*Pxx*sinr*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1)/16
-            KG[2+c1, 1+c2] += 3*Pxx*cosr*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1)/16
-            KG[2+c1, 2+c2] += Pxx*le*(9*xi**4 - 10*xi**2 + 1)/32
-            KG[0+c2, 0+c1] += -Pxx*(4*cosr**2 + 9*sinr**2*(xi**2 - 1)**2)/(8*le)
-            KG[0+c2, 1+c1] += Pxx*cosr*sinr*(9*(xi**2 - 1)**2 - 4)/(8*le)
-            KG[0+c2, 2+c1] += -3*Pxx*sinr*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1)/16
-            KG[0+c2, 0+c2] += Pxx*(4*cosr**2 + 9*sinr**2*(xi**2 - 1)**2)/(8*le)
-            KG[0+c2, 1+c2] += Pxx*cosr*sinr*(4 - 9*(xi**2 - 1)**2)/(8*le)
-            KG[0+c2, 2+c2] += 3*Pxx*sinr*(xi**2 - 1)*(3*xi**2 + 2*xi - 1)/16
-            KG[1+c2, 0+c1] += Pxx*cosr*sinr*(9*(xi**2 - 1)**2 - 4)/(8*le)
-            KG[1+c2, 1+c1] += -Pxx*(9*cosr**2*(xi**2 - 1)**2 + 4*sinr**2)/(8*le)
-            KG[1+c2, 2+c1] += 3*Pxx*cosr*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1)/16
-            KG[1+c2, 0+c2] += Pxx*cosr*sinr*(4 - 9*(xi**2 - 1)**2)/(8*le)
-            KG[1+c2, 1+c2] += Pxx*(9*cosr**2*(xi**2 - 1)**2 + 4*sinr**2)/(8*le)
-            KG[1+c2, 2+c2] += -3*Pxx*cosr*(xi**2 - 1)*(3*xi**2 + 2*xi - 1)/16
-            KG[2+c2, 0+c1] += -3*Pxx*sinr*(xi**2 - 1)*(3*xi**2 + 2*xi - 1)/16
-            KG[2+c2, 1+c1] += 3*Pxx*cosr*(xi**2 - 1)*(3*xi**2 + 2*xi - 1)/16
-            KG[2+c2, 2+c1] += Pxx*le*(9*xi**4 - 10*xi**2 + 1)/32
-            KG[2+c2, 0+c2] += 3*Pxx*sinr*(xi**2 - 1)*(3*xi**2 + 2*xi - 1)/16
-            KG[2+c2, 1+c2] += -3*Pxx*cosr*(xi**2 - 1)*(3*xi**2 + 2*xi - 1)/16
-            KG[2+c2, 2+c2] += Pxx*le*(3*xi**2 + 2*xi - 1)**2/32
+            KG[0+c1, 0+c1] += wi*(20*E*cosr*le*(12*Izz*sinr*vxx*xi*(ux + 1) + cosr*le*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) + 3*sinr*(80*E*Izz*cosr*le*vxx*xi*(ux + 1) + 3*sinr*(5*E*le**2*(xi**2 - 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[0+c1, 1+c1] += wi*(20*E*le*sinr*(12*Izz*sinr*vxx*xi*(ux + 1) + cosr*le*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) - 3*cosr*(80*E*Izz*cosr*le*vxx*xi*(ux + 1) + 3*sinr*(5*E*le**2*(xi**2 - 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[0+c1, 2+c1] += -wi*(80*E*Izz*cosr*le*vxx*(ux + 1)*(3*xi - 1) - 3*sinr*(5*E*le**2*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) - xi*(3*xi - 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[0+c1, 0+c2] += -wi*(20*E*cosr*le*(12*Izz*sinr*vxx*xi*(ux + 1) + cosr*le*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) + 3*sinr*(80*E*Izz*cosr*le*vxx*xi*(ux + 1) + 3*sinr*(5*E*le**2*(xi**2 - 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[0+c1, 1+c2] += -wi*(20*E*le*sinr*(12*Izz*sinr*vxx*xi*(ux + 1) + cosr*le*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) - 3*cosr*(80*E*Izz*cosr*le*vxx*xi*(ux + 1) + 3*sinr*(5*E*le**2*(xi**2 - 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[0+c1, 2+c2] += -wi*(80*E*Izz*cosr*le*vxx*(ux + 1)*(3*xi + 1) + 3*sinr*(5*E*le**2*(xi**2 - 1)*(3*xi**2 + 2*xi - 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi*(3*xi + 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[1+c1, 0+c1] += -wi*(20*E*cosr*le*(12*Izz*cosr*vxx*xi*(ux + 1) - le*sinr*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) - 3*sinr*(80*E*Izz*le*sinr*vxx*xi*(ux + 1) - 3*cosr*(5*E*le**2*(xi**2 - 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[1+c1, 1+c1] += -wi*(20*E*le*sinr*(12*Izz*cosr*vxx*xi*(ux + 1) - le*sinr*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) + 3*cosr*(80*E*Izz*le*sinr*vxx*xi*(ux + 1) - 3*cosr*(5*E*le**2*(xi**2 - 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[1+c1, 2+c1] += -wi*(80*E*Izz*le*sinr*vxx*(ux + 1)*(3*xi - 1) + 3*cosr*(5*E*le**2*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) - xi*(3*xi - 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[1+c1, 0+c2] += wi*(20*E*cosr*le*(12*Izz*cosr*vxx*xi*(ux + 1) - le*sinr*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) - 3*sinr*(80*E*Izz*le*sinr*vxx*xi*(ux + 1) - 3*cosr*(5*E*le**2*(xi**2 - 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[1+c1, 1+c2] += wi*(20*E*le*sinr*(12*Izz*cosr*vxx*xi*(ux + 1) - le*sinr*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) + 3*cosr*(80*E*Izz*le*sinr*vxx*xi*(ux + 1) - 3*cosr*(5*E*le**2*(xi**2 - 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[1+c1, 2+c2] += -wi*(80*E*Izz*le*sinr*vxx*(ux + 1)*(3*xi + 1) - 3*cosr*(5*E*le**2*(xi**2 - 1)*(3*xi**2 + 2*xi - 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi*(3*xi + 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[2+c1, 0+c1] += -wi*(80*E*Izz*cosr*le*vxx*(ux + 1)*(3*xi - 1) - 3*sinr*(5*E*le**2*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) - xi*(3*xi - 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[2+c1, 1+c1] += -wi*(80*E*Izz*le*sinr*vxx*(ux + 1)*(3*xi - 1) + 3*cosr*(5*E*le**2*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) - xi*(3*xi - 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[2+c1, 2+c1] += wi*(5*E*le**2*(-3*xi**2 + 2*xi + 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + (3*xi - 1)**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))/(320*le)
+            KG[2+c1, 0+c2] += wi*(80*E*Izz*cosr*le*vxx*(ux + 1)*(3*xi - 1) - 3*sinr*(5*E*le**2*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) - xi*(3*xi - 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[2+c1, 1+c2] += wi*(80*E*Izz*le*sinr*vxx*(ux + 1)*(3*xi - 1) + 3*cosr*(5*E*le**2*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) - xi*(3*xi - 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[2+c1, 2+c2] += -wi*(5*E*le**2*(-3*xi**2 + 2*xi + 1)*(3*xi**2 + 2*xi - 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) - (3*xi - 1)*(3*xi + 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))/(320*le)
+            KG[0+c2, 0+c1] += -wi*(20*E*cosr*le*(12*Izz*sinr*vxx*xi*(ux + 1) + cosr*le*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) + 3*sinr*(80*E*Izz*cosr*le*vxx*xi*(ux + 1) + 3*sinr*(5*E*le**2*(xi**2 - 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[0+c2, 1+c1] += -wi*(20*E*le*sinr*(12*Izz*sinr*vxx*xi*(ux + 1) + cosr*le*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) - 3*cosr*(80*E*Izz*cosr*le*vxx*xi*(ux + 1) + 3*sinr*(5*E*le**2*(xi**2 - 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[0+c2, 2+c1] += wi*(80*E*Izz*cosr*le*vxx*(ux + 1)*(3*xi - 1) - 3*sinr*(5*E*le**2*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) - xi*(3*xi - 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[0+c2, 0+c2] += wi*(20*E*cosr*le*(12*Izz*sinr*vxx*xi*(ux + 1) + cosr*le*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) + 3*sinr*(80*E*Izz*cosr*le*vxx*xi*(ux + 1) + 3*sinr*(5*E*le**2*(xi**2 - 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[0+c2, 1+c2] += wi*(20*E*le*sinr*(12*Izz*sinr*vxx*xi*(ux + 1) + cosr*le*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) - 3*cosr*(80*E*Izz*cosr*le*vxx*xi*(ux + 1) + 3*sinr*(5*E*le**2*(xi**2 - 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[0+c2, 2+c2] += wi*(80*E*Izz*cosr*le*vxx*(ux + 1)*(3*xi + 1) + 3*sinr*(5*E*le**2*(xi**2 - 1)*(3*xi**2 + 2*xi - 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi*(3*xi + 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[1+c2, 0+c1] += wi*(20*E*cosr*le*(12*Izz*cosr*vxx*xi*(ux + 1) - le*sinr*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) - 3*sinr*(80*E*Izz*le*sinr*vxx*xi*(ux + 1) - 3*cosr*(5*E*le**2*(xi**2 - 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[1+c2, 1+c1] += wi*(20*E*le*sinr*(12*Izz*cosr*vxx*xi*(ux + 1) - le*sinr*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) + 3*cosr*(80*E*Izz*le*sinr*vxx*xi*(ux + 1) - 3*cosr*(5*E*le**2*(xi**2 - 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[1+c2, 2+c1] += wi*(80*E*Izz*le*sinr*vxx*(ux + 1)*(3*xi - 1) + 3*cosr*(5*E*le**2*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) - xi*(3*xi - 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[1+c2, 0+c2] += -wi*(20*E*cosr*le*(12*Izz*cosr*vxx*xi*(ux + 1) - le*sinr*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) - 3*sinr*(80*E*Izz*le*sinr*vxx*xi*(ux + 1) - 3*cosr*(5*E*le**2*(xi**2 - 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[1+c2, 1+c2] += -wi*(20*E*le*sinr*(12*Izz*cosr*vxx*xi*(ux + 1) - le*sinr*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2)) + 3*cosr*(80*E*Izz*le*sinr*vxx*xi*(ux + 1) - 3*cosr*(5*E*le**2*(xi**2 - 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))))/(80*le**3)
+            KG[1+c2, 2+c2] += wi*(80*E*Izz*le*sinr*vxx*(ux + 1)*(3*xi + 1) - 3*cosr*(5*E*le**2*(xi**2 - 1)*(3*xi**2 + 2*xi - 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi*(3*xi + 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[2+c2, 0+c1] += -wi*(80*E*Izz*cosr*le*vxx*(ux + 1)*(3*xi + 1) + 3*sinr*(5*E*le**2*(xi**2 - 1)*(3*xi**2 + 2*xi - 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi*(3*xi + 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[2+c2, 1+c1] += -wi*(80*E*Izz*le*sinr*vxx*(ux + 1)*(3*xi + 1) - 3*cosr*(5*E*le**2*(xi**2 - 1)*(3*xi**2 + 2*xi - 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi*(3*xi + 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[2+c2, 2+c1] += -wi*(5*E*le**2*(-3*xi**2 + 2*xi + 1)*(3*xi**2 + 2*xi - 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) - (3*xi - 1)*(3*xi + 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))/(320*le)
+            KG[2+c2, 0+c2] += wi*(80*E*Izz*cosr*le*vxx*(ux + 1)*(3*xi + 1) + 3*sinr*(5*E*le**2*(xi**2 - 1)*(3*xi**2 + 2*xi - 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi*(3*xi + 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[2+c2, 1+c2] += wi*(80*E*Izz*le*sinr*vxx*(ux + 1)*(3*xi + 1) - 3*cosr*(5*E*le**2*(xi**2 - 1)*(3*xi**2 + 2*xi - 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + xi*(3*xi + 1)*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2)))/(160*le**2)
+            KG[2+c2, 2+c2] += wi*(5*E*le**2*(3*xi**2 + 2*xi - 1)**2*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + (3*xi + 1)**2*(A*E**(h**4)*vxx**2 + 80*E**Izz*ux**2 + 160*E**Izz*ux + 80*E**Izz*vx**2))/(320*le)
 
 
-def update_KNL(beam, u, u0, nid_pos, ncoords, KNL):
+def update_KNL(beam, u, nid_pos, ncoords, KNL):
     """Update the nonlinear part of global constitutive stiffness KNL with beam element
 
     Properties
@@ -348,8 +382,6 @@ def update_KNL(beam, u, u0, nid_pos, ncoords, KNL):
         The beam element being added to KNL
     u: array-like
         Displacement state ``u`` in global coordinates.
-    u0: array-like
-        Imperfection state ``u0`` in global coordinates.
     nid_pos : dict
         Correspondence between node ids and their position in the global assembly
     ncoords : list
@@ -368,6 +400,8 @@ def update_KNL(beam, u, u0, nid_pos, ncoords, KNL):
     Izz2 = beam.Izz2
     A1 = beam.A1
     A2 = beam.A2
+    h1 = beam.h1
+    h2 = beam.h2
     le = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
     beam.le = le
     beam.thetarad = np.arctan2(y2 - y1, x2 - x1)
@@ -379,105 +413,132 @@ def update_KNL(beam, u, u0, nid_pos, ncoords, KNL):
     c2 = DOF*pos2
 
     ucon = np.concatenate((u[c1:c1+DOF], u[c2:c2+DOF]))
-    u0con = np.concatenate((u0[c1:c1+DOF], u0[c2:c2+DOF]))
+    #u0con = np.concatenate((u0[c1:c1+DOF], u0[c2:c2+DOF]))
 
     #NOTE 2-point Gauss-Legendre quadrature
     points = [-0.577350269189625764509148780501957455647601751270126876,
                0.577350269189625764509148780501957455647601751270126876]
     weights = [1., 1.]
 
+    # NOTE 4-point Gauss-Legendre quadrature
+    points = [-0.861136311594052575223946488892809505095725379629717638,
+              -0.339981043584856264802665759103244687200575869770914353,
+               0.339981043584856264802665759103244687200575869770914353,
+               0.861136311594052575223946488892809505095725379629717638]
+    weights = [0.34785484513745385737306394922199940723534869583389354,
+               0.65214515486254614262693605077800059276465130416610646,
+               0.65214515486254614262693605077800059276465130416610646,
+               0.34785484513745385737306394922199940723534869583389354]
+
     # NOTE omitting weight because it is equal to 1.
     if beam.interpolation == 'hermitian_cubic':
-        for i in range(2):
+        for i in range(4):
             xi = points[i]
+            wi = weights[i]
+
+            A = A1 + (A2 - A1)*(xi - (-1))/(1 - (-1))
+            h = h1 + (h2 - h1)*(xi - (-1))/(1 - (-1))
+            Izz = Izz1 + (Izz2 - Izz1)*(xi - (-1))/(1 - (-1))
+
             ux = -cosr*ucon[0]/le + cosr*ucon[3]/le - sinr*ucon[1]/le + sinr*ucon[4]/le
-            vx = 2*cosr*ucon[1]*(3*xi**2/4 - 3/4)/le + 2*cosr*ucon[4]*(3/4 - 3*xi**2/4)/le + ucon[2]*(3*xi**2/4 - xi/2 - 1/4) + ucon[5]*(3*xi**2/4 + xi/2 - 1/4) - 2*sinr*ucon[0]*(3*xi**2/4 - 3/4)/le - 2*sinr*ucon[3]*(3/4 - 3*xi**2/4)/le
-            v0x = 2*cosr*u0con[1]*(3*xi**2/4 - 3/4)/le + 2*cosr*u0con[4]*(3/4 - 3*xi**2/4)/le + u0con[2]*(3*xi**2/4 - xi/2 - 1/4) + u0con[5]*(3*xi**2/4 + xi/2 - 1/4) - 2*sinr*u0con[0]*(3*xi**2/4 - 3/4)/le - 2*sinr*u0con[3]*(3/4 - 3*xi**2/4)/le
-            KNL[0+c1, 0+c1] += E*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(2*cosr*(ux + 1) + 3*sinr*(v0x + vx)*(xi - 1)*(xi + 1)) + 3*sinr*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi - 1)*(xi + 1) + 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)**2*(xi + 1)**2 + 16*xi**2*(2*Izz1 - (Izz1 - Izz2)*(xi + 1)))))/(16*le**3)
-            KNL[0+c1, 1+c1] += E*(-3*cosr*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi - 1)*(xi + 1) + 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)**2*(xi + 1)**2 + 16*xi**2*(2*Izz1 - (Izz1 - Izz2)*(xi + 1)))) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(2*cosr*(ux + 1) + 3*sinr*(v0x + vx)*(xi - 1)*(xi + 1)))/(16*le**3)
-            KNL[0+c1, 2+c1] += E*(-2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi - 1)*(3*xi + 1) - 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)**2*(xi + 1)*(3*xi + 1) + 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi - 1)))/(32*le**2)
-            KNL[0+c1, 0+c2] += E*(-2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(2*cosr*(ux + 1) + 3*sinr*(v0x + vx)*(xi - 1)*(xi + 1)) + 3*sinr*(-2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi - 1)*(xi + 1) + 3*sinr*(le**2*(-2*A1 + (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)**2*(xi + 1)**2 + xi**2*(-32*Izz1 + 16*(Izz1 - Izz2)*(xi + 1)))))/(16*le**3)
-            KNL[0+c1, 1+c2] += E*(-3*cosr*(-2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi - 1)*(xi + 1) + 3*sinr*(le**2*(-2*A1 + (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)**2*(xi + 1)**2 + xi**2*(-32*Izz1 + 16*(Izz1 - Izz2)*(xi + 1)))) - 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(2*cosr*(ux + 1) + 3*sinr*(v0x + vx)*(xi - 1)*(xi + 1)))/(16*le**3)
-            KNL[0+c1, 2+c2] += E*(-2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi + 1)*(3*xi - 1) - 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)*(xi + 1)**2*(3*xi - 1) + 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi + 1)))/(32*le**2)
-            KNL[1+c1, 0+c1] += E*(-2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(3*cosr*(v0x + vx)*(xi - 1)*(xi + 1) - 2*sinr*(ux + 1)) + 3*sinr*(-3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)**2*(xi + 1)**2 + 16*xi**2*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi - 1)*(xi + 1)))/(16*le**3)
-            KNL[1+c1, 1+c1] += E*(-3*cosr*(-3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)**2*(xi + 1)**2 + 16*xi**2*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi - 1)*(xi + 1)) - 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(3*cosr*(v0x + vx)*(xi - 1)*(xi + 1) - 2*sinr*(ux + 1)))/(16*le**3)
-            KNL[1+c1, 2+c1] += E*(3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)**2*(xi + 1)*(3*xi + 1) + 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi - 1)) - 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi - 1)*(3*xi + 1))/(32*le**2)
-            KNL[1+c1, 0+c2] += E*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(3*cosr*(v0x + vx)*(xi - 1)*(xi + 1) - 2*sinr*(ux + 1)) - 3*sinr*(3*cosr*(le**2*(-2*A1 + (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)**2*(xi + 1)**2 + 16*xi**2*(-2*Izz1 + (Izz1 - Izz2)*(xi + 1))) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi - 1)*(xi + 1)))/(16*le**3)
-            KNL[1+c1, 1+c2] += E*(3*cosr*(3*cosr*(le**2*(-2*A1 + (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)**2*(xi + 1)**2 + 16*xi**2*(-2*Izz1 + (Izz1 - Izz2)*(xi + 1))) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi - 1)*(xi + 1)) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(3*cosr*(v0x + vx)*(xi - 1)*(xi + 1) - 2*sinr*(ux + 1)))/(16*le**3)
-            KNL[1+c1, 2+c2] += E*(3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)*(xi + 1)**2*(3*xi - 1) + 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi + 1)) - 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi + 1)*(3*xi - 1))/(32*le**2)
-            KNL[2+c1, 0+c1] += E*(-2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi - 1)*(3*xi + 1) - 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)**2*(xi + 1)*(3*xi + 1) + 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi - 1)))/(32*le**2)
-            KNL[2+c1, 1+c1] += E*(3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)**2*(xi + 1)*(3*xi + 1) + 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi - 1)) - 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi - 1)*(3*xi + 1))/(32*le**2)
-            KNL[2+c1, 2+c1] += E*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)**2*(3*xi + 1)**2 + 16*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi - 1)**2)/(64*le)
-            KNL[2+c1, 0+c2] += E*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi - 1)*(3*xi + 1) + 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)**2*(xi + 1)*(3*xi + 1) + 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi - 1)))/(32*le**2)
-            KNL[2+c1, 1+c2] += E*(-3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)**2*(xi + 1)*(3*xi + 1) + 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi - 1)) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi - 1)*(3*xi + 1))/(32*le**2)
-            KNL[2+c1, 2+c2] += E*(3*xi - 1)*(3*xi + 1)*(32*Izz1 + le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)*(xi + 1) - 16*(Izz1 - Izz2)*(xi + 1))/(64*le)
-            KNL[0+c2, 0+c1] += E*(-2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(2*cosr*(ux + 1) + 3*sinr*(v0x + vx)*(xi - 1)*(xi + 1)) - 3*sinr*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi - 1)*(xi + 1) + 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)**2*(xi + 1)**2 + 16*xi**2*(2*Izz1 - (Izz1 - Izz2)*(xi + 1)))))/(16*le**3)
-            KNL[0+c2, 1+c1] += E*(3*cosr*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi - 1)*(xi + 1) + 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)**2*(xi + 1)**2 + 16*xi**2*(2*Izz1 - (Izz1 - Izz2)*(xi + 1)))) - 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(2*cosr*(ux + 1) + 3*sinr*(v0x + vx)*(xi - 1)*(xi + 1)))/(16*le**3)
-            KNL[0+c2, 2+c1] += E*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi - 1)*(3*xi + 1) + 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)**2*(xi + 1)*(3*xi + 1) + 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi - 1)))/(32*le**2)
-            KNL[0+c2, 0+c2] += E*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(2*cosr*(ux + 1) + 3*sinr*(v0x + vx)*(xi - 1)*(xi + 1)) + 3*sinr*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi - 1)*(xi + 1) + 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)**2*(xi + 1)**2 + 16*xi**2*(2*Izz1 - (Izz1 - Izz2)*(xi + 1)))))/(16*le**3)
-            KNL[0+c2, 1+c2] += E*(-3*cosr*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi - 1)*(xi + 1) + 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)**2*(xi + 1)**2 + 16*xi**2*(2*Izz1 - (Izz1 - Izz2)*(xi + 1)))) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(2*cosr*(ux + 1) + 3*sinr*(v0x + vx)*(xi - 1)*(xi + 1)))/(16*le**3)
-            KNL[0+c2, 2+c2] += E*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi + 1)*(3*xi - 1) + 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)*(xi + 1)**2*(3*xi - 1) + 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi + 1)))/(32*le**2)
-            KNL[1+c2, 0+c1] += E*(-2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(-3*cosr*(v0x + vx)*(xi - 1)*(xi + 1) + 2*sinr*(ux + 1)) - 3*sinr*(-3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)**2*(xi + 1)**2 + 16*xi**2*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi - 1)*(xi + 1)))/(16*le**3)
-            KNL[1+c2, 1+c1] += E*(3*cosr*(-3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)**2*(xi + 1)**2 + 16*xi**2*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi - 1)*(xi + 1)) - 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(-3*cosr*(v0x + vx)*(xi - 1)*(xi + 1) + 2*sinr*(ux + 1)))/(16*le**3)
-            KNL[1+c2, 2+c1] += E*(-3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)**2*(xi + 1)*(3*xi + 1) + 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi - 1)) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi - 1)*(3*xi + 1))/(32*le**2)
-            KNL[1+c2, 0+c2] += E*(-2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(3*cosr*(v0x + vx)*(xi - 1)*(xi + 1) - 2*sinr*(ux + 1)) + 3*sinr*(-3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)**2*(xi + 1)**2 + 16*xi**2*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi - 1)*(xi + 1)))/(16*le**3)
-            KNL[1+c2, 1+c2] += E*(-3*cosr*(-3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)**2*(xi + 1)**2 + 16*xi**2*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi - 1)*(xi + 1)) - 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(3*cosr*(v0x + vx)*(xi - 1)*(xi + 1) - 2*sinr*(ux + 1)))/(16*le**3)
-            KNL[1+c2, 2+c2] += E*(-3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)*(xi + 1)**2*(3*xi - 1) + 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi + 1)) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi + 1)*(3*xi - 1))/(32*le**2)
-            KNL[2+c2, 0+c1] += E*(-2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi + 1)*(3*xi - 1) - 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)*(xi + 1)**2*(3*xi - 1) + 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi + 1)))/(32*le**2)
-            KNL[2+c2, 1+c1] += E*(3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)*(xi + 1)**2*(3*xi - 1) + 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi + 1)) - 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi + 1)*(3*xi - 1))/(32*le**2)
-            KNL[2+c2, 2+c1] += E*(3*xi - 1)*(3*xi + 1)*(32*Izz1 + le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)*(xi + 1) - 16*(Izz1 - Izz2)*(xi + 1))/(64*le)
-            KNL[2+c2, 0+c2] += E*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi + 1)*(3*xi - 1) + 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)*(xi + 1)**2*(3*xi - 1) + 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi + 1)))/(32*le**2)
-            KNL[2+c2, 1+c2] += E*(-3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi - 1)*(xi + 1)**2*(3*xi - 1) + 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi + 1)) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi + 1)*(3*xi - 1))/(32*le**2)
-            KNL[2+c2, 2+c2] += E*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi + 1)**2*(3*xi - 1)**2 + 16*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi + 1)**2)/(64*le)
+            vx = 2*cosr*ucon[1]*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le + 2*cosr*ucon[4]*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le - 2*sinr*ucon[0]*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le - 2*sinr*ucon[3]*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le + 2*ucon[2]*(le*(1 - xi)**2/8 + le*(xi + 1)*(2*xi - 2)/8)/le + 2*ucon[5]*(le*(xi - 1)*(2*xi + 2)/8 + le*(xi + 1)**2/8)/le
+            vxx = 6*cosr*ucon[1]*xi/le**2 - 6*cosr*ucon[4]*xi/le**2 + ucon[2]*(3*xi - 1)/le + ucon[5]*(3*xi + 1)/le - 6*sinr*ucon[0]*xi/le**2 + 6*sinr*ucon[3]*xi/le**2
+            #v0x = 2*cosr*u0con[1]*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le + 2*cosr*u0con[4]*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le - 2*sinr*u0con[0]*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le - 2*sinr*u0con[3]*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le + 2*u0con[2]*(le*(1 - xi)**2/8 + le*(xi + 1)*(2*xi - 2)/8)/le + 2*u0con[5]*(le*(xi - 1)*(2*xi + 2)/8 + le*(xi + 1)**2/8)/le
+
+            KNL[0+c1, 0+c1] += E*wi*(10*cosr*le*(2*cosr*le*(A*ux**2 + 2*A*ux + A + Izz*vxx**2) + 3*sinr*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi)) + 3*sinr*(10*cosr*le*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi) + 3*sinr*(5*A*le**2*vx**2*(xi - 1)**2*(xi + 1)**2 + 40*Izz*le*vx*vxx*xi*(xi - 1)*(xi + 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz))))/(40*le**3)
+            KNL[0+c1, 1+c1] += -E*wi*(3*cosr*(10*cosr*le*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi) + 3*sinr*(5*A*le**2*vx**2*(xi - 1)**2*(xi + 1)**2 + 40*Izz*le*vx*vxx*xi*(xi - 1)*(xi + 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz))) - 10*le*sinr*(2*cosr*le*(A*ux**2 + 2*A*ux + A + Izz*vxx**2) + 3*sinr*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi)))/(40*le**3)
+            KNL[0+c1, 2+c1] += -E*wi*(10*cosr*le*(A*le*ux*vx*(xi - 1)*(3*xi + 1) + A*le*vx*(xi - 1)*(3*xi + 1) + 8*Izz*ux*vxx*(3*xi - 1) + 8*Izz*vxx*(3*xi - 1)) + 3*sinr*(5*A*le**2*vx**2*(xi - 1)**2*(xi + 1)*(3*xi + 1) + 20*Izz*le*vx*vxx*(xi - 1)*(xi*(3*xi + 1) + (xi + 1)*(3*xi - 1)) + xi*(3*xi - 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)))/(80*le**2)
+            KNL[0+c1, 0+c2] += -E*wi*(10*cosr*le*(2*cosr*le*(A*ux**2 + 2*A*ux + A + Izz*vxx**2) + 3*sinr*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi)) + 3*sinr*(10*cosr*le*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi) + 3*sinr*(5*A*le**2*vx**2*(xi - 1)**2*(xi + 1)**2 + 40*Izz*le*vx*vxx*xi*(xi - 1)*(xi + 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz))))/(40*le**3)
+            KNL[0+c1, 1+c2] += E*wi*(3*cosr*(10*cosr*le*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi) + 3*sinr*(5*A*le**2*vx**2*(xi - 1)**2*(xi + 1)**2 + 40*Izz*le*vx*vxx*xi*(xi - 1)*(xi + 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz))) - 10*le*sinr*(2*cosr*le*(A*ux**2 + 2*A*ux + A + Izz*vxx**2) + 3*sinr*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi)))/(40*le**3)
+            KNL[0+c1, 2+c2] += -E*wi*(10*cosr*le*(A*le*ux*vx*(xi + 1)*(3*xi - 1) + A*le*vx*(xi + 1)*(3*xi - 1) + 8*Izz*ux*vxx*(3*xi + 1) + 8*Izz*vxx*(3*xi + 1)) + 3*sinr*(5*A*le**2*vx**2*(xi - 1)*(xi + 1)**2*(3*xi - 1) + 20*Izz*le*vx*vxx*(xi + 1)*(xi*(3*xi - 1) + (xi - 1)*(3*xi + 1)) + xi*(3*xi + 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)))/(80*le**2)
+            KNL[1+c1, 0+c1] += -E*wi*(10*cosr*le*(3*cosr*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi) - 2*le*sinr*(A*ux**2 + 2*A*ux + A + Izz*vxx**2)) + 3*sinr*(3*cosr*(5*A*le**2*vx**2*(xi - 1)**2*(xi + 1)**2 + 40*Izz*le*vx*vxx*xi*(xi - 1)*(xi + 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi)))/(40*le**3)
+            KNL[1+c1, 1+c1] += E*wi*(3*cosr*(3*cosr*(5*A*le**2*vx**2*(xi - 1)**2*(xi + 1)**2 + 40*Izz*le*vx*vxx*xi*(xi - 1)*(xi + 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi)) - 10*le*sinr*(3*cosr*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi) - 2*le*sinr*(A*ux**2 + 2*A*ux + A + Izz*vxx**2)))/(40*le**3)
+            KNL[1+c1, 2+c1] += E*wi*(3*cosr*(5*A*le**2*vx**2*(xi - 1)**2*(xi + 1)*(3*xi + 1) + 20*Izz*le*vx*vxx*(xi - 1)*(xi*(3*xi + 1) + (xi + 1)*(3*xi - 1)) + xi*(3*xi - 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(A*le*ux*vx*(xi - 1)*(3*xi + 1) + A*le*vx*(xi - 1)*(3*xi + 1) + 8*Izz*ux*vxx*(3*xi - 1) + 8*Izz*vxx*(3*xi - 1)))/(80*le**2)
+            KNL[1+c1, 0+c2] += E*wi*(10*cosr*le*(3*cosr*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi) - 2*le*sinr*(A*ux**2 + 2*A*ux + A + Izz*vxx**2)) + 3*sinr*(3*cosr*(5*A*le**2*vx**2*(xi - 1)**2*(xi + 1)**2 + 40*Izz*le*vx*vxx*xi*(xi - 1)*(xi + 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi)))/(40*le**3)
+            KNL[1+c1, 1+c2] += -E*wi*(3*cosr*(3*cosr*(5*A*le**2*vx**2*(xi - 1)**2*(xi + 1)**2 + 40*Izz*le*vx*vxx*xi*(xi - 1)*(xi + 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi)) - 10*le*sinr*(3*cosr*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi) - 2*le*sinr*(A*ux**2 + 2*A*ux + A + Izz*vxx**2)))/(40*le**3)
+            KNL[1+c1, 2+c2] += E*wi*(3*cosr*(5*A*le**2*vx**2*(xi - 1)*(xi + 1)**2*(3*xi - 1) + 20*Izz*le*vx*vxx*(xi + 1)*(xi*(3*xi - 1) + (xi - 1)*(3*xi + 1)) + xi*(3*xi + 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(A*le*ux*vx*(xi + 1)*(3*xi - 1) + A*le*vx*(xi + 1)*(3*xi - 1) + 8*Izz*ux*vxx*(3*xi + 1) + 8*Izz*vxx*(3*xi + 1)))/(80*le**2)
+            KNL[2+c1, 0+c1] += -E*wi*(10*cosr*le*(A*le*ux*vx*(xi - 1)*(3*xi + 1) + A*le*vx*(xi - 1)*(3*xi + 1) + 8*Izz*ux*vxx*(3*xi - 1) + 8*Izz*vxx*(3*xi - 1)) + 3*sinr*(5*A*le**2*vx**2*(xi - 1)**2*(xi + 1)*(3*xi + 1) + 20*Izz*le*vx*vxx*(xi - 1)*(xi*(3*xi + 1) + (xi + 1)*(3*xi - 1)) + xi*(3*xi - 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)))/(80*le**2)
+            KNL[2+c1, 1+c1] += E*wi*(3*cosr*(5*A*le**2*vx**2*(xi - 1)**2*(xi + 1)*(3*xi + 1) + 20*Izz*le*vx*vxx*(xi - 1)*(xi*(3*xi + 1) + (xi + 1)*(3*xi - 1)) + xi*(3*xi - 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(A*le*ux*vx*(xi - 1)*(3*xi + 1) + A*le*vx*(xi - 1)*(3*xi + 1) + 8*Izz*ux*vxx*(3*xi - 1) + 8*Izz*vxx*(3*xi - 1)))/(80*le**2)
+            KNL[2+c1, 2+c1] += E*wi*(A*h**4*vxx**2*(3*xi - 1)**2 + 5*A*le**2*vx**2*(xi - 1)**2*(3*xi + 1)**2 + 40*Izz*le*vx*vxx*(xi - 1)*(3*xi - 1)*(3*xi + 1) + 80*Izz*ux**2*(3*xi - 1)**2 + 160*Izz*ux*(3*xi - 1)**2 + 80*Izz*(3*xi - 1)**2)/(160*le)
+            KNL[2+c1, 0+c2] += E*wi*(10*cosr*le*(A*le*ux*vx*(xi - 1)*(3*xi + 1) + A*le*vx*(xi - 1)*(3*xi + 1) + 8*Izz*ux*vxx*(3*xi - 1) + 8*Izz*vxx*(3*xi - 1)) + 3*sinr*(5*A*le**2*vx**2*(xi - 1)**2*(xi + 1)*(3*xi + 1) + 20*Izz*le*vx*vxx*(xi - 1)*(xi*(3*xi + 1) + (xi + 1)*(3*xi - 1)) + xi*(3*xi - 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)))/(80*le**2)
+            KNL[2+c1, 1+c2] += -E*wi*(3*cosr*(5*A*le**2*vx**2*(xi - 1)**2*(xi + 1)*(3*xi + 1) + 20*Izz*le*vx*vxx*(xi - 1)*(xi*(3*xi + 1) + (xi + 1)*(3*xi - 1)) + xi*(3*xi - 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(A*le*ux*vx*(xi - 1)*(3*xi + 1) + A*le*vx*(xi - 1)*(3*xi + 1) + 8*Izz*ux*vxx*(3*xi - 1) + 8*Izz*vxx*(3*xi - 1)))/(80*le**2)
+            KNL[2+c1, 2+c2] += E*wi*(A*h**4*vxx**2*(3*xi - 1)*(3*xi + 1) + 5*A*le**2*vx**2*(xi - 1)*(xi + 1)*(3*xi - 1)*(3*xi + 1) + 20*Izz*le*vx*vxx*((xi - 1)*(3*xi + 1)**2 + (xi + 1)*(3*xi - 1)**2) + 80*Izz*ux**2*(3*xi - 1)*(3*xi + 1) + 160*Izz*ux*(3*xi - 1)*(3*xi + 1) + 80*Izz*(3*xi - 1)*(3*xi + 1))/(160*le)
+            KNL[0+c2, 0+c1] += -E*wi*(10*cosr*le*(2*cosr*le*(A*ux**2 + 2*A*ux + A + Izz*vxx**2) + 3*sinr*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi)) + 3*sinr*(10*cosr*le*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi) + 3*sinr*(5*A*le**2*vx**2*(xi - 1)**2*(xi + 1)**2 + 40*Izz*le*vx*vxx*xi*(xi - 1)*(xi + 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz))))/(40*le**3)
+            KNL[0+c2, 1+c1] += E*wi*(3*cosr*(10*cosr*le*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi) + 3*sinr*(5*A*le**2*vx**2*(xi - 1)**2*(xi + 1)**2 + 40*Izz*le*vx*vxx*xi*(xi - 1)*(xi + 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz))) - 10*le*sinr*(2*cosr*le*(A*ux**2 + 2*A*ux + A + Izz*vxx**2) + 3*sinr*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi)))/(40*le**3)
+            KNL[0+c2, 2+c1] += E*wi*(10*cosr*le*(A*le*ux*vx*(xi - 1)*(3*xi + 1) + A*le*vx*(xi - 1)*(3*xi + 1) + 8*Izz*ux*vxx*(3*xi - 1) + 8*Izz*vxx*(3*xi - 1)) + 3*sinr*(5*A*le**2*vx**2*(xi - 1)**2*(xi + 1)*(3*xi + 1) + 20*Izz*le*vx*vxx*(xi - 1)*(xi*(3*xi + 1) + (xi + 1)*(3*xi - 1)) + xi*(3*xi - 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)))/(80*le**2)
+            KNL[0+c2, 0+c2] += E*wi*(10*cosr*le*(2*cosr*le*(A*ux**2 + 2*A*ux + A + Izz*vxx**2) + 3*sinr*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi)) + 3*sinr*(10*cosr*le*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi) + 3*sinr*(5*A*le**2*vx**2*(xi - 1)**2*(xi + 1)**2 + 40*Izz*le*vx*vxx*xi*(xi - 1)*(xi + 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz))))/(40*le**3)
+            KNL[0+c2, 1+c2] += -E*wi*(3*cosr*(10*cosr*le*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi) + 3*sinr*(5*A*le**2*vx**2*(xi - 1)**2*(xi + 1)**2 + 40*Izz*le*vx*vxx*xi*(xi - 1)*(xi + 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz))) - 10*le*sinr*(2*cosr*le*(A*ux**2 + 2*A*ux + A + Izz*vxx**2) + 3*sinr*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi)))/(40*le**3)
+            KNL[0+c2, 2+c2] += E*wi*(10*cosr*le*(A*le*ux*vx*(xi + 1)*(3*xi - 1) + A*le*vx*(xi + 1)*(3*xi - 1) + 8*Izz*ux*vxx*(3*xi + 1) + 8*Izz*vxx*(3*xi + 1)) + 3*sinr*(5*A*le**2*vx**2*(xi - 1)*(xi + 1)**2*(3*xi - 1) + 20*Izz*le*vx*vxx*(xi + 1)*(xi*(3*xi - 1) + (xi - 1)*(3*xi + 1)) + xi*(3*xi + 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)))/(80*le**2)
+            KNL[1+c2, 0+c1] += E*wi*(10*cosr*le*(3*cosr*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi) - 2*le*sinr*(A*ux**2 + 2*A*ux + A + Izz*vxx**2)) + 3*sinr*(3*cosr*(5*A*le**2*vx**2*(xi - 1)**2*(xi + 1)**2 + 40*Izz*le*vx*vxx*xi*(xi - 1)*(xi + 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi)))/(40*le**3)
+            KNL[1+c2, 1+c1] += -E*wi*(3*cosr*(3*cosr*(5*A*le**2*vx**2*(xi - 1)**2*(xi + 1)**2 + 40*Izz*le*vx*vxx*xi*(xi - 1)*(xi + 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi)) - 10*le*sinr*(3*cosr*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi) - 2*le*sinr*(A*ux**2 + 2*A*ux + A + Izz*vxx**2)))/(40*le**3)
+            KNL[1+c2, 2+c1] += -E*wi*(3*cosr*(5*A*le**2*vx**2*(xi - 1)**2*(xi + 1)*(3*xi + 1) + 20*Izz*le*vx*vxx*(xi - 1)*(xi*(3*xi + 1) + (xi + 1)*(3*xi - 1)) + xi*(3*xi - 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(A*le*ux*vx*(xi - 1)*(3*xi + 1) + A*le*vx*(xi - 1)*(3*xi + 1) + 8*Izz*ux*vxx*(3*xi - 1) + 8*Izz*vxx*(3*xi - 1)))/(80*le**2)
+            KNL[1+c2, 0+c2] += -E*wi*(10*cosr*le*(3*cosr*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi) - 2*le*sinr*(A*ux**2 + 2*A*ux + A + Izz*vxx**2)) + 3*sinr*(3*cosr*(5*A*le**2*vx**2*(xi - 1)**2*(xi + 1)**2 + 40*Izz*le*vx*vxx*xi*(xi - 1)*(xi + 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi)))/(40*le**3)
+            KNL[1+c2, 1+c2] += E*wi*(3*cosr*(3*cosr*(5*A*le**2*vx**2*(xi - 1)**2*(xi + 1)**2 + 40*Izz*le*vx*vxx*xi*(xi - 1)*(xi + 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi)) - 10*le*sinr*(3*cosr*(ux + 1)*(A*le*vx*(xi - 1)*(xi + 1) + 8*Izz*vxx*xi) - 2*le*sinr*(A*ux**2 + 2*A*ux + A + Izz*vxx**2)))/(40*le**3)
+            KNL[1+c2, 2+c2] += -E*wi*(3*cosr*(5*A*le**2*vx**2*(xi - 1)*(xi + 1)**2*(3*xi - 1) + 20*Izz*le*vx*vxx*(xi + 1)*(xi*(3*xi - 1) + (xi - 1)*(3*xi + 1)) + xi*(3*xi + 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(A*le*ux*vx*(xi + 1)*(3*xi - 1) + A*le*vx*(xi + 1)*(3*xi - 1) + 8*Izz*ux*vxx*(3*xi + 1) + 8*Izz*vxx*(3*xi + 1)))/(80*le**2)
+            KNL[2+c2, 0+c1] += -E*wi*(10*cosr*le*(A*le*ux*vx*(xi + 1)*(3*xi - 1) + A*le*vx*(xi + 1)*(3*xi - 1) + 8*Izz*ux*vxx*(3*xi + 1) + 8*Izz*vxx*(3*xi + 1)) + 3*sinr*(5*A*le**2*vx**2*(xi - 1)*(xi + 1)**2*(3*xi - 1) + 20*Izz*le*vx*vxx*(xi + 1)*(xi*(3*xi - 1) + (xi - 1)*(3*xi + 1)) + xi*(3*xi + 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)))/(80*le**2)
+            KNL[2+c2, 1+c1] += E*wi*(3*cosr*(5*A*le**2*vx**2*(xi - 1)*(xi + 1)**2*(3*xi - 1) + 20*Izz*le*vx*vxx*(xi + 1)*(xi*(3*xi - 1) + (xi - 1)*(3*xi + 1)) + xi*(3*xi + 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(A*le*ux*vx*(xi + 1)*(3*xi - 1) + A*le*vx*(xi + 1)*(3*xi - 1) + 8*Izz*ux*vxx*(3*xi + 1) + 8*Izz*vxx*(3*xi + 1)))/(80*le**2)
+            KNL[2+c2, 2+c1] += E*wi*(A*h**4*vxx**2*(3*xi - 1)*(3*xi + 1) + 5*A*le**2*vx**2*(xi - 1)*(xi + 1)*(3*xi - 1)*(3*xi + 1) + 20*Izz*le*vx*vxx*((xi - 1)*(3*xi + 1)**2 + (xi + 1)*(3*xi - 1)**2) + 80*Izz*ux**2*(3*xi - 1)*(3*xi + 1) + 160*Izz*ux*(3*xi - 1)*(3*xi + 1) + 80*Izz*(3*xi - 1)*(3*xi + 1))/(160*le)
+            KNL[2+c2, 0+c2] += E*wi*(10*cosr*le*(A*le*ux*vx*(xi + 1)*(3*xi - 1) + A*le*vx*(xi + 1)*(3*xi - 1) + 8*Izz*ux*vxx*(3*xi + 1) + 8*Izz*vxx*(3*xi + 1)) + 3*sinr*(5*A*le**2*vx**2*(xi - 1)*(xi + 1)**2*(3*xi - 1) + 20*Izz*le*vx*vxx*(xi + 1)*(xi*(3*xi - 1) + (xi - 1)*(3*xi + 1)) + xi*(3*xi + 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)))/(80*le**2)
+            KNL[2+c2, 1+c2] += -E*wi*(3*cosr*(5*A*le**2*vx**2*(xi - 1)*(xi + 1)**2*(3*xi - 1) + 20*Izz*le*vx*vxx*(xi + 1)*(xi*(3*xi - 1) + (xi - 1)*(3*xi + 1)) + xi*(3*xi + 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(A*le*ux*vx*(xi + 1)*(3*xi - 1) + A*le*vx*(xi + 1)*(3*xi - 1) + 8*Izz*ux*vxx*(3*xi + 1) + 8*Izz*vxx*(3*xi + 1)))/(80*le**2)
+            KNL[2+c2, 2+c2] += E*wi*(A*h**4*vxx**2*(3*xi + 1)**2 + 5*A*le**2*vx**2*(xi + 1)**2*(3*xi - 1)**2 + 40*Izz*le*vx*vxx*(xi + 1)*(3*xi - 1)*(3*xi + 1) + 80*Izz*ux**2*(3*xi + 1)**2 + 160*Izz*ux*(3*xi + 1)**2 + 80*Izz*(3*xi + 1)**2)/(160*le)
+
 
     elif beam.interpolation == 'legendre':
-        for i in range(2):
+        for i in range(4):
             xi = points[i]
+            wi = weights[i]
+
+            A = A1 + (A2 - A1)*(xi - (-1))/(1 - (-1))
+            h = h1 + (h2 - h1)*(xi - (-1))/(1 - (-1))
+            Izz = Izz1 + (Izz2 - Izz1)*(xi - (-1))/(1 - (-1))
+
             ux = -cosr*ucon[0]/le + cosr*ucon[3]/le - sinr*ucon[1]/le + sinr*ucon[4]/le
             vx = 2*cosr*ucon[1]*(3*xi**2/4 - 3/4)/le + 2*cosr*ucon[4]*(3/4 - 3*xi**2/4)/le + ucon[2]*(3*xi**2/4 - xi/2 - 1/4) + ucon[5]*(3*xi**2/4 + xi/2 - 1/4) - 2*sinr*ucon[0]*(3*xi**2/4 - 3/4)/le - 2*sinr*ucon[3]*(3/4 - 3*xi**2/4)/le
-            v0x = 2*cosr*u0con[1]*(3*xi**2/4 - 3/4)/le + 2*cosr*u0con[4]*(3/4 - 3*xi**2/4)/le + u0con[2]*(3*xi**2/4 - xi/2 - 1/4) + u0con[5]*(3*xi**2/4 + xi/2 - 1/4) - 2*sinr*u0con[0]*(3*xi**2/4 - 3/4)/le - 2*sinr*u0con[3]*(3/4 - 3*xi**2/4)/le
-            KNL[0+c1, 0+c1] += E*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(2*cosr*(ux + 1) + 3*sinr*(v0x + vx)*(xi**2 - 1)) + 3*sinr*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi**2 - 1) + 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)**2 + 16*xi**2*(2*Izz1 - (Izz1 - Izz2)*(xi + 1)))))/(16*le**3)
-            KNL[0+c1, 1+c1] += E*(-3*cosr*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi**2 - 1) + 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)**2 + 16*xi**2*(2*Izz1 - (Izz1 - Izz2)*(xi + 1)))) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(2*cosr*(ux + 1) + 3*sinr*(v0x + vx)*(xi**2 - 1)))/(16*le**3)
-            KNL[0+c1, 2+c1] += E*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(-3*xi**2 + 2*xi + 1) + 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1) - 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi - 1)))/(32*le**2)
-            KNL[0+c1, 0+c2] += E*(-2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(2*cosr*(ux + 1) + 3*sinr*(v0x + vx)*(xi**2 - 1)) - 3*sinr*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi**2 - 1) - 3*sinr*(le**2*(-2*A1 + (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)**2 + xi**2*(-32*Izz1 + 16*(Izz1 - Izz2)*(xi + 1)))))/(16*le**3)
-            KNL[0+c1, 1+c2] += E*(3*cosr*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi**2 - 1) - 3*sinr*(le**2*(-2*A1 + (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)**2 + xi**2*(-32*Izz1 + 16*(Izz1 - Izz2)*(xi + 1)))) - 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(2*cosr*(ux + 1) + 3*sinr*(v0x + vx)*(xi**2 - 1)))/(16*le**3)
-            KNL[0+c1, 2+c2] += E*(-2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(3*xi**2 + 2*xi - 1) - 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)*(3*xi**2 + 2*xi - 1) + 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi + 1)))/(32*le**2)
-            KNL[1+c1, 0+c1] += E*(-2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(3*cosr*(v0x + vx)*(xi**2 - 1) - 2*sinr*(ux + 1)) + 3*sinr*(-3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)**2 + 16*xi**2*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi**2 - 1)))/(16*le**3)
-            KNL[1+c1, 1+c1] += E*(-3*cosr*(-3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)**2 + 16*xi**2*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi**2 - 1)) - 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(3*cosr*(v0x + vx)*(xi**2 - 1) - 2*sinr*(ux + 1)))/(16*le**3)
-            KNL[1+c1, 2+c1] += E*(-3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1) - 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi - 1)) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(-3*xi**2 + 2*xi + 1))/(32*le**2)
-            KNL[1+c1, 0+c2] += E*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(3*cosr*(v0x + vx)*(xi**2 - 1) - 2*sinr*(ux + 1)) - 3*sinr*(3*cosr*(le**2*(-2*A1 + (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)**2 + xi**2*(-32*Izz1 + 16*(Izz1 - Izz2)*(xi + 1))) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi**2 - 1)))/(16*le**3)
-            KNL[1+c1, 1+c2] += E*(3*cosr*(3*cosr*(le**2*(-2*A1 + (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)**2 + xi**2*(-32*Izz1 + 16*(Izz1 - Izz2)*(xi + 1))) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi**2 - 1)) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(3*cosr*(v0x + vx)*(xi**2 - 1) - 2*sinr*(ux + 1)))/(16*le**3)
-            KNL[1+c1, 2+c2] += E*(3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)*(3*xi**2 + 2*xi - 1) + 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi + 1)) - 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(3*xi**2 + 2*xi - 1))/(32*le**2)
-            KNL[2+c1, 0+c1] += E*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(-3*xi**2 + 2*xi + 1) + 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1) - 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi - 1)))/(32*le**2)
-            KNL[2+c1, 1+c1] += E*(-3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1) - 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi - 1)) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(-3*xi**2 + 2*xi + 1))/(32*le**2)
-            KNL[2+c1, 2+c1] += E*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(-3*xi**2 + 2*xi + 1)**2 + 16*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi - 1)**2)/(64*le)
-            KNL[2+c1, 0+c2] += E*(-2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(-3*xi**2 + 2*xi + 1) - 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1) - 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi - 1)))/(32*le**2)
-            KNL[2+c1, 1+c2] += E*(3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1) - 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi - 1)) - 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(-3*xi**2 + 2*xi + 1))/(32*le**2)
-            KNL[2+c1, 2+c2] += E*(-le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(-3*xi**2 + 2*xi + 1)*(3*xi**2 + 2*xi - 1) + 16*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi - 1)*(3*xi + 1))/(64*le)
-            KNL[0+c2, 0+c1] += E*(-2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(2*cosr*(ux + 1) + 3*sinr*(v0x + vx)*(xi**2 - 1)) - 3*sinr*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi**2 - 1) + 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)**2 + 16*xi**2*(2*Izz1 - (Izz1 - Izz2)*(xi + 1)))))/(16*le**3)
-            KNL[0+c2, 1+c1] += E*(3*cosr*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi**2 - 1) + 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)**2 + 16*xi**2*(2*Izz1 - (Izz1 - Izz2)*(xi + 1)))) - 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(2*cosr*(ux + 1) + 3*sinr*(v0x + vx)*(xi**2 - 1)))/(16*le**3)
-            KNL[0+c2, 2+c1] += E*(-2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(-3*xi**2 + 2*xi + 1) - 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1) - 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi - 1)))/(32*le**2)
-            KNL[0+c2, 0+c2] += E*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(2*cosr*(ux + 1) + 3*sinr*(v0x + vx)*(xi**2 - 1)) + 3*sinr*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi**2 - 1) + 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)**2 + 16*xi**2*(2*Izz1 - (Izz1 - Izz2)*(xi + 1)))))/(16*le**3)
-            KNL[0+c2, 1+c2] += E*(-3*cosr*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi**2 - 1) + 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)**2 + 16*xi**2*(2*Izz1 - (Izz1 - Izz2)*(xi + 1)))) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(2*cosr*(ux + 1) + 3*sinr*(v0x + vx)*(xi**2 - 1)))/(16*le**3)
-            KNL[0+c2, 2+c2] += E*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(3*xi**2 + 2*xi - 1) + 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)*(3*xi**2 + 2*xi - 1) + 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi + 1)))/(32*le**2)
-            KNL[1+c2, 0+c1] += E*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(3*cosr*(v0x + vx)*(xi**2 - 1) - 2*sinr*(ux + 1)) - 3*sinr*(-3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)**2 + 16*xi**2*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi**2 - 1)))/(16*le**3)
-            KNL[1+c2, 1+c1] += E*(3*cosr*(-3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)**2 + 16*xi**2*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi**2 - 1)) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(3*cosr*(v0x + vx)*(xi**2 - 1) - 2*sinr*(ux + 1)))/(16*le**3)
-            KNL[1+c2, 2+c1] += E*(3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1) - 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi - 1)) - 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(-3*xi**2 + 2*xi + 1))/(32*le**2)
-            KNL[1+c2, 0+c2] += E*(-2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(3*cosr*(v0x + vx)*(xi**2 - 1) - 2*sinr*(ux + 1)) + 3*sinr*(-3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)**2 + 16*xi**2*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi**2 - 1)))/(16*le**3)
-            KNL[1+c2, 1+c2] += E*(-3*cosr*(-3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)**2 + 16*xi**2*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(xi**2 - 1)) - 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(3*cosr*(v0x + vx)*(xi**2 - 1) - 2*sinr*(ux + 1)))/(16*le**3)
-            KNL[1+c2, 2+c2] += E*(-3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)*(3*xi**2 + 2*xi - 1) + 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi + 1)) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(3*xi**2 + 2*xi - 1))/(32*le**2)
-            KNL[2+c2, 0+c1] += E*(-2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(3*xi**2 + 2*xi - 1) - 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)*(3*xi**2 + 2*xi - 1) + 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi + 1)))/(32*le**2)
-            KNL[2+c2, 1+c1] += E*(3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)*(3*xi**2 + 2*xi - 1) + 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi + 1)) - 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(3*xi**2 + 2*xi - 1))/(32*le**2)
-            KNL[2+c2, 2+c1] += E*(-le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(-3*xi**2 + 2*xi + 1)*(3*xi**2 + 2*xi - 1) + 16*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi - 1)*(3*xi + 1))/(64*le)
-            KNL[2+c2, 0+c2] += E*(2*cosr*le**2*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(3*xi**2 + 2*xi - 1) + 3*sinr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)*(3*xi**2 + 2*xi - 1) + 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi + 1)))/(32*le**2)
-            KNL[2+c2, 1+c2] += E*(-3*cosr*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(xi**2 - 1)*(3*xi**2 + 2*xi - 1) + 16*xi*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi + 1)) + 2*le**2*sinr*(2*A1 - (A1 - A2)*(xi + 1))*(ux + 1)*(v0x + vx)*(3*xi**2 + 2*xi - 1))/(32*le**2)
-            KNL[2+c2, 2+c2] += E*(le**2*(2*A1 - (A1 - A2)*(xi + 1))*(v0x + vx)**2*(3*xi**2 + 2*xi - 1)**2 + 16*(2*Izz1 - (Izz1 - Izz2)*(xi + 1))*(3*xi + 1)**2)/(64*le)
+            vxx = 6*cosr*ucon[1]*xi/le**2 - 6*cosr*ucon[4]*xi/le**2 + ucon[2]*(3*xi - 1)/le + ucon[5]*(3*xi + 1)/le - 6*sinr*ucon[0]*xi/le**2 + 6*sinr*ucon[3]*xi/le**2
+            #v0x = 2*cosr*u0con[1]*(3*xi**2/4 - 3/4)/le + 2*cosr*u0con[4]*(3/4 - 3*xi**2/4)/le + u0con[2]*(3*xi**2/4 - xi/2 - 1/4) + u0con[5]*(3*xi**2/4 + xi/2 - 1/4) - 2*sinr*u0con[0]*(3*xi**2/4 - 3/4)/le - 2*sinr*u0con[3]*(3/4 - 3*xi**2/4)/le
+
+            KNL[0+c1, 0+c1] += E*wi*(10*cosr*le*(2*cosr*le*(A*ux**2 + 2*A*ux + A + Izz*vxx**2) + 3*sinr*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi)) + 3*sinr*(10*cosr*le*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi) + 3*sinr*(5*A*le**2*vx**2*(xi**2 - 1)**2 + 40*Izz*le*vx*vxx*xi*(xi**2 - 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz))))/(40*le**3)
+            KNL[0+c1, 1+c1] += -E*wi*(3*cosr*(10*cosr*le*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi) + 3*sinr*(5*A*le**2*vx**2*(xi**2 - 1)**2 + 40*Izz*le*vx*vxx*xi*(xi**2 - 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz))) - 10*le*sinr*(2*cosr*le*(A*ux**2 + 2*A*ux + A + Izz*vxx**2) + 3*sinr*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi)))/(40*le**3)
+            KNL[0+c1, 2+c1] += E*wi*(10*cosr*le*(ux + 1)*(A*le*vx*(-3*xi**2 + 2*xi + 1) - 8*Izz*vxx*(3*xi - 1)) + 3*sinr*(5*A*le**2*vx**2*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1) + 20*Izz*le*vx*vxx*(xi*(-3*xi**2 + 2*xi + 1) - (3*xi - 1)*(xi**2 - 1)) - xi*(3*xi - 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)))/(80*le**2)
+            KNL[0+c1, 0+c2] += -E*wi*(10*cosr*le*(2*cosr*le*(A*ux**2 + 2*A*ux + A + Izz*vxx**2) + 3*sinr*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi)) + 3*sinr*(10*cosr*le*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi) + 3*sinr*(5*A*le**2*vx**2*(xi**2 - 1)**2 + 40*Izz*le*vx*vxx*xi*(xi**2 - 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz))))/(40*le**3)
+            KNL[0+c1, 1+c2] += E*wi*(3*cosr*(10*cosr*le*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi) + 3*sinr*(5*A*le**2*vx**2*(xi**2 - 1)**2 + 40*Izz*le*vx*vxx*xi*(xi**2 - 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz))) - 10*le*sinr*(2*cosr*le*(A*ux**2 + 2*A*ux + A + Izz*vxx**2) + 3*sinr*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi)))/(40*le**3)
+            KNL[0+c1, 2+c2] += -E*wi*(10*cosr*le*(ux + 1)*(A*le*vx*(3*xi**2 + 2*xi - 1) + 8*Izz*vxx*(3*xi + 1)) + 3*sinr*(5*A*le**2*vx**2*(xi**2 - 1)*(3*xi**2 + 2*xi - 1) + 20*Izz*le*vx*vxx*(xi*(3*xi**2 + 2*xi - 1) + (3*xi + 1)*(xi**2 - 1)) + xi*(3*xi + 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)))/(80*le**2)
+            KNL[1+c1, 0+c1] += -E*wi*(10*cosr*le*(3*cosr*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi) - 2*le*sinr*(A*ux**2 + 2*A*ux + A + Izz*vxx**2)) + 3*sinr*(3*cosr*(5*A*le**2*vx**2*(xi**2 - 1)**2 + 40*Izz*le*vx*vxx*xi*(xi**2 - 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi)))/(40*le**3)
+            KNL[1+c1, 1+c1] += E*wi*(3*cosr*(3*cosr*(5*A*le**2*vx**2*(xi**2 - 1)**2 + 40*Izz*le*vx*vxx*xi*(xi**2 - 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi)) - 10*le*sinr*(3*cosr*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi) - 2*le*sinr*(A*ux**2 + 2*A*ux + A + Izz*vxx**2)))/(40*le**3)
+            KNL[1+c1, 2+c1] += -E*wi*(3*cosr*(5*A*le**2*vx**2*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1) + 20*Izz*le*vx*vxx*(xi*(-3*xi**2 + 2*xi + 1) - (3*xi - 1)*(xi**2 - 1)) - xi*(3*xi - 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(ux + 1)*(A*le*vx*(-3*xi**2 + 2*xi + 1) - 8*Izz*vxx*(3*xi - 1)))/(80*le**2)
+            KNL[1+c1, 0+c2] += E*wi*(10*cosr*le*(3*cosr*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi) - 2*le*sinr*(A*ux**2 + 2*A*ux + A + Izz*vxx**2)) + 3*sinr*(3*cosr*(5*A*le**2*vx**2*(xi**2 - 1)**2 + 40*Izz*le*vx*vxx*xi*(xi**2 - 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi)))/(40*le**3)
+            KNL[1+c1, 1+c2] += -E*wi*(3*cosr*(3*cosr*(5*A*le**2*vx**2*(xi**2 - 1)**2 + 40*Izz*le*vx*vxx*xi*(xi**2 - 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi)) - 10*le*sinr*(3*cosr*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi) - 2*le*sinr*(A*ux**2 + 2*A*ux + A + Izz*vxx**2)))/(40*le**3)
+            KNL[1+c1, 2+c2] += E*wi*(3*cosr*(5*A*le**2*vx**2*(xi**2 - 1)*(3*xi**2 + 2*xi - 1) + 20*Izz*le*vx*vxx*(xi*(3*xi**2 + 2*xi - 1) + (3*xi + 1)*(xi**2 - 1)) + xi*(3*xi + 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(ux + 1)*(A*le*vx*(3*xi**2 + 2*xi - 1) + 8*Izz*vxx*(3*xi + 1)))/(80*le**2)
+            KNL[2+c1, 0+c1] += E*wi*(10*cosr*le*(ux + 1)*(A*le*vx*(-3*xi**2 + 2*xi + 1) - 8*Izz*vxx*(3*xi - 1)) + 3*sinr*(5*A*le**2*vx**2*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1) + 20*Izz*le*vx*vxx*(xi*(-3*xi**2 + 2*xi + 1) - (3*xi - 1)*(xi**2 - 1)) - xi*(3*xi - 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)))/(80*le**2)
+            KNL[2+c1, 1+c1] += -E*wi*(3*cosr*(5*A*le**2*vx**2*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1) + 20*Izz*le*vx*vxx*(xi*(-3*xi**2 + 2*xi + 1) - (3*xi - 1)*(xi**2 - 1)) - xi*(3*xi - 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(ux + 1)*(A*le*vx*(-3*xi**2 + 2*xi + 1) - 8*Izz*vxx*(3*xi - 1)))/(80*le**2)
+            KNL[2+c1, 2+c1] += E*wi*(5*A*le**2*vx**2*(-3*xi**2 + 2*xi + 1)**2 - 40*Izz*le*vx*vxx*(3*xi - 1)*(-3*xi**2 + 2*xi + 1) + (3*xi - 1)**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz))/(160*le)
+            KNL[2+c1, 0+c2] += -E*wi*(10*cosr*le*(ux + 1)*(A*le*vx*(-3*xi**2 + 2*xi + 1) - 8*Izz*vxx*(3*xi - 1)) + 3*sinr*(5*A*le**2*vx**2*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1) + 20*Izz*le*vx*vxx*(xi*(-3*xi**2 + 2*xi + 1) - (3*xi - 1)*(xi**2 - 1)) - xi*(3*xi - 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)))/(80*le**2)
+            KNL[2+c1, 1+c2] += E*wi*(3*cosr*(5*A*le**2*vx**2*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1) + 20*Izz*le*vx*vxx*(xi*(-3*xi**2 + 2*xi + 1) - (3*xi - 1)*(xi**2 - 1)) - xi*(3*xi - 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(ux + 1)*(A*le*vx*(-3*xi**2 + 2*xi + 1) - 8*Izz*vxx*(3*xi - 1)))/(80*le**2)
+            KNL[2+c1, 2+c2] += E*wi*(-5*A*le**2*vx**2*(-3*xi**2 + 2*xi + 1)*(3*xi**2 + 2*xi - 1) + 20*Izz*le*vx*vxx*((3*xi - 1)*(3*xi**2 + 2*xi - 1) - (3*xi + 1)*(-3*xi**2 + 2*xi + 1)) + (3*xi - 1)*(3*xi + 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz))/(160*le)
+            KNL[0+c2, 0+c1] += -E*wi*(10*cosr*le*(2*cosr*le*(A*ux**2 + 2*A*ux + A + Izz*vxx**2) + 3*sinr*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi)) + 3*sinr*(10*cosr*le*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi) + 3*sinr*(5*A*le**2*vx**2*(xi**2 - 1)**2 + 40*Izz*le*vx*vxx*xi*(xi**2 - 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz))))/(40*le**3)
+            KNL[0+c2, 1+c1] += E*wi*(3*cosr*(10*cosr*le*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi) + 3*sinr*(5*A*le**2*vx**2*(xi**2 - 1)**2 + 40*Izz*le*vx*vxx*xi*(xi**2 - 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz))) - 10*le*sinr*(2*cosr*le*(A*ux**2 + 2*A*ux + A + Izz*vxx**2) + 3*sinr*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi)))/(40*le**3)
+            KNL[0+c2, 2+c1] += -E*wi*(10*cosr*le*(ux + 1)*(A*le*vx*(-3*xi**2 + 2*xi + 1) - 8*Izz*vxx*(3*xi - 1)) + 3*sinr*(5*A*le**2*vx**2*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1) + 20*Izz*le*vx*vxx*(xi*(-3*xi**2 + 2*xi + 1) - (3*xi - 1)*(xi**2 - 1)) - xi*(3*xi - 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)))/(80*le**2)
+            KNL[0+c2, 0+c2] += E*wi*(10*cosr*le*(2*cosr*le*(A*ux**2 + 2*A*ux + A + Izz*vxx**2) + 3*sinr*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi)) + 3*sinr*(10*cosr*le*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi) + 3*sinr*(5*A*le**2*vx**2*(xi**2 - 1)**2 + 40*Izz*le*vx*vxx*xi*(xi**2 - 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz))))/(40*le**3)
+            KNL[0+c2, 1+c2] += -E*wi*(3*cosr*(10*cosr*le*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi) + 3*sinr*(5*A*le**2*vx**2*(xi**2 - 1)**2 + 40*Izz*le*vx*vxx*xi*(xi**2 - 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz))) - 10*le*sinr*(2*cosr*le*(A*ux**2 + 2*A*ux + A + Izz*vxx**2) + 3*sinr*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi)))/(40*le**3)
+            KNL[0+c2, 2+c2] += E*wi*(10*cosr*le*(ux + 1)*(A*le*vx*(3*xi**2 + 2*xi - 1) + 8*Izz*vxx*(3*xi + 1)) + 3*sinr*(5*A*le**2*vx**2*(xi**2 - 1)*(3*xi**2 + 2*xi - 1) + 20*Izz*le*vx*vxx*(xi*(3*xi**2 + 2*xi - 1) + (3*xi + 1)*(xi**2 - 1)) + xi*(3*xi + 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)))/(80*le**2)
+            KNL[1+c2, 0+c1] += E*wi*(10*cosr*le*(3*cosr*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi) - 2*le*sinr*(A*ux**2 + 2*A*ux + A + Izz*vxx**2)) + 3*sinr*(3*cosr*(5*A*le**2*vx**2*(xi**2 - 1)**2 + 40*Izz*le*vx*vxx*xi*(xi**2 - 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi)))/(40*le**3)
+            KNL[1+c2, 1+c1] += -E*wi*(3*cosr*(3*cosr*(5*A*le**2*vx**2*(xi**2 - 1)**2 + 40*Izz*le*vx*vxx*xi*(xi**2 - 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi)) - 10*le*sinr*(3*cosr*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi) - 2*le*sinr*(A*ux**2 + 2*A*ux + A + Izz*vxx**2)))/(40*le**3)
+            KNL[1+c2, 2+c1] += E*wi*(3*cosr*(5*A*le**2*vx**2*(xi**2 - 1)*(-3*xi**2 + 2*xi + 1) + 20*Izz*le*vx*vxx*(xi*(-3*xi**2 + 2*xi + 1) - (3*xi - 1)*(xi**2 - 1)) - xi*(3*xi - 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(ux + 1)*(A*le*vx*(-3*xi**2 + 2*xi + 1) - 8*Izz*vxx*(3*xi - 1)))/(80*le**2)
+            KNL[1+c2, 0+c2] += -E*wi*(10*cosr*le*(3*cosr*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi) - 2*le*sinr*(A*ux**2 + 2*A*ux + A + Izz*vxx**2)) + 3*sinr*(3*cosr*(5*A*le**2*vx**2*(xi**2 - 1)**2 + 40*Izz*le*vx*vxx*xi*(xi**2 - 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi)))/(40*le**3)
+            KNL[1+c2, 1+c2] += E*wi*(3*cosr*(3*cosr*(5*A*le**2*vx**2*(xi**2 - 1)**2 + 40*Izz*le*vx*vxx*xi*(xi**2 - 1) + xi**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi)) - 10*le*sinr*(3*cosr*(ux + 1)*(A*le*vx*(xi**2 - 1) + 8*Izz*vxx*xi) - 2*le*sinr*(A*ux**2 + 2*A*ux + A + Izz*vxx**2)))/(40*le**3)
+            KNL[1+c2, 2+c2] += -E*wi*(3*cosr*(5*A*le**2*vx**2*(xi**2 - 1)*(3*xi**2 + 2*xi - 1) + 20*Izz*le*vx*vxx*(xi*(3*xi**2 + 2*xi - 1) + (3*xi + 1)*(xi**2 - 1)) + xi*(3*xi + 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(ux + 1)*(A*le*vx*(3*xi**2 + 2*xi - 1) + 8*Izz*vxx*(3*xi + 1)))/(80*le**2)
+            KNL[2+c2, 0+c1] += -E*wi*(10*cosr*le*(ux + 1)*(A*le*vx*(3*xi**2 + 2*xi - 1) + 8*Izz*vxx*(3*xi + 1)) + 3*sinr*(5*A*le**2*vx**2*(xi**2 - 1)*(3*xi**2 + 2*xi - 1) + 20*Izz*le*vx*vxx*(xi*(3*xi**2 + 2*xi - 1) + (3*xi + 1)*(xi**2 - 1)) + xi*(3*xi + 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)))/(80*le**2)
+            KNL[2+c2, 1+c1] += E*wi*(3*cosr*(5*A*le**2*vx**2*(xi**2 - 1)*(3*xi**2 + 2*xi - 1) + 20*Izz*le*vx*vxx*(xi*(3*xi**2 + 2*xi - 1) + (3*xi + 1)*(xi**2 - 1)) + xi*(3*xi + 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(ux + 1)*(A*le*vx*(3*xi**2 + 2*xi - 1) + 8*Izz*vxx*(3*xi + 1)))/(80*le**2)
+            KNL[2+c2, 2+c1] += E*wi*(-5*A*le**2*vx**2*(-3*xi**2 + 2*xi + 1)*(3*xi**2 + 2*xi - 1) + 20*Izz*le*vx*vxx*((3*xi - 1)*(3*xi**2 + 2*xi - 1) - (3*xi + 1)*(-3*xi**2 + 2*xi + 1)) + (3*xi - 1)*(3*xi + 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz))/(160*le)
+            KNL[2+c2, 0+c2] += E*wi*(10*cosr*le*(ux + 1)*(A*le*vx*(3*xi**2 + 2*xi - 1) + 8*Izz*vxx*(3*xi + 1)) + 3*sinr*(5*A*le**2*vx**2*(xi**2 - 1)*(3*xi**2 + 2*xi - 1) + 20*Izz*le*vx*vxx*(xi*(3*xi**2 + 2*xi - 1) + (3*xi + 1)*(xi**2 - 1)) + xi*(3*xi + 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)))/(80*le**2)
+            KNL[2+c2, 1+c2] += -E*wi*(3*cosr*(5*A*le**2*vx**2*(xi**2 - 1)*(3*xi**2 + 2*xi - 1) + 20*Izz*le*vx*vxx*(xi*(3*xi**2 + 2*xi - 1) + (3*xi + 1)*(xi**2 - 1)) + xi*(3*xi + 1)*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz)) - 10*le*sinr*(ux + 1)*(A*le*vx*(3*xi**2 + 2*xi - 1) + 8*Izz*vxx*(3*xi + 1)))/(80*le**2)
+            KNL[2+c2, 2+c2] += E*wi*(5*A*le**2*vx**2*(3*xi**2 + 2*xi - 1)**2 + 40*Izz*le*vx*vxx*(3*xi + 1)*(3*xi**2 + 2*xi - 1) + (3*xi + 1)**2*(A*h**4*vxx**2 + 80*Izz*ux**2 + 160*Izz*ux + 80*Izz))/(160*le)
 
     else:
         raise NotImplementedError('beam interpolation "%s" not implemented' % beam.interpolation)
 
 
-def calc_fint(beams, u, u0, nid_pos, ncoords):
+def calc_fint(beams, u, nid_pos, ncoords):
     """Calculate the internal force vector
 
     Properties
@@ -486,15 +547,13 @@ def calc_fint(beams, u, u0, nid_pos, ncoords):
         The beam elements to be added to the internal force vector
     u: array-like
         Displacement state ``u`` in global coordinates.
-    u0: array-like
-        Imperfection state ``u0`` in global coordinates.
     nid_pos : dict
         Correspondence between node ids and their position in the global assembly
     ncoords : list
         Nodal coordinates of the whole model
 
     """
-    fint = np.zeros_like(u0)
+    fint = np.zeros_like(u)
 
     for beam in beams:
         pos1 = nid_pos[beam.n1]
@@ -507,6 +566,8 @@ def calc_fint(beams, u, u0, nid_pos, ncoords):
         Izz2 = beam.Izz2
         A1 = beam.A1
         A2 = beam.A2
+        h1 = beam.h1
+        h2 = beam.h2
         le = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
         beam.le = le
         beam.thetarad = np.arctan2(y2 - y1, x2 - x1)
@@ -518,44 +579,65 @@ def calc_fint(beams, u, u0, nid_pos, ncoords):
         c2 = DOF*pos2
 
         ucon = np.concatenate((u[c1:c1+DOF], u[c2:c2+DOF]))
-        u0con = np.concatenate((u0[c1:c1+DOF], u0[c2:c2+DOF]))
+        #u0con = np.concatenate((u0[c1:c1+DOF], u0[c2:c2+DOF]))
 
         #NOTE 2-point Gauss-Legendre quadrature
         points = [-0.577350269189625764509148780501957455647601751270126876,
                    0.577350269189625764509148780501957455647601751270126876]
         weights = [1., 1.]
 
-        if beam.interpolation == 'hermitian_cubic':
-            for i in range(2):
-                xi = points[i]
-                ux = -cosr*ucon[0]/le + cosr*ucon[3]/le - sinr*ucon[1]/le + sinr*ucon[4]/le
-                vx = 2*cosr*ucon[1]*(3*xi**2/4 - 3/4)/le + 2*cosr*ucon[4]*(3/4 - 3*xi**2/4)/le + ucon[2]*(3*xi**2/4 - xi/2 - 1/4) + ucon[5]*(3*xi**2/4 + xi/2 - 1/4) - 2*sinr*ucon[0]*(3*xi**2/4 - 3/4)/le - 2*sinr*ucon[3]*(3/4 - 3*xi**2/4)/le
-                v0x = 2*cosr*u0con[1]*(3*xi**2/4 - 3/4)/le + 2*cosr*u0con[4]*(3/4 - 3*xi**2/4)/le + u0con[2]*(3*xi**2/4 - xi/2 - 1/4) + u0con[5]*(3*xi**2/4 + xi/2 - 1/4) - 2*sinr*u0con[0]*(3*xi**2/4 - 3/4)/le - 2*sinr*u0con[3]*(3/4 - 3*xi**2/4)/le
-                Pxx = E*ucon[2]*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(le*(1 - xi)**2/8 + le*(xi + 1)*(2*xi - 2)/8)/le + vx*(le*(1 - xi)**2/8 + le*(xi + 1)*(2*xi - 2)/8)/le) + E*ucon[5]*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(le*(xi - 1)*(2*xi + 2)/8 + le*(xi + 1)**2/8)/le + vx*(le*(xi - 1)*(2*xi + 2)/8 + le*(xi + 1)**2/8)/le) + ucon[0]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(-ux/(2*le) - 1/le) - E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le + vx*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le)) + ucon[1]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le + vx*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le) + E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(-ux/(2*le) - 1/le)) + ucon[3]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(ux/(2*le) + 1/le) - E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le + vx*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le)) + ucon[4]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le + vx*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le) + E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(ux/(2*le) + 1/le))
-                Mxx = -6*E*cosr*ucon[1]*xi*(Izz1 + (-Izz1 + Izz2)*(xi + 1)/2)/le**2 + 6*E*cosr*ucon[4]*xi*(Izz1 + (-Izz1 + Izz2)*(xi + 1)/2)/le**2 + 6*E*sinr*ucon[0]*xi*(Izz1 + (-Izz1 + Izz2)*(xi + 1)/2)/le**2 - 6*E*sinr*ucon[3]*xi*(Izz1 + (-Izz1 + Izz2)*(xi + 1)/2)/le**2 - 4*E*ucon[2]*(Izz1 + (-Izz1 + Izz2)*(xi + 1)/2)*(le*(xi + 1)/4 + le*(2*xi - 2)/4)/le**2 - 4*E*ucon[5]*(Izz1 + (-Izz1 + Izz2)*(xi + 1)/2)*(le*(xi - 1)/4 + le*(2*xi + 2)/4)/le**2
+        # NOTE 4-point Gauss-Legendre quadrature
+        points = [-0.861136311594052575223946488892809505095725379629717638,
+                  -0.339981043584856264802665759103244687200575869770914353,
+                   0.339981043584856264802665759103244687200575869770914353,
+                   0.861136311594052575223946488892809505095725379629717638]
+        weights = [0.34785484513745385737306394922199940723534869583389354,
+                   0.65214515486254614262693605077800059276465130416610646,
+                   0.65214515486254614262693605077800059276465130416610646,
+                   0.34785484513745385737306394922199940723534869583389354]
 
-                fint[0 + c1] += Pxx*cosr*le*(-ux/le - 1/le)/2 - sinr*(-3*Mxx*xi/le + Pxx*le*(2*v0x*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le + 2*vx*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le)/2)
-                fint[1 + c1] += Pxx*le*sinr*(-ux/le - 1/le)/2 + cosr*(-3*Mxx*xi/le + Pxx*le*(2*v0x*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le + 2*vx*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le)/2)
-                fint[2 + c1] += -2*Mxx*(le*(xi + 1)/4 + le*(2*xi - 2)/4)/le + Pxx*le*(2*v0x*(le*(1 - xi)**2/8 + le*(xi + 1)*(2*xi - 2)/8)/le + 2*vx*(le*(1 - xi)**2/8 + le*(xi + 1)*(2*xi - 2)/8)/le)/2
-                fint[0 + c2] += Pxx*cosr*le*(ux/le + 1/le)/2 - sinr*(3*Mxx*xi/le + Pxx*le*(2*v0x*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le + 2*vx*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le)/2)
-                fint[1 + c2] += Pxx*le*sinr*(ux/le + 1/le)/2 + cosr*(3*Mxx*xi/le + Pxx*le*(2*v0x*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le + 2*vx*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le)/2)
-                fint[2 + c2] += -2*Mxx*(le*(xi - 1)/4 + le*(2*xi + 2)/4)/le + Pxx*le*(2*v0x*(le*(xi - 1)*(2*xi + 2)/8 + le*(xi + 1)**2/8)/le + 2*vx*(le*(xi - 1)*(2*xi + 2)/8 + le*(xi + 1)**2/8)/le)/2
+
+        if beam.interpolation == 'hermitian_cubic':
+            for i in range(4):
+                xi = points[i]
+                wi = weights[i]
+
+                A = A1 + (A2 - A1)*(xi - (-1))/(1 - (-1))
+                h = h1 + (h2 - h1)*(xi - (-1))/(1 - (-1))
+                Izz = Izz1 + (Izz2 - Izz1)*(xi - (-1))/(1 - (-1))
+
+                ux = -cosr*ucon[0]/le + cosr*ucon[3]/le - sinr*ucon[1]/le + sinr*ucon[4]/le
+                vx = 2*cosr*ucon[1]*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le + 2*cosr*ucon[4]*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le - 2*sinr*ucon[0]*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le - 2*sinr*ucon[3]*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le + 2*ucon[2]*(le*(1 - xi)**2/8 + le*(xi + 1)*(2*xi - 2)/8)/le + 2*ucon[5]*(le*(xi - 1)*(2*xi + 2)/8 + le*(xi + 1)**2/8)/le
+                vxx = 6*cosr*ucon[1]*xi/le**2 - 6*cosr*ucon[4]*xi/le**2 + ucon[2]*(3*xi - 1)/le + ucon[5]*(3*xi + 1)/le - 6*sinr*ucon[0]*xi/le**2 + 6*sinr*ucon[3]*xi/le**2
+                #v0x = 2*cosr*u0con[1]*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le + 2*cosr*u0con[4]*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le - 2*sinr*u0con[0]*((1 - xi)**2/4 + (xi + 2)*(2*xi - 2)/4)/le - 2*sinr*u0con[3]*((2 - xi)*(2*xi + 2)/4 - (xi + 1)**2/4)/le + 2*u0con[2]*(le*(1 - xi)**2/8 + le*(xi + 1)*(2*xi - 2)/8)/le + 2*u0con[5]*(le*(xi - 1)*(2*xi + 2)/8 + le*(xi + 1)**2/8)/le
+
+                fint[0 + c1] += E*wi*(-40*cosr*le*(A*ux**3 + 3*A*ux**2 + A*ux*vx**2 + 2*A*ux + A*vx**2 + 3*Izz*ux*vxx**2 + 3*Izz*vxx**2) - 3*sinr*(20*le*vx*(xi - 1)*(xi + 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + vxx*xi*(A*h**4*vxx**2 + 240*Izz*ux**2 + 480*Izz*ux + 80*Izz*vx**2 + 160*Izz)))/(160*le)
+                fint[1 + c1] += E*wi*(3*cosr*(20*le*vx*(xi - 1)*(xi + 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + vxx*xi*(A*h**4*vxx**2 + 240*Izz*ux**2 + 480*Izz*ux + 80*Izz*vx**2 + 160*Izz)) - 40*le*sinr*(A*ux**3 + 3*A*ux**2 + A*ux*vx**2 + 2*A*ux + A*vx**2 + 3*Izz*ux*vxx**2 + 3*Izz*vxx**2))/(160*le)
+                fint[2 + c1] += E*wi*(A*h**4*vxx**3*(3*xi - 1) + 20*A*le*ux**2*vx*(xi - 1)*(3*xi + 1) + 40*A*le*ux*vx*(xi - 1)*(3*xi + 1) + 20*A*le*vx**3*(xi - 1)*(3*xi + 1) + 20*Izz*le*vx*vxx**2*(xi - 1)*(3*xi + 1) + 240*Izz*ux**2*vxx*(3*xi - 1) + 480*Izz*ux*vxx*(3*xi - 1) + 80*Izz*vx**2*vxx*(3*xi - 1) + 160*Izz*vxx*(3*xi - 1))/320
+                fint[0 + c2] += E*wi*(40*cosr*le*(A*ux**3 + 3*A*ux**2 + A*ux*vx**2 + 2*A*ux + A*vx**2 + 3*Izz*ux*vxx**2 + 3*Izz*vxx**2) + 3*sinr*(20*le*vx*(xi - 1)*(xi + 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + vxx*xi*(A*h**4*vxx**2 + 240*Izz*ux**2 + 480*Izz*ux + 80*Izz*vx**2 + 160*Izz)))/(160*le)
+                fint[1 + c2] += E*wi*(-3*cosr*(20*le*vx*(xi - 1)*(xi + 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + vxx*xi*(A*h**4*vxx**2 + 240*Izz*ux**2 + 480*Izz*ux + 80*Izz*vx**2 + 160*Izz)) + 40*le*sinr*(A*ux**3 + 3*A*ux**2 + A*ux*vx**2 + 2*A*ux + A*vx**2 + 3*Izz*ux*vxx**2 + 3*Izz*vxx**2))/(160*le)
+                fint[2 + c2] += E*wi*(A*h**4*vxx**3*(3*xi + 1) + 20*A*le*ux**2*vx*(xi + 1)*(3*xi - 1) + 40*A*le*ux*vx*(xi + 1)*(3*xi - 1) + 20*A*le*vx**3*(xi + 1)*(3*xi - 1) + 20*Izz*le*vx*vxx**2*(xi + 1)*(3*xi - 1) + 240*Izz*ux**2*vxx*(3*xi + 1) + 480*Izz*ux*vxx*(3*xi + 1) + 80*Izz*vx**2*vxx*(3*xi + 1) + 160*Izz*vxx*(3*xi + 1))/320
 
         elif beam.interpolation == 'legendre':
-            for i in range(2):
+            for i in range(4):
                 xi = points[i]
+                wi = weights[i]
+
+                A = A1 + (A2 - A1)*(xi - (-1))/(1 - (-1))
+                h = h1 + (h2 - h1)*(xi - (-1))/(1 - (-1))
+                Izz = Izz1 + (Izz2 - Izz1)*(xi - (-1))/(1 - (-1))
+
                 ux = -cosr*ucon[0]/le + cosr*ucon[3]/le - sinr*ucon[1]/le + sinr*ucon[4]/le
                 vx = 2*cosr*ucon[1]*(3*xi**2/4 - 3/4)/le + 2*cosr*ucon[4]*(3/4 - 3*xi**2/4)/le + ucon[2]*(3*xi**2/4 - xi/2 - 1/4) + ucon[5]*(3*xi**2/4 + xi/2 - 1/4) - 2*sinr*ucon[0]*(3*xi**2/4 - 3/4)/le - 2*sinr*ucon[3]*(3/4 - 3*xi**2/4)/le
-                v0x = 2*cosr*u0con[1]*(3*xi**2/4 - 3/4)/le + 2*cosr*u0con[4]*(3/4 - 3*xi**2/4)/le + u0con[2]*(3*xi**2/4 - xi/2 - 1/4) + u0con[5]*(3*xi**2/4 + xi/2 - 1/4) - 2*sinr*u0con[0]*(3*xi**2/4 - 3/4)/le - 2*sinr*u0con[3]*(3/4 - 3*xi**2/4)/le
-                Pxx = E*ucon[2]*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(3*xi**2/8 - xi/4 - 1/8) + vx*(3*xi**2/8 - xi/4 - 1/8)) + E*ucon[5]*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(3*xi**2/8 + xi/4 - 1/8) + vx*(3*xi**2/8 + xi/4 - 1/8)) + ucon[0]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(-ux/(2*le) - 1/le) - E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(3*xi**2/4 - 3/4)/le + vx*(3*xi**2/4 - 3/4)/le)) + ucon[1]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(3*xi**2/4 - 3/4)/le + vx*(3*xi**2/4 - 3/4)/le) + E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(-ux/(2*le) - 1/le)) + ucon[3]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(ux/(2*le) + 1/le) - E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(3/4 - 3*xi**2/4)/le + vx*(3/4 - 3*xi**2/4)/le)) + ucon[4]*(E*cosr*(A1 + (-A1 + A2)*(xi + 1)/2)*(2*v0x*(3/4 - 3*xi**2/4)/le + vx*(3/4 - 3*xi**2/4)/le) + E*sinr*(A1 + (-A1 + A2)*(xi + 1)/2)*(ux/(2*le) + 1/le))
-                Mxx = -6*E*cosr*ucon[1]*xi*(Izz1 + (-Izz1 + Izz2)*(xi + 1)/2)/le**2 + 6*E*cosr*ucon[4]*xi*(Izz1 + (-Izz1 + Izz2)*(xi + 1)/2)/le**2 + 2*E*ucon[2]*(1/2 - 3*xi/2)*(Izz1 + (-Izz1 + Izz2)*(xi + 1)/2)/le + 2*E*ucon[5]*(Izz1 + (-Izz1 + Izz2)*(xi + 1)/2)*(-3*xi/2 - 1/2)/le + 6*E*sinr*ucon[0]*xi*(Izz1 + (-Izz1 + Izz2)*(xi + 1)/2)/le**2 - 6*E*sinr*ucon[3]*xi*(Izz1 + (-Izz1 + Izz2)*(xi + 1)/2)/le**2
+                vxx = 6*cosr*ucon[1]*xi/le**2 - 6*cosr*ucon[4]*xi/le**2 + ucon[2]*(3*xi - 1)/le + ucon[5]*(3*xi + 1)/le - 6*sinr*ucon[0]*xi/le**2 + 6*sinr*ucon[3]*xi/le**2
+                #v0x = 2*cosr*u0con[1]*(3*xi**2/4 - 3/4)/le + 2*cosr*u0con[4]*(3/4 - 3*xi**2/4)/le + u0con[2]*(3*xi**2/4 - xi/2 - 1/4) + u0con[5]*(3*xi**2/4 + xi/2 - 1/4) - 2*sinr*u0con[0]*(3*xi**2/4 - 3/4)/le - 2*sinr*u0con[3]*(3/4 - 3*xi**2/4)/le
 
-                fint[0 + c1] += Pxx*cosr*le*(-ux/le - 1/le)/2 - sinr*(-3*Mxx*xi/le + Pxx*le*(2*v0x*(3*xi**2/4 - 3/4)/le + 2*vx*(3*xi**2/4 - 3/4)/le)/2)
-                fint[1 + c1] += Pxx*le*sinr*(-ux/le - 1/le)/2 + cosr*(-3*Mxx*xi/le + Pxx*le*(2*v0x*(3*xi**2/4 - 3/4)/le + 2*vx*(3*xi**2/4 - 3/4)/le)/2)
-                fint[2 + c1] += Mxx*(1/2 - 3*xi/2) + Pxx*le*(2*v0x*(3*xi**2/8 - xi/4 - 1/8) + 2*vx*(3*xi**2/8 - xi/4 - 1/8))/2
-                fint[0 + c2] += Pxx*cosr*le*(ux/le + 1/le)/2 - sinr*(3*Mxx*xi/le + Pxx*le*(2*v0x*(3/4 - 3*xi**2/4)/le + 2*vx*(3/4 - 3*xi**2/4)/le)/2)
-                fint[1 + c2] += Pxx*le*sinr*(ux/le + 1/le)/2 + cosr*(3*Mxx*xi/le + Pxx*le*(2*v0x*(3/4 - 3*xi**2/4)/le + 2*vx*(3/4 - 3*xi**2/4)/le)/2)
-                fint[2 + c2] += Mxx*(-3*xi/2 - 1/2) + Pxx*le*(2*v0x*(3*xi**2/8 + xi/4 - 1/8) + 2*vx*(3*xi**2/8 + xi/4 - 1/8))/2
+                fint[0 + c1] += E*wi*(-40*cosr*le*(A*ux**3 + 3*A*ux**2 + A*ux*vx**2 + 2*A*ux + A*vx**2 + 3*Izz*ux*vxx**2 + 3*Izz*vxx**2) - 3*sinr*(20*le*vx*(xi**2 - 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + vxx*xi*(A*h**4*vxx**2 + 240*Izz*ux**2 + 480*Izz*ux + 80*Izz*vx**2 + 160*Izz)))/(160*le)
+                fint[1 + c1] += E*wi*(3*cosr*(20*le*vx*(xi**2 - 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + vxx*xi*(A*h**4*vxx**2 + 240*Izz*ux**2 + 480*Izz*ux + 80*Izz*vx**2 + 160*Izz)) - 40*le*sinr*(A*ux**3 + 3*A*ux**2 + A*ux*vx**2 + 2*A*ux + A*vx**2 + 3*Izz*ux*vxx**2 + 3*Izz*vxx**2))/(160*le)
+                fint[2 + c1] += E*wi*(A*h**4*vxx**3*(3*xi - 1) + 240*Izz*ux**2*vxx*(3*xi - 1) + 480*Izz*ux*vxx*(3*xi - 1) + 80*Izz*vx**2*vxx*(3*xi - 1) + 160*Izz*vxx*(3*xi - 1) - 20*le*vx*(-3*xi**2 + 2*xi + 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2))/320
+                fint[0 + c2] += E*wi*(40*cosr*le*(A*ux**3 + 3*A*ux**2 + A*ux*vx**2 + 2*A*ux + A*vx**2 + 3*Izz*ux*vxx**2 + 3*Izz*vxx**2) + 3*sinr*(20*le*vx*(xi**2 - 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + vxx*xi*(A*h**4*vxx**2 + 240*Izz*ux**2 + 480*Izz*ux + 80*Izz*vx**2 + 160*Izz)))/(160*le)
+                fint[1 + c2] += E*wi*(-3*cosr*(20*le*vx*(xi**2 - 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2) + vxx*xi*(A*h**4*vxx**2 + 240*Izz*ux**2 + 480*Izz*ux + 80*Izz*vx**2 + 160*Izz)) + 40*le*sinr*(A*ux**3 + 3*A*ux**2 + A*ux*vx**2 + 2*A*ux + A*vx**2 + 3*Izz*ux*vxx**2 + 3*Izz*vxx**2))/(160*le)
+                fint[2 + c2] += E*wi*(A*h**4*vxx**3*(3*xi + 1) + 240*Izz*ux**2*vxx*(3*xi + 1) + 480*Izz*ux*vxx*(3*xi + 1) + 80*Izz*vx**2*vxx*(3*xi + 1) + 160*Izz*vxx*(3*xi + 1) + 20*le*vx*(3*xi**2 + 2*xi - 1)*(A*ux**2 + 2*A*ux + A*vx**2 + Izz*vxx**2))/320
 
     return fint
 

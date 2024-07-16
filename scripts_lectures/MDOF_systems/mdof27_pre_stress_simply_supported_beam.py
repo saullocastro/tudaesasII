@@ -104,7 +104,7 @@ def calc_KT(u):
     KNL = np.zeros((N, N))
     KG = np.zeros((N, N))
     for beam in beams:
-        update_KNL(beam, u, 0*u, nid_pos, ncoords, KNL)
+        update_KNL(beam, u, nid_pos, ncoords, KNL)
         update_KG(beam, u, nid_pos, ncoords, KG)
     assert np.allclose(K + KNL + KG, (K + KNL + KG).T)
     return KNL + KG
@@ -121,7 +121,7 @@ for Ppreload in Ppreload_list:
             uu = np.linalg.solve(Kuu, fext[bu])
             u[bu] = uu
         for i in range(100):
-            fint = calc_fint(beams, u, 0*u, nid_pos, ncoords)
+            fint = calc_fint(beams, u, nid_pos, ncoords)
             R = fint - fext
             check = np.abs(R[bu]).max()
             if check < 0.01:

@@ -56,9 +56,10 @@ def test_NL_pre_stress_simply_supported_beam():
             beam.rho = rho
             beam.A1, beam.A2 = A1, A2
             beam.Izz1, beam.Izz2 = Izz1, Izz2
+            beam.h1 = beam.h2 = h
             beam.interpolation = interpolation
             update_K(beam, nid_pos, ncoords, K)
-            update_KG(beam, 1., None, nid_pos, ncoords, KGunit)
+            update_KG(beam, 1., nid_pos, ncoords, KGunit)
             update_M(beam, nid_pos, M)
             beams.append(beam)
 
@@ -89,15 +90,18 @@ def test_NL_pre_stress_simply_supported_beam():
         num_modes = 3
         linbuck_eigvals, _ = eigh(a=Kuu, b=KGuu, subset_by_index=[0, num_modes-1])
         assert np.isclose(linbuck_eigvals[0], 115947.38111518, rtol=0.01)
-        Ppreload = -0.9*linbuck_eigvals[0]
-        print('*linear buckling eigenvalues', linbuck_eigvals)
+        Ppreload = -0.999*linbuck_eigvals[0]
+        print('linear buckling eigenvalues', linbuck_eigvals)
 
-        def calc_KT(u):
+        displ = np.zeros_like(ncoords)
+        displ[:, 1] = u0[1::DOF]
+
+        def calc_KT(u, ncoords):
             KNL = np.zeros((N, N))
             KG = np.zeros((N, N))
             for beam in beams:
-                update_KNL(beam, u, u0, nid_pos, ncoords, KNL)
-                update_KG(beam, u, u0, nid_pos, ncoords, KG)
+                update_KNL(beam, u, nid_pos, ncoords, KNL)
+                update_KG(beam, u, nid_pos, ncoords, KG)
             assert np.allclose(KNL + KG, (KNL + KG).T)
             return KNL + KG
 
@@ -112,23 +116,23 @@ def test_NL_pre_stress_simply_supported_beam():
                 uu = np.linalg.solve(Kuu, fext[bu])
                 u[bu] = uu
             for i in range(100):
-                fint = calc_fint(beams, u, u0, nid_pos, ncoords)
+                KT = calc_KT(u, ncoords+displ) #NOTE full Newton-Raphson since KT is updated only after each load step
+                fint = calc_fint(beams, u, nid_pos, ncoords+displ)
                 R = fint - fext
                 check = np.abs(R[bu]).max()
                 epsilon = 1e-6
                 if check < epsilon:
-                    KT = calc_KT(u) #NOTE modified Newton-Raphson since KT is updated only after each load step
                     break
                 duu = np.linalg.solve(KT[bu, :][:, bu], -R[bu])
                 u[bu] += duu
             assert i < 99
 
         nmodes = 3
-        KTuu = calc_KT(u)[bu, :][:, bu]
+        KTuu = calc_KT(u, ncoords + displ)[bu, :][:, bu]
         eigvals, U = eigh(a=KTuu, b=Muu, subset_by_index=(0, nmodes-1))
         omegan = np.sqrt(eigvals)
         print('Natural frequency [rad/s]', omegan)
-        assert np.isclose(omegan[0], 26.2132, rtol=0.01)
+        assert np.isclose(omegan[0], 22.88495, rtol=0.01)
 
 if __name__ == '__main__':
     test_NL_pre_stress_simply_supported_beam()

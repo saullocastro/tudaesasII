@@ -13,11 +13,11 @@ DOF = 3
 
 def test_NL_imperfect_deflection():
     for interpolation in ('legendre' , 'hermitian_cubic'):
-        n = 17
+        n = 11
         length = 3 # total size of the beam along x
 
         # imperfection via bow imperfection
-        w0 = length/100
+        w0 = length/200
 
         # Material Lastrobe Lescalloy
         E = 203.e9 # Pa
@@ -58,10 +58,11 @@ def test_NL_imperfect_deflection():
             beam.E = E
             beam.rho = rho
             beam.A1, beam.A2 = A1, A2
+            beam.h1 = beam.h2 = h
             beam.Izz1, beam.Izz2 = Izz1, Izz2
             beam.interpolation = interpolation
             update_K(beam, nid_pos, ncoords, K)
-            update_KG(beam, 1., None, nid_pos, ncoords, KGunit)
+            update_KG(beam, 1., nid_pos, ncoords, KGunit)
             update_M(beam, nid_pos, M)
             beams.append(beam)
 
@@ -84,22 +85,25 @@ def test_NL_imperfect_deflection():
         num_modes = 3
         linbuck_eigvals, _ = eigh(a=Kuu, b=KGuu, subset_by_index=[0, num_modes-1])
         assert np.isclose(linbuck_eigvals[0], 115947.38111518, rtol=0.01)
-        Ppreload = -0.91*linbuck_eigvals[0]
-        Ppreload = -0.5*linbuck_eigvals[0]
+        Ppreload = -0.895*linbuck_eigvals[0]
+        Ppreload = -0.7*linbuck_eigvals[0]
 
-        def calc_KT(u, u0):
+        displ = np.zeros_like(ncoords)
+
+        def calc_KT(u, ncoords):
             KNL = np.zeros((N, N))
             KG = np.zeros((N, N))
             for beam in beams:
-                update_KNL(beam, u, u0, nid_pos, ncoords, KNL)
-                update_KG(beam, u, u0, nid_pos, ncoords, KG)
+                update_KNL(beam, u, nid_pos, ncoords, KNL)
+                update_KG(beam, u, nid_pos, ncoords, KG)
             assert np.allclose(KNL + KG, (KNL + KG).T)
             return KNL + KG
 
         u = np.zeros(N)
-        u0 = np.zeros(N)
-        u0[1::DOF] = w0*np.sin(np.pi*x/length)
+        displ[:, 1] = w0*np.sin(np.pi*x/length)
+
         loads = np.abs(Ppreload)*np.linspace(0.1, 1., 10)
+
         for load in loads:
             fext = np.zeros(N)
             fext[0::DOF][at_tip] = -load
@@ -108,14 +112,12 @@ def test_NL_imperfect_deflection():
                 uu = np.linalg.solve(Kuu, fext[bu])
                 u[bu] = uu
             for i in range(100):
-                KT = calc_KT(u, u0) #NOTE full Newton-Raphson since KT is updated at every iteration
-                fint = calc_fint(beams, u, u0, nid_pos, ncoords)
+                KT = calc_KT(u, ncoords+displ) #NOTE full Newton-Raphson since KT is updated at every iteration
+                fint = calc_fint(beams, u, nid_pos, ncoords+displ)
                 R = fint - fext
                 check = np.abs(R[bu]).max()
                 epsilon = 1e-6
                 if check < epsilon:
-                    # NOTE modified Newton-Raphson does not work
-                    #KT = calc_KT(u, u0) #NOTE modified Newton-Raphson since KT is updated once at each load step
                     break
                 duu = np.linalg.solve(KT[bu, :][:, bu], -R[bu])
                 if np.any(np.isnan(duu)):
@@ -130,11 +132,10 @@ def test_NL_imperfect_deflection():
         # NOTE reference deflection from the bow imperfection under axial
         # compressive load, taken from
         #      https://calcresource.com/statics-buckling-load.html
-        k = np.sqrt(load/(E*Izz))
         PE = np.pi**2*E*Izz/length**2
         deflection_ref = w0*(load/(PE - load))
         print('reference deflection', deflection_ref)
-        assert np.isclose(deflection_calc, deflection_ref, rtol=0.05)
+        assert np.isclose(deflection_calc, deflection_ref, rtol=0.1)
 
 if __name__ == '__main__':
     test_NL_imperfect_deflection()

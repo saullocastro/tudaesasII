@@ -3,7 +3,7 @@ import sys
 sys.path.append('.')
 
 # uncomment to run from the scripts_lectures/MDOF_systems/ directory:
-# sys.path.append('../..')
+sys.path.append('../..')
 
 import matplotlib
 matplotlib.use('TkAgg')
@@ -108,8 +108,8 @@ def calc_KT(u):
     for beam in beams:
         update_KNL(beam, u, nid_pos, ncoords, KNL)
         update_KG(beam, u, nid_pos, ncoords, KG)
-    assert np.allclose(K + KNL + KG, (K + KNL + KG).T)
-    return K + KNL + KG
+    assert np.allclose(KNL + KG, (KNL + KG).T)
+    return KNL + KG
 
 first_omegan_NL = []
 estimated_PCR = []

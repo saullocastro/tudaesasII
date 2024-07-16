@@ -51,7 +51,7 @@ def test_pre_stress_simply_supported_beam():
         beam.A1, beam.A2 = A1, A2
         beam.Izz1, beam.Izz2 = Izz1, Izz2
         update_K(beam, nid_pos, ncoords, K)
-        update_KG(beam, 1., None, nid_pos, ncoords, KG)
+        update_KG(beam, 1., nid_pos, ncoords, KG)
         update_M(beam, nid_pos, M)
         beams.append(beam)
 
