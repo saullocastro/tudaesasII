@@ -5,18 +5,18 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>TU Delft, Aerospace Engineering, Stability and Analysis of Structures II tudaesasII &#8212; tudaesasII 2024.2 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="_static/classic.css?v=514cf933" />
+    <title>TU Delft, Aerospace Engineering, Stability and Analysis of Structures II tudaesasII &#8212; tudaesasII 2026.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css?v=2bf1fcf8" />
     
-    <script src="_static/documentation_options.js?v=ec70c504"></script>
-    <script src="_static/doctools.js?v=888ff710"></script>
-    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/documentation_options.js?v=3822dbdc"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" /> 
   </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -25,7 +25,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="#">tudaesasII 2024.2 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="#">tudaesasII 2026.1 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">TU Delft, Aerospace Engineering, Stability and Analysis of Structures II <span class="math">tudaesasII</span></a></li> 
       </ul>
     </div>  
@@ -58,7 +58,7 @@ Python</p>
 <span id="implemented-finite-elements"></span><h3>Implemented finite elements<a class="headerlink" href="#module-tudaesasII.beam2d" title="Link to this heading">¶</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="tudaesasII.beam2d.Beam2D">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tudaesasII.beam2d.</span></span><span class="sig-name descname"><span class="pre">Beam2D</span></span><a class="headerlink" href="#tudaesasII.beam2d.Beam2D" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tudaesasII.beam2d.</span></span><span class="sig-name descname"><span class="pre">Beam2D</span></span><a class="headerlink" href="#tudaesasII.beam2d.Beam2D" title="Link to this definition">¶</a></dt>
 <dd><p>Euler-Bernoulli beam element</p>
 <p>Formulated using Euler-Bernoulli beam element with two interpolation
 polynomials available:</p>
@@ -94,7 +94,7 @@ polynomials available:</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tudaesasII.beam2d.calc_fint">
-<span class="sig-prename descclassname"><span class="pre">tudaesasII.beam2d.</span></span><span class="sig-name descname"><span class="pre">calc_fint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beams</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nid_pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ncoords</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tudaesasII.beam2d.calc_fint" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">tudaesasII.beam2d.</span></span><span class="sig-name descname"><span class="pre">calc_fint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beams</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nid_pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ncoords</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tudaesasII.beam2d.calc_fint" title="Link to this definition">¶</a></dt>
 <dd><p>Calculate the internal force vector</p>
 </dd></dl>
 
@@ -139,13 +139,13 @@ polynomials available:</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tudaesasII.beam2d.update_KG">
-<span class="sig-prename descclassname"><span class="pre">tudaesasII.beam2d.</span></span><span class="sig-name descname"><span class="pre">update_KG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beam</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ppreload_u0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nid_pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ncoords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">KG</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tudaesasII.beam2d.update_KG" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">tudaesasII.beam2d.</span></span><span class="sig-name descname"><span class="pre">update_KG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beam</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ppreload_u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nid_pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ncoords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">KG</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tudaesasII.beam2d.update_KG" title="Link to this definition">¶</a></dt>
 <dd><p>Update geometric stiffness matrix KG with beam element</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tudaesasII.beam2d.update_KNL">
-<span class="sig-prename descclassname"><span class="pre">tudaesasII.beam2d.</span></span><span class="sig-name descname"><span class="pre">update_KNL</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beam</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nid_pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ncoords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">KNL</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tudaesasII.beam2d.update_KNL" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">tudaesasII.beam2d.</span></span><span class="sig-name descname"><span class="pre">update_KNL</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beam</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nid_pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ncoords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">KNL</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tudaesasII.beam2d.update_KNL" title="Link to this definition">¶</a></dt>
 <dd><p>Update the nonlinear part of global constitutive stiffness KNL with beam element</p>
 </dd></dl>
 
@@ -184,7 +184,7 @@ rotations</p>
 
 <span class="target" id="module-tudaesasII.quad4r"></span><dl class="py class">
 <dt class="sig sig-object py" id="tudaesasII.quad4r.Quad4R">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tudaesasII.quad4r.</span></span><span class="sig-name descname"><span class="pre">Quad4R</span></span><a class="headerlink" href="#tudaesasII.quad4r.Quad4R" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tudaesasII.quad4r.</span></span><span class="sig-name descname"><span class="pre">Quad4R</span></span><a class="headerlink" href="#tudaesasII.quad4r.Quad4R" title="Link to this definition">¶</a></dt>
 <dd><p>Reissner-Mindlin plate element with reduced integration</p>
 <p>Formulated based on the first-order shear deformation theory for plates</p>
 <p>Reduced integration is achieved by having only 1 integration point at the
@@ -204,7 +204,16 @@ would be the equivalent from Brockman 1987</p></li>
 </dd>
 <dt><strong>rho</strong><span class="classifier">double</span></dt><dd><p>Material density.</p>
 </dd>
-<dt><strong>ABDE</strong><span class="classifier">double</span></dt><dd><p>The plate stiffness matrix with shape <code class="docutils literal notranslate"><span class="pre">(8,</span> <span class="pre">8)</span></code>. Easily obtained form
+<dt><strong>A</strong><span class="classifier">double</span></dt><dd><p>The plate in-plane stiffness matrix with shape <code class="docutils literal notranslate"><span class="pre">(3,</span> <span class="pre">3)</span></code>. Easily obtained form
+the <code class="xref py py-class docutils literal notranslate"><span class="pre">Laminate</span></code> object of the <code class="docutils literal notranslate"><span class="pre">composites</span></code> module.</p>
+</dd>
+<dt><strong>B</strong><span class="classifier">double</span></dt><dd><p>The plate coupling stiffness matrix with shape <code class="docutils literal notranslate"><span class="pre">(3,</span> <span class="pre">3)</span></code>. Easily obtained form
+the <code class="xref py py-class docutils literal notranslate"><span class="pre">Laminate</span></code> object of the <code class="docutils literal notranslate"><span class="pre">composites</span></code> module.</p>
+</dd>
+<dt><strong>D</strong><span class="classifier">double</span></dt><dd><p>The plate bending stiffness matrix with shape <code class="docutils literal notranslate"><span class="pre">(3,</span> <span class="pre">3)</span></code>. Easily obtained form
+the <code class="xref py py-class docutils literal notranslate"><span class="pre">Laminate</span></code> object of the <code class="docutils literal notranslate"><span class="pre">composites</span></code> module.</p>
+</dd>
+<dt><strong>Atrans</strong><span class="classifier">double</span></dt><dd><p>The plate transverse shear stiffness matrix with shape <code class="docutils literal notranslate"><span class="pre">(2,</span> <span class="pre">2)</span></code>. Easily obtained form
 the <code class="xref py py-class docutils literal notranslate"><span class="pre">Laminate</span></code> object of the <code class="docutils literal notranslate"><span class="pre">composites</span></code> module.</p>
 </dd>
 <dt><strong>n1, n2, n3, n4</strong><span class="classifier">int</span></dt><dd><p>Node identification number.</p>
@@ -277,7 +286,7 @@ respectively.</p>
 </section>
 <section id="license">
 <h2>License<a class="headerlink" href="#license" title="Link to this heading">¶</a></h2>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Copyright</span> <span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="mi">2019</span><span class="o">-</span><span class="mi">2024</span><span class="p">,</span> <span class="n">Saullo</span> <span class="n">G</span><span class="o">.</span> <span class="n">P</span><span class="o">.</span> <span class="n">Castro</span> <span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">G</span><span class="o">.</span><span class="n">P</span><span class="o">.</span><span class="n">Castro</span><span class="nd">@tudelft</span><span class="o">.</span><span class="n">nl</span><span class="p">),</span> <span class="n">Jurij</span> <span class="n">Sodja</span> <span class="p">(</span><span class="n">J</span><span class="o">.</span><span class="n">Sodja</span><span class="nd">@tudelft</span><span class="o">.</span><span class="n">nl</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Copyright</span> <span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="mi">2019</span><span class="o">-</span><span class="mi">2026</span><span class="p">,</span> <span class="n">Saullo</span> <span class="n">G</span><span class="o">.</span> <span class="n">P</span><span class="o">.</span> <span class="n">Castro</span> <span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">G</span><span class="o">.</span><span class="n">P</span><span class="o">.</span><span class="n">Castro</span><span class="nd">@tudelft</span><span class="o">.</span><span class="n">nl</span><span class="p">),</span> <span class="n">Jurij</span> <span class="n">Sodja</span> <span class="p">(</span><span class="n">J</span><span class="o">.</span><span class="n">Sodja</span><span class="nd">@tudelft</span><span class="o">.</span><span class="n">nl</span><span class="p">)</span>
 <span class="n">All</span> <span class="n">rights</span> <span class="n">reserved</span><span class="o">.</span>
 
 <span class="n">Redistribution</span> <span class="ow">and</span> <span class="n">use</span> <span class="ow">in</span> <span class="n">source</span> <span class="ow">and</span> <span class="n">binary</span> <span class="n">forms</span><span class="p">,</span> <span class="k">with</span> <span class="ow">or</span> <span class="n">without</span> <span class="n">modification</span><span class="p">,</span> <span class="n">are</span> <span class="n">permitted</span> <span class="n">provided</span> <span class="n">that</span> <span class="n">the</span> <span class="n">following</span> <span class="n">conditions</span> <span class="n">are</span> <span class="n">met</span><span class="p">:</span>
@@ -286,7 +295,7 @@ respectively.</p>
 
 <span class="mf">2.</span> <span class="n">Redistributions</span> <span class="ow">in</span> <span class="n">binary</span> <span class="n">form</span> <span class="n">must</span> <span class="n">reproduce</span> <span class="n">the</span> <span class="n">above</span> <span class="n">copyright</span> <span class="n">notice</span><span class="p">,</span> <span class="n">this</span> <span class="nb">list</span> <span class="n">of</span> <span class="n">conditions</span> <span class="ow">and</span> <span class="n">the</span> <span class="n">following</span> <span class="n">disclaimer</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">documentation</span> <span class="ow">and</span><span class="o">/</span><span class="ow">or</span> <span class="n">other</span> <span class="n">materials</span> <span class="n">provided</span> <span class="k">with</span> <span class="n">the</span> <span class="n">distribution</span><span class="o">.</span>
 
-<span class="mf">3.</span> <span class="n">Neither</span> <span class="n">the</span> <span class="n">name</span> <span class="n">of</span> <span class="n">the</span> <span class="n">copyright</span> <span class="n">holder</span> <span class="n">nor</span> <span class="n">the</span> <span class="n">names</span> <span class="n">of</span> <span class="n">its</span> <span class="n">contributors</span> <span class="n">may</span> <span class="n">be</span> <span class="n">used</span> <span class="n">to</span> <span class="n">endorse</span> <span class="ow">or</span> <span class="n">promote</span> <span class="n">products</span> <span class="n">derived</span> <span class="kn">from</span> <span class="nn">this</span> <span class="n">software</span> <span class="n">without</span> <span class="n">specific</span> <span class="n">prior</span> <span class="n">written</span> <span class="n">permission</span><span class="o">.</span>
+<span class="mf">3.</span> <span class="n">Neither</span> <span class="n">the</span> <span class="n">name</span> <span class="n">of</span> <span class="n">the</span> <span class="n">copyright</span> <span class="n">holder</span> <span class="n">nor</span> <span class="n">the</span> <span class="n">names</span> <span class="n">of</span> <span class="n">its</span> <span class="n">contributors</span> <span class="n">may</span> <span class="n">be</span> <span class="n">used</span> <span class="n">to</span> <span class="n">endorse</span> <span class="ow">or</span> <span class="n">promote</span> <span class="n">products</span> <span class="n">derived</span> <span class="kn">from</span><span class="w"> </span><span class="nn">this</span> <span class="n">software</span> <span class="n">without</span> <span class="n">specific</span> <span class="n">prior</span> <span class="n">written</span> <span class="n">permission</span><span class="o">.</span>
 
 <span class="n">THIS</span> <span class="n">SOFTWARE</span> <span class="n">IS</span> <span class="n">PROVIDED</span> <span class="n">BY</span> <span class="n">THE</span> <span class="n">COPYRIGHT</span> <span class="n">HOLDERS</span> <span class="n">AND</span> <span class="n">CONTRIBUTORS</span> <span class="s2">&quot;AS IS&quot;</span> <span class="n">AND</span> <span class="n">ANY</span> <span class="n">EXPRESS</span> <span class="n">OR</span> <span class="n">IMPLIED</span> <span class="n">WARRANTIES</span><span class="p">,</span> <span class="n">INCLUDING</span><span class="p">,</span> <span class="n">BUT</span> <span class="n">NOT</span> <span class="n">LIMITED</span> <span class="n">TO</span><span class="p">,</span> <span class="n">THE</span> <span class="n">IMPLIED</span> <span class="n">WARRANTIES</span> <span class="n">OF</span> <span class="n">MERCHANTABILITY</span> <span class="n">AND</span> <span class="n">FITNESS</span> <span class="n">FOR</span> <span class="n">A</span> <span class="n">PARTICULAR</span> <span class="n">PURPOSE</span> <span class="n">ARE</span> <span class="n">DISCLAIMED</span><span class="o">.</span> <span class="n">IN</span> <span class="n">NO</span> <span class="n">EVENT</span> <span class="n">SHALL</span> <span class="n">THE</span> <span class="n">COPYRIGHT</span> <span class="n">HOLDER</span> <span class="n">OR</span> <span class="n">CONTRIBUTORS</span> <span class="n">BE</span> <span class="n">LIABLE</span> <span class="n">FOR</span> <span class="n">ANY</span> <span class="n">DIRECT</span><span class="p">,</span> <span class="n">INDIRECT</span><span class="p">,</span> <span class="n">INCIDENTAL</span><span class="p">,</span> <span class="n">SPECIAL</span><span class="p">,</span> <span class="n">EXEMPLARY</span><span class="p">,</span> <span class="n">OR</span> <span class="n">CONSEQUENTIAL</span> <span class="n">DAMAGES</span> <span class="p">(</span><span class="n">INCLUDING</span><span class="p">,</span> <span class="n">BUT</span> <span class="n">NOT</span> <span class="n">LIMITED</span> <span class="n">TO</span><span class="p">,</span> <span class="n">PROCUREMENT</span> <span class="n">OF</span> <span class="n">SUBSTITUTE</span> <span class="n">GOODS</span> <span class="n">OR</span> <span class="n">SERVICES</span><span class="p">;</span> <span class="n">LOSS</span> <span class="n">OF</span> <span class="n">USE</span><span class="p">,</span> <span class="n">DATA</span><span class="p">,</span> <span class="n">OR</span> <span class="n">PROFITS</span><span class="p">;</span> <span class="n">OR</span> <span class="n">BUSINESS</span> <span class="n">INTERRUPTION</span><span class="p">)</span> <span class="n">HOWEVER</span> <span class="n">CAUSED</span> <span class="n">AND</span> <span class="n">ON</span> <span class="n">ANY</span> <span class="n">THEORY</span> <span class="n">OF</span> <span class="n">LIABILITY</span><span class="p">,</span> <span class="n">WHETHER</span> <span class="n">IN</span> <span class="n">CONTRACT</span><span class="p">,</span> <span class="n">STRICT</span> <span class="n">LIABILITY</span><span class="p">,</span> <span class="n">OR</span> <span class="n">TORT</span> <span class="p">(</span><span class="n">INCLUDING</span> <span class="n">NEGLIGENCE</span> <span class="n">OR</span> <span class="n">OTHERWISE</span><span class="p">)</span> <span class="n">ARISING</span> <span class="n">IN</span> <span class="n">ANY</span> <span class="n">WAY</span> <span class="n">OUT</span> <span class="n">OF</span> <span class="n">THE</span> <span class="n">USE</span> <span class="n">OF</span> <span class="n">THIS</span> <span class="n">SOFTWARE</span><span class="p">,</span> <span class="n">EVEN</span> <span class="n">IF</span> <span class="n">ADVISED</span> <span class="n">OF</span> <span class="n">THE</span> <span class="n">POSSIBILITY</span> <span class="n">OF</span> <span class="n">SUCH</span> <span class="n">DAMAGE</span><span class="o">.</span>
 </pre></div>
@@ -307,7 +316,7 @@ respectively.</p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
   <div>
     <h3><a href="#">Table of Contents</a></h3>
@@ -351,7 +360,7 @@ respectively.</p>
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
@@ -359,13 +368,13 @@ respectively.</p>
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -374,13 +383,13 @@ respectively.</p>
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="#">tudaesasII 2024.2 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="#">tudaesasII 2026.1 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">TU Delft, Aerospace Engineering, Stability and Analysis of Structures II <span class="math">tudaesasII</span></a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
     &#169; Copyright 2019-2024, Saullo G. P. Castro, Jurij Sodja.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>
