@@ -16,7 +16,7 @@ r"""
 DOF = 5
 num_nodes = 3
 
-sympy.var('h, A', positive=True, real=True)
+sympy.var('h, area', positive=True, real=True)
 sympy.var('x1, y1, x2, y2, x3, y3, x, y', real=True, positive=True)
 sympy.var('rho')
 sympy.var('A11, A12, A16, A22, A26, A66')
@@ -36,13 +36,13 @@ r3 = x3*R.i + y3*R.j
 r = x*R.i + y*R.j
 
 Aexpr = cross(r1 - r3, r2 - r3).components[R.k]/2
-print('A =', Aexpr)
+print('area =', Aexpr)
 
 AN1 = cross(r2 - r, r3 - r).components[R.k]/2
 AN2 = cross(r3 - r, r1 - r).components[R.k]/2
-N1 = simplify(AN1/A)
-N2 = simplify(AN2/A)
-N3 = simplify((A - AN1 - AN2)/A)
+N1 = simplify(AN1/area)
+N2 = simplify(AN2/area)
+N3 = simplify((area - AN1 - AN2)/area)
 
 N1x = N1.diff(x)
 N2x = N2.diff(x)
@@ -60,7 +60,7 @@ N3y = N3.diff(y)
 Jinv = Matrix([[N1x, N1y],
                [N2x, N2y]])
 detJ = Jinv.inv().det().simplify()
-detJ = 2*A # it can be easily shown
+detJ = 2*area # it can be easily shown
 
 print('N1x =', N1x)
 print('N2x =', N2x)
