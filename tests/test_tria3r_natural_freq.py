@@ -75,7 +75,10 @@ def test_tria3r_natural_freq(plot=False, mode=0):
         tria.scf13 = plate.scf_k13
         tria.scf23 = plate.scf_k23
         tria.h = h
-        tria.ABDE = plate.ABDE
+        tria.A = plate.A
+        tria.B = plate.B
+        tria.D = plate.D
+        tria.Atrans = plate.Atrans
         update_K(tria, nid_pos, ncoords, K)
         update_M(tria, nid_pos, ncoords, M)
         trias.append(tria)

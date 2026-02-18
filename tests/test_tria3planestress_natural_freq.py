@@ -20,7 +20,6 @@ def test_tria3planestress_natural_freq():
         h = 1
         w = h/10
         I = h**3*w/12
-        A = w*h
 
         # material properties
         E = 70e9

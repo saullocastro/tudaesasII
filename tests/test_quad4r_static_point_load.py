@@ -61,7 +61,10 @@ def test_static_plate_quad_point_load(plot=False):
         quad.scf13 = plate.scf_k13
         quad.scf23 = plate.scf_k23
         quad.h = h
-        quad.ABDE = plate.ABDE
+        quad.A = plate.A
+        quad.B = plate.B
+        quad.D = plate.D
+        quad.Atrans = plate.Atrans
         update_K(quad, nid_pos, ncoords, K)
         quads.append(quad)
 

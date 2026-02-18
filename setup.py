@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 
 is_released = True
-version = '2024.2'
+version = '2026.0'
 
 
 def git_version():
@@ -62,7 +62,7 @@ install_requires = [
         "numpy",
         "scipy",
         "structsolve",
-        "composites >= 0.5.4",
+        "composites >= 0.8.0",
         ]
 
 #Trove classifiers
@@ -85,6 +85,7 @@ Programming Language :: Python :: 3.9
 Programming Language :: Python :: 3.10
 Programming Language :: Python :: 3.11
 Programming Language :: Python :: 3.12
+Programming Language :: Python :: 3.13
 License :: OSI Approved :: BSD License
 
 """

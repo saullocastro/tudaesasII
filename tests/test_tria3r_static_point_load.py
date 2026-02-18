@@ -72,7 +72,10 @@ def test_tria3r_static_point_load(plot=False):
         tria.scf13 = plate.scf_k13
         tria.scf23 = plate.scf_k23
         tria.h = h
-        tria.ABDE = plate.ABDE
+        tria.A = plate.A
+        tria.B = plate.B
+        tria.D = plate.D
+        tria.Atrans = plate.Atrans
         update_K(tria, nid_pos, ncoords, K)
         trias.append(tria)
 
