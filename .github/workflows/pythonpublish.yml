@@ -9,7 +9,7 @@ jobs:
   deploy:
     strategy:
       matrix:
-        python-version: ['3.12']
+        python-version: ['3.13']
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4

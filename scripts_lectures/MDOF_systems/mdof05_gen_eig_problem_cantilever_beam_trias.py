@@ -26,7 +26,7 @@ length = 10
 h = 1
 w = h/10
 I = h**3*w/12
-A = w*h
+area = w*h
 
 # material properties
 E = 70e9
@@ -96,9 +96,9 @@ U[bu] = Uu
 omegan = np.sqrt(eigvals)
 print('omegan', omegan[:num_modes])
 
-print('omega1 theoretical', 1.875**2*np.sqrt(E*I/(rho*A*length**4)))
-print('omega2 theoretical', 4.694**2*np.sqrt(E*I/(rho*A*length**4)))
-print('omega3 theoretical', 7.855**2*np.sqrt(E*I/(rho*A*length**4)))
+print('omega1 theoretical', 1.875**2*np.sqrt(E*I/(rho*area*length**4)))
+print('omega2 theoretical', 4.694**2*np.sqrt(E*I/(rho*area*length**4)))
+print('omega3 theoretical', 7.855**2*np.sqrt(E*I/(rho*area*length**4)))
 
 if plot_result:
     u = np.zeros(N, dtype=float)

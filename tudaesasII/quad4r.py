@@ -25,8 +25,17 @@ class Quad4R(object):
         Plate thickness.
     rho : double
         Material density.
-    ABDE : double
-        The plate stiffness matrix with shape ``(8, 8)``. Easily obtained form
+    A : double
+        The plate in-plane stiffness matrix with shape ``(3, 3)``. Easily obtained form
+        the :class:`.Laminate` object of the ``composites`` module.
+    B : double
+        The plate coupling stiffness matrix with shape ``(3, 3)``. Easily obtained form
+        the :class:`.Laminate` object of the ``composites`` module.
+    D : double
+        The plate bending stiffness matrix with shape ``(3, 3)``. Easily obtained form
+        the :class:`.Laminate` object of the ``composites`` module.
+    Atrans : double
+        The plate transverse shear stiffness matrix with shape ``(2, 2)``. Easily obtained form
         the :class:`.Laminate` object of the ``composites`` module.
     n1, n2, n3, n4 : int
         Node identification number.
