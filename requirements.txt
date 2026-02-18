@@ -1,6 +1,6 @@
 numpy
 scipy
-composites >= 0.5.4
+composites >= 0.8.0
 structsolve
 pytest
 pytest-cov
