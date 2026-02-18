@@ -46,7 +46,7 @@ jobs:
         verbose: true
 
     - name: "Coveralls GitHub Action"
-      uses: coverallsapp/github-action@master
+      uses: coverallsapp/github-action@v2
       env:
         COVERALLS_REPO_TOKEN : ${{ secrets.COVERALLS_REPO_TOKEN }}
       with:
